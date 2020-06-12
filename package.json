@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "server": "node -r source-map-support/register ./dist/server/index.js",
-    "server:build": "cd server && tsc",
+    "server:build": "tsc -P server/tsconfig.json",
+    "server": "npm run server:build && node -r source-map-support/register ./dist/server/index.js",
     "server:build:clean": "rimraf dist/server",
-    "server:dev": "tsc-watch -P server/tsconfig.json --onSuccess \"npm run server\"",
+    "server:dev": "npm run server:build:clean && tsc-watch -P server/tsconfig.json --onSuccess \"node -r source-map-support/register ./dist/server/index.js\"",
     "client:dev": "cd client && npx webpack-dev-server --content-base ./dist --hot --inline --color --port 3000",
-    "dev": "echo Hello; concurrently \"npm run server:dev\" \"npm run client:dev\""
+    "dev": "echo Hello; concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix"
   },
   "author": "",
   "license": "ISC",
@@ -33,5 +34,19 @@
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.11.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^3.2.0",
+    "@typescript-eslint/parser": "^3.2.0",
+    "eslint": "^7.2.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.21.2",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^3.1.3",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "prettier": "^2.0.5"
   }
 }

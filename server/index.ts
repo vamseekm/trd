@@ -1,4 +1,5 @@
-import { start } from "./server";
-(async function(){
+import { start } from './server';
+
+(async function main() {
     await start();
 })();
