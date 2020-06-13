@@ -9,6 +9,8 @@ x-node-config: &node-config
     - /home/node/app/node_modules
   environment:
     - HTTP_API_PORT=2000
+x-env: &common-env
+  - MYSQL_ROOT_PASSWORD: example
 
 services: 
 
@@ -27,4 +29,27 @@ services:
     ports: 
       - 127.0.0.1:3000:3000
     command: "npm run client:dev"
+
+  db:
+    image: mariadb
+    restart: always
+    environment: 
+      <<: *common-env
+    volumes: 
+      - ../trd_mysql_data:/var/lib/mysql
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 127.0.0.1:8088:8080
+  nginx:
+    image: nginx:latest
+    ports:
+      - 127.0.0.1:8080:8080
+    volumes:
+      - ./config/nginx/reverse_proxy.conf:/etc/nginx/conf.d/reverse_proxy.conf
+    depends_on: 
+      - api_dev_server
+      - client_dev_server
 
