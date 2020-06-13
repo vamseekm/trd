@@ -9,7 +9,7 @@
     "server": "npm run server:build && node -r source-map-support/register ./dist/server/index.js",
     "server:build:clean": "rimraf dist/server",
     "server:dev": "npm run server:build:clean && tsc-watch --pretty --preserveWatchOutput -P server/tsconfig.json --onSuccess \"node -r source-map-support/register ./dist/server/index.js\"",
-    "client:dev": "cd client && npx webpack-dev-server --content-base ./dist --hot --inline --color --port 3000 --host 0.0.0.0",
+    "client:dev": "cd client && npx webpack-dev-server --content-base ./dist --hot --inline --color --port $WEBPACK_DEV_SERVER_PORT --host 0.0.0.0",
     "dev": "echo Hello; concurrently \"npm run server:dev\" \"npm run client:dev\"",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix"
   },
