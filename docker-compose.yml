@@ -1,0 +1,30 @@
+version: "3.4"
+x-node-config: &node-config
+  image: trd_be_node_img
+  depends_on:
+    - build
+  working_dir: /home/node/app
+  volumes: 
+    - ./:/home/node/app
+    - /home/node/app/node_modules
+  environment:
+    - HTTP_API_PORT=3000
+
+services: 
+
+  build:
+    image: trd_be_node_img
+    build: .
+
+  api_dev_server:
+    <<: *node-config
+    ports: 
+      - 127.0.0.1:2000:2000
+    command: "./server_dev.sh"
+
+  client_dev_server:
+    <<: *node-config
+    ports: 
+      - 127.0.0.1:3000:3000
+    command: "npm run client:dev"
+

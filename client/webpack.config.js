@@ -5,9 +5,8 @@ module.exports = {
     mode: 'development',
 
     devServer: {
-        contentBase: path.join(__dirname, 'dist'),
+        contentBase: path.join(__dirname, '../dist/client'),
         compress: true,
-        port: 9000,
     },
     // Enable sourcemaps for debugging webpack's output.
     devtool: 'source-map',
