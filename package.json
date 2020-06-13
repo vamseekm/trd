@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "wait_for_db": "npx wait-on -l -v tcp:db:3306",
     "rimraf": "./node_modules/rimraf/bin.js",
     "server:build": "tsc -P server/tsconfig.json",
     "server": "npm run server:build && node -r source-map-support/register ./dist/server/index.js",
@@ -19,6 +20,7 @@
     "concurrently": "^5.2.0",
     "express": "^4.17.1",
     "html-webpack-plugin": "^4.3.0",
+    "morgan": "^1.10.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "rimraf": "^3.0.2",
@@ -27,6 +29,7 @@
     "ts-loader": "^7.0.5",
     "tsc-watch": "^4.2.8",
     "typescript": "^3.9.5",
+    "wait-on": "^5.0.1",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.11.0"
