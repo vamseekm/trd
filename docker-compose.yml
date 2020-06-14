@@ -7,11 +7,18 @@ x-node-config: &node-config
   volumes: 
     - ./:/home/node/app
     - /home/node/app/node_modules
+
 x-env: &common-env
   - MYSQL_ROOT_PASSWORD: example
   - HTTP_API_PORT: 2000
   - WEBPACK_DEV_SERVER_PORT: 3000
-  - DB_HOST: db
+  - MYSQL_HOST: db
+  - MYSQL_PORT: 3306
+  - MYSQL_USER: root
+  - MYSQL_PASSWORD: example
+  - REDIS_HOST: redis
+  - REDIS_PORT: 6379
+  - GATEWAY_URI: http://gateway:8080
 
 services: 
 
@@ -23,7 +30,7 @@ services:
     <<: *node-config
     ports: 
       - 127.0.0.1:2000:2000
-    command: "./server_dev.sh"
+    command: "./server_dev.sh --api-server"
     environment: 
       <<: *common-env
 
@@ -38,6 +45,8 @@ services:
   db:
     image: mariadb
     restart: always
+    ports:
+      - 127.0.0.1:3306:3306
     environment: 
       <<: *common-env
     volumes: 
@@ -49,7 +58,24 @@ services:
     ports:
       - 127.0.0.1:8088:8080
 
-  nginx:
+  redis:
+    image: redis
+    ports:
+      - 127.0.0.1:6379:6379
+    volumes:
+      - ../trd_redis_data:/data
+
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: rediscommander/redis-commander:latest
+    restart: always
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - 127.0.0.1:8081:8081
+
+  gateway:
     image: nginx:latest
     ports:
       - 127.0.0.1:8080:8080

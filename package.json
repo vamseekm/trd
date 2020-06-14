@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "wait_for_db": "npx wait-on -l -v tcp:db:3306",
+    "wait_for_redis": "npx wait-on -l -v tcp:redis:6379",
     "rimraf": "./node_modules/rimraf/bin.js",
     "server:build": "tsc -P server/tsconfig.json",
     "server": "npm run server:build && node -r source-map-support/register ./dist/server/index.js",
@@ -20,6 +21,8 @@
     "concurrently": "^5.2.0",
     "express": "^4.17.1",
     "html-webpack-plugin": "^4.3.0",
+    "lodash.once": "^4.1.1",
+    "minimist": "^1.2.5",
     "morgan": "^1.10.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
@@ -36,6 +39,8 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.6",
+    "@types/lodash.once": "^4.1.6",
+    "@types/minimist": "^1.2.0",
     "@types/node": "^14.0.13",
     "@types/react": "^16.9.36",
     "@types/react-dom": "^16.9.8",
