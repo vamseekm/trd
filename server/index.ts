@@ -1,13 +1,14 @@
-/* eslint-disable no-console */
-import minimist from 'minimist';
-import { start } from './api_server';
+import 'reflect-metadata';
+import { program } from 'commander';
+import { Container } from 'typedi';
+import { Cli } from './cli';
 
-const argv = minimist(process.argv.slice(2));
-console.log('ARGV: ', JSON.stringify(argv));
-
+program.option('-a --api-server', 'Start API server.');
+program.parse(process.argv);
 async function run() {
-    if (argv['api-server']) {
-        await start();
+    const cli = Container.get(Cli);
+    if (program.apiServer) {
+        await cli.startAPIServer();
     }
 }
 
