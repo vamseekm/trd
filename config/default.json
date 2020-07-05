@@ -1,0 +1,5 @@
+{
+    "HTTP_API_PORT": "3000",
+    "KITE_API_KEY": "",
+    "KITE_API_SECRET": ""
+}
