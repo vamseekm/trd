@@ -4,28 +4,39 @@ import express from 'express';
 import { Service } from 'typedi';
 import autoBind from 'auto-bind';
 import { IController } from '../types';
-import { BrokerService } from '../../services';
+import { BrokerAPI } from '../api';
 
 @Service()
 export class BrokerController implements IController {
-    constructor(private broker: BrokerService) {
+    constructor(private brokerAPI: BrokerAPI, private broker: BrokerAPI) {
         autoBind(this);
     }
 
     async login(req: express.Request, res: express.Response): Promise<void> {
-        const loginUrl = await this.broker.getLoginUrl();
+        const loginUrl = await this.brokerAPI.getLoginUrl();
         res.redirect(307, loginUrl);
     }
 
     async redirect(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
         try {
             const { request_token } = req.query;
-            await this.broker.generateAccessToken(request_token as string);
+            await this.brokerAPI.generateAccessToken(request_token as string);
             res.send('generated access token');
         } catch (err) {
             console.log(err);
             next(JSON.stringify(err, null, 2));
         }
+    }
+
+    async profile(req: express.Request, res: express.Response): Promise<void> {
+        const profile = await this.broker.getProfile();
+        res.send(profile);
+    }
+
+    async privateRoutes(): Promise<express.Router> {
+        const router = express.Router();
+        router.get('/profile', this.profile);
+        return router;
     }
 
     async publicRoutes(): Promise<express.Router> {

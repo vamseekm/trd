@@ -1,9 +1,9 @@
 import express from 'express';
 import { Service } from 'typedi';
 import morgan from 'morgan';
-import { Config, HTTP_API_PORT } from './config';
-import { BrokerController } from '../lib/controller';
-import { IController } from '../lib/types';
+import { Config } from '../infra/config';
+import { BrokerController } from './controller';
+import { IController, HTTP_API_PORT } from './types';
 
 @Service()
 export class APIServer {
@@ -22,11 +22,13 @@ export class APIServer {
 
     async mountRoutes(ctrl: IController, prefix: string): Promise<void> {
         this.publicRouter.use(prefix, await this.brokerCtrl.publicRoutes());
+        this.privateRouter.use(prefix, await this.brokerCtrl.privateRoutes());
     }
 
     async setupRoutes(): Promise<void> {
         this.mountRoutes(this.brokerCtrl, '/broker');
         this.app.use('/api.public', this.publicRouter);
+        this.app.use('/api', this.privateRouter);
     }
 
     async start(): Promise<unknown> {

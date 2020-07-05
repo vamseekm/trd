@@ -4,7 +4,7 @@ import { createConnection, Connection } from 'typeorm';
 import { Config } from './config';
 
 @Service()
-export class DB {
+export class MySQL {
     private conn?: Connection;
 
     constructor(private config: Config) {}
