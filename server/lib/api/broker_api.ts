@@ -3,10 +3,14 @@
 /* eslint-disable no-useless-catch */
 /* eslint-disable no-useless-constructor */
 import { Service } from 'typedi';
+import { from } from 'rxjs';
+import { map, filter, toArray } from 'rxjs/operators';
+
 import { Config } from '../../infra/config';
 import { DBService } from '../service';
 import { KITE_API_KEY, KITE_ACCESS_TOKEN, KITE_API_SECRET, IBrokerProfile } from '../types';
 import { Redis } from '../../infra';
+import { IInstrument } from '../types/instrument';
 
 const { KiteConnect } = require('kiteconnect');
 
@@ -58,5 +62,46 @@ export class BrokerAPI {
                 orderTypes: profile.order_types,
             };
         });
+    }
+
+    async getExchanges(): Promise<string[]> {
+        const profile = await this.getProfile();
+        return profile.exchanges;
+    }
+
+    async getInstrumentsByExchange(exchange: string): Promise<IInstrument[]> {
+        const kite = await this.kiteInstance();
+        const instruments: any = await kite.getInstruments(exchange);
+        return from(instruments)
+            .pipe(
+                filter((item: any) => {
+                    if (!item.instrument_token || item.instrument_token.length === 0) {
+                        console.log(`Found invalid instrument:`, JSON.stringify(item, null, 2));
+                        return false;
+                    }
+                    return true;
+                }),
+                map(
+                    (ins: any): IInstrument => {
+                        const expiry = ins.expiry || 0;
+                        return {
+                            instrumentToken: ins.instrument_token,
+                            exchangeToken: ins.exchange_token,
+                            tradingSymbol: ins.tradingsymbol,
+                            name: ins.name,
+                            lastPrice: ins.last_price,
+                            expiry,
+                            strike: ins.strike,
+                            tickSize: ins.tick_size,
+                            lotSize: ins.lot_size,
+                            instrumentType: ins.instrument_type,
+                            segment: ins.segment,
+                            exchange: ins.exchange,
+                        };
+                    },
+                ),
+                toArray(),
+            )
+            .toPromise();
     }
 }
