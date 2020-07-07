@@ -54,7 +54,8 @@ export class BrokerAPI {
 
     async getProfile(): Promise<IBrokerProfile> {
         return this.redis.cachedGet({ key: 'Broker.getProfile', expiry: 8 * 3600 * 1000 }, async () => {
-            const profile = await (await this.kiteInstance()).getProfile();
+            const kite = await this.kiteInstance();
+            const profile = await kite.getProfile();
             return {
                 name: profile.user_shortname,
                 exchanges: profile.exchanges,
@@ -76,7 +77,7 @@ export class BrokerAPI {
             .pipe(
                 filter((item: any) => {
                     if (!item.instrument_token || item.instrument_token.length === 0) {
-                        console.log(`Found invalid instrument:`, JSON.stringify(item, null, 2));
+                        console.log(`Found invalid instrument in ${exchange}:`, JSON.stringify(item, null, 4));
                         return false;
                     }
                     return true;
