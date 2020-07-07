@@ -24,7 +24,8 @@ async function run() {
 (async function main() {
     try {
         await run();
+        console.log('Action completed.');
     } catch (err) {
-        console.log(err);
+        console.error(`Action completed with error: `, err);
     }
 })();
