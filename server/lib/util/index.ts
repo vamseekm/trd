@@ -1,27 +1,29 @@
 import { from } from 'rxjs';
-import { reduce, filter } from 'rxjs/operators';
-import { stringify } from 'querystring';
+import { reduce } from 'rxjs/operators';
 
-export async function objectArrayToMap<T, K extends keyof T>(items: T[], prop: K): Promise<Record<string, T>> {
+export async function mapFromObjectList<T, K extends keyof T>(items: T[], prop: K): Promise<Record<string, T>> {
     return from(items)
         .pipe(
-            reduce((results, item) => {
+            reduce((res, item) => {
                 const propValue: unknown = item[prop];
-                // eslint-disable-next-line no-param-reassign
-                results[propValue as string] = item;
-                return results;
+                res[propValue as string] = item;
+                return res;
             }, {} as Record<string, T>),
         )
         .toPromise();
 }
 
-export async function arrayToMap(items: string[]): Promise<Record<string, boolean>> {
+export async function propMapFromObjectList<T, K extends keyof T>(
+    items: T[],
+    prop: K,
+): Promise<Record<string, number>> {
     return from(items)
         .pipe(
-            reduce((results, item) => {
-                results[item] = true;
-                return results;
-            }, {} as Record<string, boolean>),
+            reduce((res, item, idx) => {
+                const propValue: unknown = item[prop];
+                res[propValue as string] = idx;
+                return res;
+            }, {} as Record<string, number>),
         )
         .toPromise();
 }
