@@ -1,9 +1,11 @@
 import express from 'express';
 import { Service } from 'typedi';
 import morgan from 'morgan';
+import { memoryUsage } from 'process';
 import { Config } from '../infra/config';
 import { BrokerController, TasksController } from './controller';
 import { IController, HTTP_API_PORT } from './types';
+import { Logger } from '../infra';
 
 @Service()
 export class APIServer {
@@ -13,7 +15,12 @@ export class APIServer {
 
     privateRouter: express.Router;
 
-    constructor(private config: Config, private brokerCtrl: BrokerController, private tasksCtrl: TasksController) {
+    constructor(
+        private config: Config,
+        private brokerCtrl: BrokerController,
+        private tasksCtrl: TasksController,
+        private logger: Logger,
+    ) {
         this.app = express();
         this.app.use(morgan('tiny'));
         this.publicRouter = express.Router();
@@ -38,7 +45,7 @@ export class APIServer {
         const port = this.config.get(HTTP_API_PORT);
         return new Promise((resolve) => {
             this.app.listen(port, () => {
-                console.log(`API server available at 0.0.0.0:${port}`);
+                this.logger.info(`API server available at 0.0.0.0:${port}`);
                 resolve();
             });
         });

@@ -1,8 +1,32 @@
 import { Service } from 'typedi';
 import express from 'express';
 import autoBind from 'auto-bind';
+import { spawn } from 'child_process';
+import { nextTick } from 'process';
 import { Tasks } from '../tasks';
 import { IController } from '../types';
+
+async function runTask(cmd: string) {
+    return new Promise((resolve, reject) => {
+        // const fullCmd = `bash ./server.sh --${cmd}`;
+        const child = spawn('npm', ['run', 'server', '--', `--${cmd}`, '-x']);
+        child.on('exit', (code, signal) => {
+            resolve({ code, signal });
+        });
+        child.on('error', (err) => {
+            reject(err);
+        });
+        child.on('close', () => {
+            resolve();
+        });
+        child.stdout.on('data', (data) => {
+            console.log(data.toString());
+        });
+        child.stderr.on('data', (data) => {
+            console.log(data.toString());
+        });
+    });
+}
 
 @Service()
 export class TasksController implements IController {
@@ -10,9 +34,13 @@ export class TasksController implements IController {
         autoBind(this);
     }
 
-    async sync(req: express.Request, res: express.Response): Promise<void> {
-        await this.tasks.sync();
-        res.send('ok');
+    async sync(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+        try {
+            await runTask('sync');
+            res.send('ok');
+        } catch (err) {
+            next(err);
+        }
     }
 
     async publicRoutes(): Promise<express.Router> {

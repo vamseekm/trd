@@ -5,10 +5,11 @@ import { Service } from 'typedi';
 import autoBind from 'auto-bind';
 import { IController } from '../types';
 import { BrokerAPI } from '../api';
+import { Logger } from '../../infra';
 
 @Service()
 export class BrokerController implements IController {
-    constructor(private brokerAPI: BrokerAPI, private broker: BrokerAPI) {
+    constructor(private brokerAPI: BrokerAPI, private broker: BrokerAPI, private logger: Logger) {
         autoBind(this);
     }
 
@@ -23,7 +24,7 @@ export class BrokerController implements IController {
             await this.brokerAPI.generateAccessToken(request_token as string);
             res.send('generated access token');
         } catch (err) {
-            console.log(err);
+            this.logger.error(err);
             next(JSON.stringify(err, null, 2));
         }
     }

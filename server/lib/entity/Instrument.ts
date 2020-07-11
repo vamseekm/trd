@@ -44,4 +44,7 @@ export class Instrument implements IInstrument {
 
     @Column('boolean', { default: true })
     live!: boolean;
+
+    @Column('int', { default: 100000 })
+    rank!: number;
 }

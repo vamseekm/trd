@@ -2,17 +2,18 @@
 import { Service } from 'typedi';
 import { createConnection, Connection } from 'typeorm';
 import { Config } from './config';
+import { Logger } from './logger';
 
 @Service()
 export class MySQL {
     private conn?: Connection;
 
-    constructor(private config: Config) {}
+    constructor(private config: Config, private logger: Logger) {}
 
     async connection(): Promise<Connection> {
         if (!this.conn) {
             const dbConfig = this.config.get('db');
-            console.log('Using db config: ', dbConfig);
+            this.logger.info('Using db config: ', dbConfig);
             this.conn = await createConnection(this.config.get('db', {}));
         }
         return this.conn;

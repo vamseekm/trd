@@ -9,7 +9,7 @@ import { map, filter, toArray } from 'rxjs/operators';
 import { Config } from '../../infra/config';
 import { DBService } from '../service';
 import { KITE_API_KEY, KITE_ACCESS_TOKEN, KITE_API_SECRET, IBrokerProfile } from '../types';
-import { Redis } from '../../infra';
+import { Redis, Logger } from '../../infra';
 import { IInstrument } from '../types/instrument';
 
 const { KiteConnect } = require('kiteconnect');
@@ -20,7 +20,7 @@ type KiteConnectType = typeof KiteConnect;
 export class BrokerAPI {
     private kite: KiteConnectType | undefined;
 
-    constructor(private config: Config, private dbSerivce: DBService, private redis: Redis) {}
+    constructor(private config: Config, private dbSerivce: DBService, private redis: Redis, private logger: Logger) {}
 
     async kiteInstance(): Promise<KiteConnectType> {
         if (!this.kite) {
@@ -28,7 +28,7 @@ export class BrokerAPI {
             this.kite = new KiteConnect({ api_key: apiKey });
             const accessToken = await this.dbSerivce.configGet(KITE_ACCESS_TOKEN, '');
             if (!accessToken || accessToken.length === 0) {
-                console.warn(`Access token not available: ${accessToken}`);
+                this.logger.error(`Access token not available: ${accessToken}`);
             }
             this.kite.setAccessToken(accessToken);
         }
@@ -77,14 +77,14 @@ export class BrokerAPI {
             .pipe(
                 filter((item: any) => {
                     if (!item.instrument_token || item.instrument_token.length === 0) {
-                        console.log(`Found invalid instrument in ${exchange}:`, JSON.stringify(item, null, 4));
+                        this.logger.info(`Found invalid instrument in ${exchange}:`, JSON.stringify(item, null, 4));
                         return false;
                     }
                     return true;
                 }),
                 map(
                     (ins: any): IInstrument => {
-                        const expiry = ins.expiry && ins.expiry.length > 0 ? Number.parseInt(ins.expiry, 10) : 0;
+                        const expiry = ins.expiry ? Math.floor(ins.expiry / 1000) : 0;
                         return {
                             instrumentToken: ins.instrument_token,
                             exchangeToken: ins.exchange_token,
