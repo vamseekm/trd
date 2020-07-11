@@ -37,6 +37,7 @@ async function run() {
     const logger = Container.get(Logger);
     try {
         await run();
+        console.log('Action completed.');
     } catch (err) {
         logger.error('error', err);
     } finally {

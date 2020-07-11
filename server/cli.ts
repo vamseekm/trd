@@ -29,9 +29,8 @@ export class Cli {
     }
 
     async startAPIServer(): Promise<void> {
-        // this.logger.info('Starting API server...');
-        // await this.apiServer.start();
-        throw new Error('hello');
+        this.logger.info('Starting API server...');
+        await this.apiServer.start();
     }
 
     async sync(): Promise<void> {

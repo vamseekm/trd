@@ -1,7 +1,6 @@
 import express from 'express';
 import { Service } from 'typedi';
 import morgan from 'morgan';
-import { memoryUsage } from 'process';
 import { Config } from '../infra/config';
 import { BrokerController, TasksController } from './controller';
 import { IController, HTTP_API_PORT } from './types';
@@ -43,11 +42,16 @@ export class APIServer {
     async start(): Promise<unknown> {
         await this.setupRoutes();
         const port = this.config.get(HTTP_API_PORT);
-        return new Promise((resolve) => {
-            this.app.listen(port, () => {
-                this.logger.info(`API server available at 0.0.0.0:${port}`);
-                resolve();
-            });
+        return new Promise((resolve, reject) => {
+            this.app
+                .listen(port, () => {
+                    this.logger.info(`API server available at 0.0.0.0:${port}`);
+                    // resolve();
+                })
+                .on('error', (err) => {
+                    this.logger.error(err);
+                    reject(err);
+                });
         });
     }
 }
