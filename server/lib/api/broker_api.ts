@@ -43,7 +43,7 @@ export class BrokerAPI {
         try {
             const { access_token } = await (await this.kiteInstance()).generateSession(
                 requestToken,
-                await this.config.get(KITE_API_SECRET),
+                this.config.get(KITE_API_SECRET),
             );
             await this.dbSerivce.configSet(KITE_ACCESS_TOKEN, access_token);
             return access_token;
@@ -84,7 +84,7 @@ export class BrokerAPI {
                 }),
                 map(
                     (ins: any): IInstrument => {
-                        const expiry = ins.expiry || 0;
+                        const expiry = ins.expiry && ins.expiry.length > 0 ? Number.parseInt(ins.expiry, 10) : 0;
                         return {
                             instrumentToken: ins.instrument_token,
                             exchangeToken: ins.exchange_token,

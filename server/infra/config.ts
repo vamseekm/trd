@@ -6,7 +6,7 @@ import config from 'config';
 
 @Service()
 export class Config {
-    async get(key: string, defaultValue?: any): Promise<string> {
+    get(key: string, defaultValue?: any): string {
         if (config.has(key)) {
             return config.get(key);
         }

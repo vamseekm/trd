@@ -7,16 +7,19 @@ import autoBind from 'auto-bind';
 import { MetadataArgsStorage } from 'typeorm/metadata-args/MetadataArgsStorage';
 import { Config } from './config';
 
-const client: RedisClient = redis.createClient();
-client.on('error', (err) => console.log(err));
-
 function redisCacheKey(key: string): string {
     return `cache:${key}`;
 }
 
 @Service()
 export class Redis {
+    private client: redis.RedisClient;
+
     constructor(private config: Config) {
+        const redisConfig = this.config.get('redis');
+        console.log('Using redis config:', redisConfig);
+        this.client = redis.createClient(redisConfig);
+        this.client.on('error', (err) => console.log(err));
         autoBind(this);
     }
 
@@ -29,7 +32,7 @@ export class Redis {
                     resolve(...results);
                 }
             });
-            (client as any)[name].apply(client, args);
+            (this.client as any)[name].apply(this.client, args);
         });
     }
 

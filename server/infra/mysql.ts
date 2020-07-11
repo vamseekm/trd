@@ -11,7 +11,9 @@ export class MySQL {
 
     async connection(): Promise<Connection> {
         if (!this.conn) {
-            this.conn = await createConnection(await this.config.get('db', {}));
+            const dbConfig = this.config.get('db');
+            console.log('Using db config: ', dbConfig);
+            this.conn = await createConnection(this.config.get('db', {}));
         }
         return this.conn;
     }

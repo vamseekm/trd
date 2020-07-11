@@ -1,0 +1,17 @@
+{
+    "db": {
+        "type": "mariadb",
+        "host": "db",
+        "port": 3306,
+        "username": "root",
+        "password": "example",
+        "database": "toredo",
+        "synchronize": true,
+        "logging": false,
+        "entities": ["dist/**/entity/*.js"]
+    },
+    "redis": {
+        "host": "redis",
+        "port": 6379
+    }
+}

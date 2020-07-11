@@ -1,15 +1,14 @@
 /* eslint-disable no-useless-constructor */
 import { Service } from 'typedi';
-import { getRepository, getConnection } from 'typeorm';
+import { getRepository, getConnection, In } from 'typeorm';
 import { from } from 'rxjs';
-import { reduce, map, partition, toArray } from 'rxjs/operators';
-import { stringify } from 'querystring';
-import { util } from 'config';
-import { MySQL, Redis } from '../../infra';
+import { concatMap, toArray } from 'rxjs/operators';
+import { diff as deepDiff } from 'deep-diff';
+import { Redis } from '../../infra';
 import { Config } from '../entity/Config';
 import { IInstrument } from '../types/instrument';
 import { Instrument } from '../entity/Instrument';
-import { objectArrayToMap, arrayToMap } from '../util';
+import { diffListOfObjects, mapFromObjectList } from '../util';
 
 @Service()
 export class DBService {
@@ -31,7 +30,7 @@ export class DBService {
 
     async configSet(key: string, value: string): Promise<void> {
         await this.redis.cacheDel(key);
-        await getConnection().query('INSERT INTO config_model VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', [
+        await getConnection().query('INSERT INTO config VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', [
             key,
             value,
             value,
@@ -43,44 +42,57 @@ export class DBService {
         return instrument;
     }
 
+    async getInstrumentsByExchange(exchange: string): Promise<Instrument[]> {
+        return getRepository(Instrument)
+            .createQueryBuilder('instrument')
+            .where('instrument.exchange = :exchange', { exchange })
+            .getMany();
+    }
+
     async storeInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<void> {
-        const inputInstrumentsMap = await objectArrayToMap(inputInstruments, 'instrumentToken');
-        const inputInstrumentIdMap = await arrayToMap(Object.keys(inputInstrumentsMap));
-        /*
-        const inputInstrumentsMap = inputInstruments
-            .filter((item) => item.instrumentToken && item.instrumentToken.length > 0)
-            .reduce((map, item) => {
-                map[item.instrumentToken] = item;
-                return map;
-            }, {} as Record<string, IInstrument>);
-        const dbIds: Record<string, boolean> = (
+        const dbInstruments: IInstrument[] = (await this.getInstrumentsByExchange(exchange)).map((item) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { live, track, ...rest } = item;
+            return rest;
+        });
+        const diff = diffListOfObjects(dbInstruments, inputInstruments, 'instrumentToken');
+        console.log(`Instrument stats for exchange: ${exchange}`, diff.stats);
+        const removedIds = diff.removed.map((item) => item.instrumentToken);
+        if (removedIds.length > 0) {
             await getRepository(Instrument)
-                .createQueryBuilder('instrument')
-                .select(['instrument.instrumentToken as instrumentToken'])
-                .getRawMany()
-        ).reduce(function (map: Record<string, boolean>, row: { instrumentToken: string }) {
-            // eslint-disable-next-line no-param-reassign
-            map[row.instrumentToken] = true;
-            return map;
-        }, {});
-
-        const [updateStream, insertStream] = partition((item: IInstrument) => dbIds[item.instrumentToken])(
-            from(inputInstruments),
-        );
-        const updates = await updateStream.pipe(toArray()).toPromise();
-        const inserts = await insertStream.pipe(toArray()).toPromise();
-        console.log('updates: ', updates.length);
-        console.log('inserts: ', inserts.length);
-        console.log(inserts);
-
-        const insts = await from(instruments)
-            .pipe(
-                tap((ins) => console.log(ins)),
-                flatMap(this.insertInstrument.bind(this)),
-                toArray(),
-            )
-            .toPromise();
-        console.log(insts);
-        */
+                .createQueryBuilder()
+                .update()
+                .set({ live: false })
+                .where('instrumentToken IN (:tokens)', { tokens: removedIds })
+                .execute();
+        }
+        if (diff.added.length > 0) {
+            await getRepository(Instrument)
+                .createQueryBuilder()
+                .insert()
+                .into('instrument')
+                .values(diff.added)
+                .execute();
+        }
+        const inputInstrumentMap = await mapFromObjectList(inputInstruments, 'instrumentToken');
+        if (diff.updated.length > 0) {
+            try {
+                await from(diff.updated)
+                    .pipe(
+                        concatMap(async (item) => {
+                            return getRepository(Instrument)
+                                .createQueryBuilder()
+                                .update()
+                                .set(inputInstrumentMap[item.instrumentToken])
+                                .where('instrumentToken = :instrumentToken', { instrumentToken: item.instrumentToken })
+                                .execute();
+                        }),
+                        toArray(),
+                    )
+                    .toPromise();
+            } catch (err) {
+                console.log(err);
+            }
+        }
     }
 }

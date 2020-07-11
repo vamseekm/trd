@@ -22,10 +22,13 @@ async function run() {
 }
 
 (async function main() {
+    const startTime = new Date().getTime();
     try {
         await run();
-        console.log('Action completed.');
     } catch (err) {
-        console.error(`Action completed with error: `, err);
+        console.error(err);
+    } finally {
+        const endTime = new Date().getTime();
+        console.log(`Action elapsed time: ${((endTime - startTime) / 1000).toFixed(3)} sec.`);
     }
 })();

@@ -15,16 +15,16 @@ export class Instrument implements IInstrument {
     @Column('varchar', { length: 256 })
     name!: string;
 
-    @Column('decimal', { precision: 10, scale: 2 })
+    @Column('double')
     lastPrice!: number;
 
-    @Column('bigint')
+    @Column('int')
     expiry!: number;
 
-    @Column('decimal', { precision: 10, scale: 2, default: 0 })
+    @Column('double')
     strike!: number;
 
-    @Column()
+    @Column('double')
     tickSize!: number;
 
     @Column()
@@ -38,4 +38,10 @@ export class Instrument implements IInstrument {
 
     @Column('varchar', { length: 16 })
     exchange!: string;
+
+    @Column('boolean', { default: false })
+    track!: boolean;
+
+    @Column('boolean', { default: true })
+    live!: boolean;
 }

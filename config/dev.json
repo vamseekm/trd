@@ -4,11 +4,14 @@
         "host": "127.0.0.1",
         "port": 3306,
         "username": "root",
-        "password": "mvkrishna",
+        "password": "example",
         "database": "toredo",
         "synchronize": true,
-        "logging": false,
+        "logging": true,
         "entities": ["dist/**/entity/*.js"]
     },
-    "myenv": "dev"
+    "redis": {
+        "host": "127.0.0.1",
+        "port": 6379
+    }
 }

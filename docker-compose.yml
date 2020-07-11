@@ -1,0 +1,54 @@
+version: '3.1'
+
+services:
+
+  db:
+    image: mariadb
+    restart: always
+    ports:
+    - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+    volumes:
+      - db-data:/var/lib/mysql
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+  redis:
+    container_name: redis
+    hostname: redis
+    image: redis
+    volumes:
+    - redis-data:/data
+    ports:
+    - 6379:6379
+
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: rediscommander/redis-commander:latest
+    restart: always
+    environment:
+    - REDIS_HOSTS=local:redis:6379
+    ports:
+    - "8081:8081"
+
+  api_server:
+    image: node-app
+    build: .
+    ports:
+    - 3000:3000
+    command: "./server.sh --api-server"
+    environment: 
+      NODE_ENV: docker
+
+  
+    
+
+volumes:
+  db-data:
+  redis-data:
