@@ -2,8 +2,6 @@ import 'reflect-metadata';
 
 import { program } from 'commander';
 import { Container } from 'typedi';
-import moment from 'moment';
-import { memoryUsage } from 'process';
 import { Cli } from './cli';
 import { Logger } from './infra/logger';
 

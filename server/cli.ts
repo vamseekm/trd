@@ -1,8 +1,5 @@
 /* eslint-disable no-useless-constructor */
 import { Service } from 'typedi';
-import { memoryUsage } from 'process';
-import moment from 'moment';
-
 import { APIServer } from './lib/api_server';
 import { MySQL } from './infra';
 import { BrokerAPI } from './lib/api';
