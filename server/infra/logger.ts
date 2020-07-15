@@ -25,8 +25,14 @@ export class Logger {
             format: format.combine(
                 format.errors({ stack: true }),
                 format.timestamp(),
-                format.prettyPrint(),
-                format.align(),
+                format.colorize(),
+                format.printf(({ level, message, timestamp, stack }: any) => {
+                    if (stack) {
+                        // print log trace
+                        return `${timestamp} ${level}: ${message} - ${stack}`;
+                    }
+                    return `${timestamp} ${level}: ${message}`;
+                }),
             ),
             transports: [new winston.transports.Console()],
         });

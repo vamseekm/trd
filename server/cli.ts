@@ -37,5 +37,6 @@ export class Cli {
 
     async debug(): Promise<void> {
         this.logger.info(`Debug start.`);
+        return new Promise(() => {});
     }
 }
