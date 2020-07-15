@@ -11,6 +11,15 @@ export class Tasks {
     constructor(private dbService: DBService, private broker: BrokerAPI, private logger: Logger) {}
 
     async sync(): Promise<void> {
+        await this.syncMeta();
+        await this.syncInstruments();
+    }
+
+    async syncMeta(): Promise<void> {
+        console.log('Syncing meta...');
+    }
+
+    async syncInstruments(): Promise<void> {
         const exchanges = (await this.broker.getExchanges()).filter((ex) => ex !== 'MF');
         this.logger.info({ exchanges });
         await from(exchanges)

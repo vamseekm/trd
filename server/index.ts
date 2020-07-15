@@ -14,6 +14,7 @@ async function run() {
     const cli = Container.get(Cli);
     const logger = Container.get(Logger);
     cli.setup();
+
     if (program.apiServer) {
         await cli.dbInit();
         await cli.startAPIServer();

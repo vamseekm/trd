@@ -1,5 +1,39 @@
 {
     "HTTP_API_PORT": "3000",
     "KITE_API_KEY": "",
-    "KITE_API_SECRET": ""
+    "KITE_API_SECRET": "",
+    "NSE": {
+      "INDEX_FILES": [
+        {
+          "name": "Nifty 50",
+          "url": "https://www1.nseindia.com/content/indices/ind_nifty50list.csv",
+          "from": 1,
+          "to": 50
+        },
+        {
+          "name": "Nifty Next 50",
+          "url": "https://archives.nseindia.com/content/indices/ind_niftynext50list.csv",
+          "from": 51,
+          "to": 100
+        },
+        {
+          "name": "Nifty 100",
+          "url": "https://archives.nseindia.com/content/indices/ind_nifty100list.csv",
+          "from": 1,
+          "to": 100
+        },
+        {
+          "name": "Nifty 200",
+          "url": "https://archives.nseindia.com/content/indices/ind_nifty200list.csv",
+          "from": 1,
+          "to": 200
+        },
+        {
+          "name": "Nifty 500",
+          "url": "https://archives.nseindia.com/content/indices/ind_nifty500list.csv",
+          "from": 1,
+          "to": 500
+        }
+      ]
+    }
 }
