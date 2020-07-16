@@ -21,7 +21,6 @@ export class Cli {
     setup() {}
 
     async dbInit(): Promise<void> {
-        this.logger.info('Initializing DB...');
         await this.db.init();
     }
 

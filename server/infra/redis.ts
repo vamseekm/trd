@@ -17,7 +17,6 @@ export class Redis {
 
     constructor(private config: Config, private logger: Logger) {
         const redisConfig = this.config.get('redis');
-        this.logger.info('Using redis config:', redisConfig);
         this.client = redis.createClient(redisConfig);
         this.client.on('error', (err) => logger.error(err));
         autoBind(this);
