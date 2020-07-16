@@ -20,10 +20,10 @@ async function runTask(cmd: string) {
             resolve();
         });
         child.stdout.on('data', (data) => {
-            console.log(data.toString());
+            process.stdout.write(data.toString());
         });
         child.stderr.on('data', (data) => {
-            console.log(data.toString());
+            process.stdout.write(data.toString());
         });
     });
 }
