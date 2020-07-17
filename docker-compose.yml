@@ -42,7 +42,7 @@ services:
     image: node-app
     ports:
       - 3000:3000
-    command: "./server.sh --api-server"
+    command: "sh ./server.sh --api-server"
     environment:
       NODE_ENV: docker
 

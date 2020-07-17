@@ -1,6 +1,5 @@
-FROM node:lts-buster-slim
-RUN apt-get -y update
-RUN apt-get -y install htop
+FROM node:12-alpine3.12
+RUN apk update && apk add htop
 WORKDIR /home/node/app
 
 COPY package.json .
