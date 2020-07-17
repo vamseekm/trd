@@ -8,11 +8,11 @@ import { Logger } from './logger';
 export class MySQL {
     private conn?: Connection;
 
-    constructor(private config: Config, private logger: Logger) {}
+    constructor(private config: Config, private logger: Logger) { }
 
     async connection(): Promise<Connection> {
         if (!this.conn) {
-            this.logger.info("Connecting to DB...");
+            this.logger.info('Connecting to DB...');
             this.conn = await createConnection(this.config.get('db', {}));
         }
         return this.conn;

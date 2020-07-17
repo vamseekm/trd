@@ -7,7 +7,6 @@
         "password": "example",
         "database": "toredo",
         "synchronize": true,
-        "logging": true,
         "entities": ["dist/**/entity/*.js"]
     },
     "redis": {

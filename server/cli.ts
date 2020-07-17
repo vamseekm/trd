@@ -16,9 +16,9 @@ export class Cli {
         private dbService: DBService,
         private tasks: Tasks,
         private logger: Logger,
-    ) {}
+    ) { }
 
-    setup() {}
+    setup() { }
 
     async dbInit(): Promise<void> {
         await this.db.init();
@@ -36,6 +36,6 @@ export class Cli {
 
     async debug(): Promise<void> {
         this.logger.info(`Debug start.`);
-        return new Promise(() => {});
+        return new Promise(() => { });
     }
 }
