@@ -1,7 +1,7 @@
 import { Entity, PrimaryColumn, Column } from 'typeorm';
 
 @Entity()
-export class Config {
+export class Pref {
     @PrimaryColumn()
     key!: string;
 

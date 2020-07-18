@@ -3,29 +3,30 @@
 import express from 'express';
 import { Service } from 'typedi';
 import autoBind from 'auto-bind';
-import { IController } from '../types';
-import { BrokerAPI } from '../api';
+import { IController } from '../../types';
 import { Logger } from '../../infra';
+import { BrokerService } from './service';
 
 @Service()
 export class BrokerController implements IController {
-    constructor(private brokerAPI: BrokerAPI, private broker: BrokerAPI, private logger: Logger) {
+    constructor(private logger: Logger, private broker: BrokerService) {
         autoBind(this);
     }
 
     async login(req: express.Request, res: express.Response): Promise<void> {
-        const loginUrl = await this.brokerAPI.getLoginUrl();
+        const loginUrl = await this.broker.getLoginUrl();
         res.redirect(307, loginUrl);
     }
 
     async redirect(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
         try {
             const { request_token } = req.query;
-            await this.brokerAPI.generateAccessToken(request_token as string);
+            await this.broker.generateAccessToken(request_token as string);
             res.send('generated access token');
         } catch (err) {
             this.logger.error(err);
-            next(JSON.stringify(err, null, 2));
+            res.send('Not ok');
+            // next(JSON.stringify(err, null, 2));
         }
     }
 

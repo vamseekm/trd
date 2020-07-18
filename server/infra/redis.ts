@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-useless-constructor */
 import { Service } from 'typedi';
-import redis, { RedisClient } from 'redis';
+import redis from 'redis';
 import autoBind from 'auto-bind';
 import { Config } from './config';
 import { Logger } from './logger';

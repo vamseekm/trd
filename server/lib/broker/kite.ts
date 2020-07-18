@@ -2,31 +2,44 @@
 /* eslint-disable camelcase */
 /* eslint-disable no-useless-catch */
 /* eslint-disable no-useless-constructor */
-import { Service } from 'typedi';
 import { from } from 'rxjs';
 import { map, filter, toArray } from 'rxjs/operators';
 
-import { Config } from '../../infra/config';
-import { DBService } from '../service';
-import { KITE_API_KEY, KITE_ACCESS_TOKEN, KITE_API_SECRET, IBrokerProfile } from '../types';
-import { Redis, Logger } from '../../infra';
-import { IInstrument } from '../types/instrument';
+import {
+    KITE_API_KEY,
+    KITE_ACCESS_TOKEN,
+    KITE_API_SECRET,
+    IBrokerProfile,
+    IBrokerService,
+    IInstrument,
+} from '../../types';
+import { Redis, Logger, Config } from '../../infra';
+
+import { PrefService } from '../pref';
+import { InstrumentService } from '../instrument';
 
 const { KiteConnect } = require('kiteconnect');
 
 type KiteConnectType = typeof KiteConnect;
 
-@Service()
-export class BrokerAPI {
+export abstract class KiteService implements IBrokerService {
     private kite: KiteConnectType | undefined;
 
-    constructor(private config: Config, private dbSerivce: DBService, private redis: Redis, private logger: Logger) {}
+    config!: Config;
 
-    async kiteInstance(): Promise<KiteConnectType> {
+    instrumentSvc!: InstrumentService;
+
+    logger!: Logger;
+
+    redis!: Redis;
+
+    prefSvc!: PrefService;
+
+    async instance(): Promise<KiteConnectType> {
         if (!this.kite) {
             const apiKey = await this.config.get(KITE_API_KEY);
             this.kite = new KiteConnect({ api_key: apiKey });
-            const accessToken = await this.dbSerivce.configGet(KITE_ACCESS_TOKEN, '');
+            const accessToken = await this.prefSvc.configGet(KITE_ACCESS_TOKEN, '');
             if (!accessToken || accessToken.length === 0) {
                 this.logger.error(`Access token not available: ${accessToken}`);
             }
@@ -36,25 +49,25 @@ export class BrokerAPI {
     }
 
     async getLoginUrl(): Promise<string> {
-        return (await this.kiteInstance()).getLoginURL();
+        return (await this.instance()).getLoginURL();
     }
 
     async generateAccessToken(requestToken: string): Promise<string> {
         try {
-            const { access_token } = await (await this.kiteInstance()).generateSession(
+            const { access_token } = await (await this.instance()).generateSession(
                 requestToken,
                 this.config.get(KITE_API_SECRET),
             );
-            await this.dbSerivce.configSet(KITE_ACCESS_TOKEN, access_token);
+            await this.prefSvc.configSet(KITE_ACCESS_TOKEN, access_token);
             return access_token;
         } catch (err) {
-            throw err;
+            return Promise.reject(err);
         }
     }
 
     async getProfile(): Promise<IBrokerProfile> {
         return this.redis.cachedGet({ key: 'Broker.getProfile', expiry: 8 * 3600 * 1000 }, async () => {
-            const kite = await this.kiteInstance();
+            const kite = await this.instance();
             const profile = await kite.getProfile();
             return {
                 name: profile.user_shortname,
@@ -71,7 +84,7 @@ export class BrokerAPI {
     }
 
     async getInstrumentsByExchange(exchange: string): Promise<IInstrument[]> {
-        const kite = await this.kiteInstance();
+        const kite = await this.instance();
         const instruments: any = await kite.getInstruments(exchange);
         return from(instruments)
             .pipe(

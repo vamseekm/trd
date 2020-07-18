@@ -1,15 +1,6 @@
 import { Service } from 'typedi';
 import winston, { format } from 'winston';
-import { timestamp } from 'rxjs/operators';
-import { parseTwoDigitYear } from 'moment';
 import { memoryUsage } from 'process';
-
-const errorStackTracerFormat = winston.format((info) => {
-    if (info.meta && info.meta instanceof Error) {
-        info.message = `${info.message} ${info.meta.stack}`;
-    }
-    return info;
-});
 
 @Service()
 export class Logger {

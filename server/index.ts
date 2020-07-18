@@ -47,7 +47,7 @@ async function run() {
 })();
 
 async function cleanHandler(cause: any) {
-    console.log(`Exiting with cause: ${cause}`);
+    console.log(`Exiting with cause: ${JSON.stringify(cause, null, 2)}`);
     if (cause.stack) console.log(cause.stack);
     exit(0);
 }

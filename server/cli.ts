@@ -2,21 +2,12 @@
 import { Service } from 'typedi';
 import { APIServer } from './lib/api_server';
 import { MySQL } from './infra';
-import { BrokerAPI } from './lib/api';
-import { DBService } from './lib/service';
-import { Tasks } from './lib/tasks';
+import { TaskService } from './lib/task/service';
 import { Logger } from './infra/logger';
 
 @Service()
 export class Cli {
-    constructor(
-        private db: MySQL,
-        private apiServer: APIServer,
-        private broker: BrokerAPI,
-        private dbService: DBService,
-        private tasks: Tasks,
-        private logger: Logger,
-    ) { }
+    constructor(private db: MySQL, private apiServer: APIServer, private tasks: TaskService, private logger: Logger) { }
 
     setup() { }
 

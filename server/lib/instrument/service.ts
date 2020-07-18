@@ -1,40 +1,16 @@
 /* eslint-disable no-useless-constructor */
 import { Service } from 'typedi';
-import { getRepository, getConnection } from 'typeorm';
+import { getRepository } from 'typeorm';
 import { from } from 'rxjs';
 import { toArray, mergeMap } from 'rxjs/operators';
 import { Redis, Logger } from '../../infra';
-import { Config } from '../entity/Config';
-import { IInstrument } from '../types/instrument';
-import { Instrument } from '../entity/Instrument';
+import { IInstrument } from '../../types';
+import { Instrument } from './entity';
 import { diffListOfObjects, mapFromObjectList } from '../util';
 
 @Service()
-export class DBService {
-    constructor(private redis: Redis, private logger: Logger) {}
-
-    async configGet(key: string, defaultValue: string): Promise<string> {
-        return this.redis.cachedGet({ key, expiry: 12 * 3600 * 1000 }, async () => {
-            const configItem = await getRepository(Config)
-                .createQueryBuilder('config')
-                .where('config.key = :key', { key })
-                .getOne();
-            if (configItem) {
-                const { value } = configItem;
-                return value;
-            }
-            return defaultValue || '';
-        });
-    }
-
-    async configSet(key: string, value: string): Promise<void> {
-        await this.redis.cacheDel(key);
-        await getConnection().query('INSERT INTO config VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?', [
-            key,
-            value,
-            value,
-        ]);
-    }
+export class InstrumentService {
+    constructor(private redis: Redis, private logger: Logger) { }
 
     async insertInstrument(instrument: IInstrument): Promise<IInstrument> {
         await getRepository(Instrument).createQueryBuilder().insert().into(Instrument).values(instrument).execute();

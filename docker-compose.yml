@@ -45,6 +45,7 @@ services:
     command: "./server.sh"
     environment:
       NODE_ENV: docker
+    restart: always
 
 volumes:
   db-data:

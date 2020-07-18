@@ -1,5 +1,5 @@
 import { PrimaryColumn, Column, Entity } from 'typeorm';
-import { IInstrument } from '../types/instrument';
+import { IInstrument } from '../../types';
 
 @Entity()
 export class Instrument implements IInstrument {

@@ -3,8 +3,8 @@ import express from 'express';
 import autoBind from 'auto-bind';
 import { spawn } from 'child_process';
 import { nextTick } from 'process';
-import { Tasks } from '../tasks';
-import { IController } from '../types';
+import { TaskService } from './service';
+import { IController } from '../../types';
 
 async function runTask(cmd: string) {
     return new Promise((resolve, reject) => {
@@ -29,8 +29,8 @@ async function runTask(cmd: string) {
 }
 
 @Service()
-export class TasksController implements IController {
-    constructor(private tasks: Tasks) {
+export class TaskController implements IController {
+    constructor(private tasks: TaskService) {
         autoBind(this);
     }
 
