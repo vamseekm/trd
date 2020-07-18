@@ -36,7 +36,7 @@ export class TasksController implements IController {
 
     async sync(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
         try {
-            await runTask('sync');
+            await this.tasks.sync();
             res.send('ok');
         } catch (err) {
             next(err);

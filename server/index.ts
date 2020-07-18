@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { program } from 'commander';
 import { Container } from 'typedi';
+import { exit } from 'process';
 import { Cli } from './cli';
 import { Logger } from './infra/logger';
 
@@ -44,3 +45,14 @@ async function run() {
         logger.log('info', `Action elapsed time: ${((endTime - startTime) / 1000).toFixed(3)} sec.`);
     }
 })();
+
+async function cleanHandler(cause: any) {
+    console.log(`Exiting with cause: ${cause}`);
+    if (cause.stack) console.log(cause.stack);
+    exit(0);
+}
+
+process.on('unhandledRejection', cleanHandler);
+process.on('SIGINT', cleanHandler);
+process.on('SIGTERM', cleanHandler);
+process.on('SIGUSR2', cleanHandler);

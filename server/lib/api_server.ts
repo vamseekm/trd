@@ -34,7 +34,10 @@ export class APIServer {
     async setupRoutes(): Promise<void> {
         this.mountRoutes(this.brokerCtrl, '/broker');
         this.mountRoutes(this.tasksCtrl, '/tasks');
-        this.app.get('/health', (req, res) => res.send('Ok'));
+        this.app.get('/health', (req, res) => {
+            this.logger.info('heart beat.');
+            res.send('Ok');
+        });
         this.app.use('/api.public', this.publicRouter);
         this.app.use('/api', this.privateRouter);
     }

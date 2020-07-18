@@ -28,8 +28,8 @@ export class Logger {
                 format.timestamp(),
                 format.colorize(),
                 format.printf(({ level, message, timestamp, stack }: any) => {
-                    const {rss} = memoryUsage();
-                    const mem = (rss/(1024*1024)).toFixed(2);
+                    const { rss } = memoryUsage();
+                    const mem = (rss / (1024 * 1024)).toFixed(2);
                     if (stack) {
                         // print log trace
                         return `${timestamp} [${mem} MiB] ${level}: ${message} - ${stack}`;
