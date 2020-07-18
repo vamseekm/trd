@@ -4,4 +4,6 @@
 cd $(cd $(dirname $0); pwd)
 #npm run wait_for_db
 #npm run wait_for_redis
-npx tsc-watch --pretty --skipLibCheck --preserveWatchOutput -P tsconfig.json --onSuccess "node -r source-map-support/register ./dist/server/index.js $@"
+#npx tsc-watch --pretty --skipLibCheck --preserveWatchOutput -P tsconfig.json --onSuccess "node -r source-map-support/register ./dist/server/index.js $@"
+#node -r source-map-support/register ./dist/server/index.js $@
+npm run api-server:watch
