@@ -19,12 +19,12 @@ export class Cli {
     }
 
     async startAPIServer(): Promise<void> {
-        this.loggerSvc.info('Starting API server...');
+        this.loggerSvc.info('Starting API server ...');
         await this.apiServer.start();
     }
 
     async sync(): Promise<void> {
-        this.loggerSvc.info(`Syncing instruments...`);
+        this.loggerSvc.info(`Syncing instruments ...`);
         return this.taskSvc.sync();
     }
 

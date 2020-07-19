@@ -1,11 +1,28 @@
 import 'reflect-metadata';
 
+import { exec } from 'child_process';
 import { program } from 'commander';
 import { exit } from 'process';
 import { Container } from 'typedi';
 
 import { LoggerService } from '../infra';
 import { Cli } from './cli';
+
+async function clearPort(port: number) {
+    const logger = Container.get(LoggerService);
+    return new Promise((resolve, reject) => {
+        logger.info(`Killing any processes holding port :${port} ...`);
+        exec(`fuser -k ${port}/tcp | exit 0`, (error, stdout, stderr) => {
+            if (error) {
+                if (error) logger.error(error);
+                return reject(error);
+            }
+            if (stdout && stdout.length > 0) logger.info('stdout: ', stdout);
+            if (stderr && stderr.length > 0) logger.info('stderr: ', stderr);
+            return resolve({ stdout, stderr });
+        });
+    });
+}
 
 async function run() {
     program.option('-x --force-exit', 'Force exit');
@@ -15,6 +32,12 @@ async function run() {
     program.parse(process.argv);
     const cli = Container.get(Cli);
     const logger = Container.get(LoggerService);
+
+    try {
+        await clearPort(3000);
+    } catch (error) {
+        logger.error(error);
+    }
 
     if (program.apiServer) {
         await cli.dbInit();
@@ -27,10 +50,11 @@ async function run() {
         await cli.debug();
     }
     if (program.forceExit) {
-        logger.log('info', 'force exiting...');
+        logger.log('info', 'force exiting ...');
         // eslint-disable-next-line unicorn/no-process-exit
         process.exit(0);
     }
+    console.log('hi');
 }
 
 (async function main() {

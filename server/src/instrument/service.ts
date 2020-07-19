@@ -11,7 +11,7 @@ import { Instrument } from './entity';
 
 @Service()
 export class InstrumentService {
-    constructor(private redis: Redis, private logger: LoggerService) {}
+    constructor(private redis: Redis, private logger: LoggerService) { }
 
     async insertInstrument(instrument: IInstrument): Promise<IInstrument> {
         await getRepository(Instrument).createQueryBuilder().insert().into(Instrument).values(instrument).execute();

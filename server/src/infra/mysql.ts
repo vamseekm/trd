@@ -9,11 +9,11 @@ import { LoggerService } from './logger';
 export class MySQLService {
     private conn?: Connection;
 
-    constructor(private config: Config, private logger: LoggerService) {}
+    constructor(private config: Config, private logger: LoggerService) { }
 
     async connection(): Promise<Connection> {
         if (!this.conn) {
-            this.logger.info('Connecting to DB...');
+            this.logger.info('Connecting to DB ...');
             this.conn = await createConnection(this.config.get('db', {}));
         }
         return this.conn;

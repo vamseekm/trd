@@ -16,16 +16,14 @@ export class LoggerService {
         this.logger = winston.createLogger({
             format: format.combine(
                 format.errors({ stack: true }),
-                format.timestamp(),
+                format.timestamp({ format: 'YY/M/D|HH:mm:ss.SSS' }),
                 format.colorize(),
-                format.printf(({ level, message, timestamp, stack }: any) => {
+                format.printf((options: any) => {
+                    const { level, timestamp, stack, message } = options;
                     const { rss } = memoryUsage();
-                    const mem = (rss / (1024 * 1024)).toFixed(2);
-                    if (stack) {
-                        // print log trace
-                        return `${timestamp} [${mem} MiB] ${level}: ${message} - ${stack}`;
-                    }
-                    return `${timestamp} [${mem} MiB] ${level}: ${message}`;
+                    const mem = (rss / (1024 * 1024)).toFixed(1);
+                    const first = `${timestamp}|${mem}M|${level.replace(/(nfo|rror|arn)/g, '')}| ${message}`;
+                    return stack ? `${first} ${stack}` : first;
                 }),
             ),
             transports: [new winston.transports.Console()],

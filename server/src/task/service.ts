@@ -13,7 +13,7 @@ export class TaskService {
         private brokerSvc: BrokerService,
         private instrumentSvc: InstrumentService,
         private logger: LoggerService,
-    ) {}
+    ) { }
 
     async sync(): Promise<void> {
         await this.syncMeta();
@@ -21,7 +21,7 @@ export class TaskService {
     }
 
     async syncMeta(): Promise<void> {
-        console.log('Syncing meta...');
+        console.log('Syncing meta ...');
     }
 
     async syncInstruments(): Promise<void> {

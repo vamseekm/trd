@@ -36,8 +36,8 @@ export class APIServer {
         this.mountRoutes(this.brokerCtrl, '/broker');
         this.mountRoutes(this.tasksCtrl, '/tasks');
         this.app.get('/health', (request, response) => {
-            this.logger.info('heart beat.');
-            response.send('Ok');
+            this.logger.info('heartbeat');
+            response.send('ok');
         });
         this.app.use('/api.public', this.publicRouter);
         this.app.use('/api', this.privateRouter);
