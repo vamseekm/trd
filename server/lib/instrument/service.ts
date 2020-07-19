@@ -3,8 +3,8 @@ import { Service } from 'typedi';
 import { getRepository } from 'typeorm';
 import { from } from 'rxjs';
 import { toArray, mergeMap } from 'rxjs/operators';
-import { Redis, Logger } from '../../infra';
-import { IInstrument } from '../../types';
+import { Redis, Logger } from '../infra';
+import { IInstrument } from '../types';
 import { Instrument } from './entity';
 import { diffListOfObjects, mapFromObjectList } from '../util';
 

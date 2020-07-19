@@ -1,11 +1,10 @@
 import express from 'express';
 import { Service } from 'typedi';
 import morgan from 'morgan';
-import { Config } from '../infra/config';
-import { BrokerController } from './broker';
-import { TaskController } from './task';
+import { BrokerController } from '../broker';
+import { TaskController } from '../task';
 import { IController, HTTP_API_PORT } from '../types';
-import { Logger } from '../infra';
+import { Logger, Config } from '../infra';
 
 @Service()
 export class APIServer {

@@ -12,11 +12,10 @@ import {
     IBrokerProfile,
     IBrokerService,
     IInstrument,
-} from '../../types';
-import { Redis, Logger, Config } from '../../infra';
+} from '../types';
+import { Redis, Logger, Config } from '../infra';
 
 import { PrefService } from '../pref';
-import { InstrumentService } from '../instrument';
 
 const { KiteConnect } = require('kiteconnect');
 
@@ -26,8 +25,6 @@ export abstract class KiteService implements IBrokerService {
     private kite: KiteConnectType | undefined;
 
     config!: Config;
-
-    instrumentSvc!: InstrumentService;
 
     logger!: Logger;
 
@@ -54,10 +51,8 @@ export abstract class KiteService implements IBrokerService {
 
     async generateAccessToken(requestToken: string): Promise<string> {
         try {
-            const { access_token } = await (await this.instance()).generateSession(
-                requestToken,
-                this.config.get(KITE_API_SECRET),
-            );
+            const instance = await this.instance();
+            const { access_token } = await instance.generateSession(requestToken, this.config.get(KITE_API_SECRET));
             await this.prefSvc.configSet(KITE_ACCESS_TOKEN, access_token);
             return access_token;
         } catch (err) {

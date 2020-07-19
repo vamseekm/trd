@@ -1,7 +1,7 @@
 /* eslint-disable no-useless-constructor */
 import { Service } from 'typedi';
 import { getRepository, getConnection } from 'typeorm';
-import { Redis } from '../../infra';
+import { Redis } from '../infra';
 import { Pref } from './entity';
 
 @Service()

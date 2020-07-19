@@ -2,7 +2,7 @@
 import { Service } from 'typedi';
 import { from } from 'rxjs';
 import { concatMap, toArray } from 'rxjs/operators';
-import { Logger } from '../../infra';
+import { Logger } from '../infra';
 import { BrokerService } from '../broker';
 import { InstrumentService } from '../instrument';
 

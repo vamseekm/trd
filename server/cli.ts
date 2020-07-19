@@ -1,9 +1,9 @@
 /* eslint-disable no-useless-constructor */
 import { Service } from 'typedi';
-import { APIServer } from './lib/api_server';
-import { MySQL } from './infra';
+import { APIServer } from './lib/api-server/server';
+import { MySQL } from './lib/infra';
 import { TaskService } from './lib/task/service';
-import { Logger } from './infra/logger';
+import { Logger } from './lib/infra/logger';
 
 @Service()
 export class Cli {

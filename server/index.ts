@@ -4,7 +4,7 @@ import { program } from 'commander';
 import { Container } from 'typedi';
 import { exit } from 'process';
 import { Cli } from './cli';
-import { Logger } from './infra/logger';
+import { Logger } from './lib/infra';
 
 async function run() {
     program.option('-x --force-exit', 'Force exit');
@@ -46,13 +46,22 @@ async function run() {
     }
 })();
 
-async function cleanHandler(cause: any) {
-    console.log(`Exiting with cause: ${JSON.stringify(cause, null, 2)}`);
-    if (cause.stack) console.log(cause.stack);
-    exit(0);
+function cleanHandler(type: string) {
+    return function handleExit(cause: any) {
+        console.log(`Exiting with cause [${type}]: ${JSON.stringify(cause, null, 2)}`);
+        if (cause.stack) console.log(cause.stack);
+        exit(0);
+    };
 }
 
-process.on('unhandledRejection', cleanHandler);
-process.on('SIGINT', cleanHandler);
-process.on('SIGTERM', cleanHandler);
-process.on('SIGUSR2', cleanHandler);
+function handleRejection(err: any, promise: any) {
+    console.error('unhandled promise rejection:', '\nerr:', err, '\npromise:', promise);
+    if (err && err.stack) {
+        console.error('stack:', err.stack);
+    }
+}
+
+process.on('unhandledRejection', handleRejection);
+process.on('SIGINT', cleanHandler('SIGINT'));
+process.on('SIGTERM', cleanHandler('SIGTERM'));
+process.on('SIGUSR2', cleanHandler('SIGUSR2'));

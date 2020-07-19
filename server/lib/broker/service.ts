@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
 import { KiteService } from './kite';
-import { Config, Redis, Logger } from '../../infra';
+import { Config, Redis, Logger } from '../infra';
 import { InstrumentService } from '../instrument';
 import { PrefService } from '../pref';
 

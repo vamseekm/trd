@@ -4,7 +4,7 @@ import autoBind from 'auto-bind';
 import { spawn } from 'child_process';
 import { nextTick } from 'process';
 import { TaskService } from './service';
-import { IController } from '../../types';
+import { IController } from '../types';
 
 async function runTask(cmd: string) {
     return new Promise((resolve, reject) => {

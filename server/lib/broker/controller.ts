@@ -3,8 +3,8 @@
 import express from 'express';
 import { Service } from 'typedi';
 import autoBind from 'auto-bind';
-import { IController } from '../../types';
-import { Logger } from '../../infra';
+import { IController } from '../types';
+import { Logger } from '../infra';
 import { BrokerService } from './service';
 
 @Service()
@@ -24,8 +24,8 @@ export class BrokerController implements IController {
             await this.broker.generateAccessToken(request_token as string);
             res.send('generated access token');
         } catch (err) {
-            this.logger.error(err);
-            res.send('Not ok');
+            this.logger.error('my error:', err);
+            next(err);
             // next(JSON.stringify(err, null, 2));
         }
     }
