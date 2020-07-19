@@ -29,6 +29,7 @@
         "@types/redis": "^2.8.24",
         "auto-bind": "^4.0.0",
         "axios": "^0.19.2",
+        "chalk": "^4.1.0",
         "commander": "^5.1.0",
         "concurrently": "^5.2.0",
         "config": "^3.3.1",

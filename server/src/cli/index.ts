@@ -12,13 +12,19 @@ async function clearPort(port: number) {
     const logger = Container.get(LoggerService);
     return new Promise((resolve, reject) => {
         logger.info(`Killing any processes holding port :${port} ...`);
-        exec(`fuser -k ${port}/tcp | exit 0`, (error, stdout, stderr) => {
+        exec(`fuser -k ${port}/tcp; sleep 0.1 | exit 0`, (error, stdout, stderr) => {
             if (error) {
                 if (error) logger.error(error);
                 return reject(error);
             }
-            if (stdout && stdout.length > 0) logger.info('stdout: ', stdout);
-            if (stderr && stderr.length > 0) logger.info('stderr: ', stderr);
+            if (stdout && stdout.length > 0) {
+                logger.info('stdout: ');
+                console.log(stdout);
+            }
+            if (stderr && stderr.length > 0) {
+                logger.info('stderr: ');
+                console.log(stderr);
+            }
             return resolve({ stdout, stderr });
         });
     });
