@@ -1,10 +1,11 @@
 import express from 'express';
-import { Service } from 'typedi';
 import morgan from 'morgan';
+import { Service } from 'typedi';
+
 import { BrokerController } from '../broker';
+import { Config, LoggerService } from '../infra';
 import { TaskController } from '../task';
-import { IController, HTTP_API_PORT } from '../types';
-import { Logger, Config } from '../infra';
+import { HTTP_API_PORT, IController } from '../types';
 
 @Service()
 export class APIServer {
@@ -18,7 +19,7 @@ export class APIServer {
         private config: Config,
         private brokerCtrl: BrokerController,
         private tasksCtrl: TaskController,
-        private logger: Logger,
+        private logger: LoggerService,
     ) {
         this.app = express();
         this.app.use(morgan('tiny'));
@@ -34,9 +35,9 @@ export class APIServer {
     async setupRoutes(): Promise<void> {
         this.mountRoutes(this.brokerCtrl, '/broker');
         this.mountRoutes(this.tasksCtrl, '/tasks');
-        this.app.get('/health', (req, res) => {
+        this.app.get('/health', (request, response) => {
             this.logger.info('heart beat.');
-            res.send('Ok');
+            response.send('Ok');
         });
         this.app.use('/api.public', this.publicRouter);
         this.app.use('/api', this.privateRouter);
@@ -51,9 +52,9 @@ export class APIServer {
                     this.logger.info(`API server available at 0.0.0.0:${port}`);
                     // resolve();
                 })
-                .on('error', (err) => {
-                    this.logger.error(err);
-                    reject(err);
+                .on('error', (error) => {
+                    this.logger.error(error);
+                    reject(error);
                 });
         });
     }

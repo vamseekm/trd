@@ -1,4 +1,5 @@
-import { PrimaryColumn, Column, Entity } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
+
 import { IInstrument } from '../types';
 
 @Entity()

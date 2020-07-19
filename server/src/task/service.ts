@@ -1,14 +1,19 @@
 /* eslint-disable no-useless-constructor */
-import { Service } from 'typedi';
 import { from } from 'rxjs';
 import { concatMap, toArray } from 'rxjs/operators';
-import { Logger } from '../infra';
+import { Service } from 'typedi';
+
 import { BrokerService } from '../broker';
+import { LoggerService } from '../infra';
 import { InstrumentService } from '../instrument';
 
 @Service()
 export class TaskService {
-    constructor(private brokerSvc: BrokerService, private instrumentSvc: InstrumentService, private logger: Logger) { }
+    constructor(
+        private brokerSvc: BrokerService,
+        private instrumentSvc: InstrumentService,
+        private logger: LoggerService,
+    ) {}
 
     async sync(): Promise<void> {
         await this.syncMeta();
@@ -29,8 +34,8 @@ export class TaskService {
                         this.logger.info(`Syncing exchange: ${exchange}`);
                         const instruments = await this.brokerSvc.getInstrumentsByExchange(exchange);
                         await this.instrumentSvc.storeInstruments(exchange, instruments);
-                    } catch (err) {
-                        this.logger.error(err);
+                    } catch (error) {
+                        this.logger.error(error);
                     }
                 }),
                 toArray(),

@@ -1,4 +1,5 @@
 import { Token } from 'typedi';
+
 import { IInstrument } from './instrument';
 
 export interface IBrokerProfile {

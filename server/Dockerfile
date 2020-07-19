@@ -1,5 +1,5 @@
-FROM node:12-alpine3.12
-RUN apk update && apk add htop
+FROM node:12-stretch-slim
+RUN apt-get -y update && apt-get -y install htop
 WORKDIR /home/node/app
 
 COPY package.json .

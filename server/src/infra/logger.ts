@@ -1,9 +1,9 @@
+import { memoryUsage } from 'process';
 import { Service } from 'typedi';
 import winston, { format } from 'winston';
-import { memoryUsage } from 'process';
 
 @Service()
-export class Logger {
+export class LoggerService {
     private logger: winston.Logger;
 
     public log: any;

@@ -3,19 +3,18 @@
 /* eslint-disable no-useless-catch */
 /* eslint-disable no-useless-constructor */
 import { from } from 'rxjs';
-import { map, filter, toArray } from 'rxjs/operators';
+import { filter, map, toArray } from 'rxjs/operators';
 
+import { Config, LoggerService, Redis } from '../infra';
+import { PrefService } from '../pref';
 import {
-    KITE_API_KEY,
-    KITE_ACCESS_TOKEN,
-    KITE_API_SECRET,
     IBrokerProfile,
     IBrokerService,
     IInstrument,
+    KITE_ACCESS_TOKEN,
+    KITE_API_KEY,
+    KITE_API_SECRET,
 } from '../types';
-import { Redis, Logger, Config } from '../infra';
-
-import { PrefService } from '../pref';
 
 const { KiteConnect } = require('kiteconnect');
 
@@ -26,7 +25,7 @@ export abstract class KiteService implements IBrokerService {
 
     config!: Config;
 
-    logger!: Logger;
+    logger!: LoggerService;
 
     redis!: Redis;
 
@@ -55,8 +54,8 @@ export abstract class KiteService implements IBrokerService {
             const { access_token } = await instance.generateSession(requestToken, this.config.get(KITE_API_SECRET));
             await this.prefSvc.configSet(KITE_ACCESS_TOKEN, access_token);
             return access_token;
-        } catch (err) {
-            return Promise.reject(err);
+        } catch (error) {
+            return Promise.reject(error);
         }
     }
 
@@ -85,7 +84,10 @@ export abstract class KiteService implements IBrokerService {
             .pipe(
                 filter((item: any) => {
                     if (!item.instrument_token || item.instrument_token.length === 0) {
-                        this.logger.info(`Found invalid instrument in ${exchange}:`, JSON.stringify(item, null, 4));
+                        this.logger.info(
+                            `Found invalid instrument in ${exchange}:`,
+                            JSON.stringify(item, undefined, 4),
+                        );
                         return false;
                     }
                     return true;

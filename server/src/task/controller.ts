@@ -1,10 +1,10 @@
-import { Service } from 'typedi';
-import express from 'express';
 import autoBind from 'auto-bind';
 import { spawn } from 'child_process';
-import { nextTick } from 'process';
-import { TaskService } from './service';
+import express from 'express';
+import { Service } from 'typedi';
+
 import { IController } from '../types';
+import { TaskService } from './service';
 
 async function runTask(cmd: string) {
     return new Promise((resolve, reject) => {
@@ -13,8 +13,8 @@ async function runTask(cmd: string) {
         child.on('exit', (code, signal) => {
             resolve({ code, signal });
         });
-        child.on('error', (err) => {
-            reject(err);
+        child.on('error', (error) => {
+            reject(error);
         });
         child.on('close', () => {
             resolve();
@@ -34,18 +34,17 @@ export class TaskController implements IController {
         autoBind(this);
     }
 
-    async sync(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+    async sync(request: express.Request, response: express.Response, next: express.NextFunction): Promise<void> {
         try {
             await this.tasks.sync();
-            res.send('ok');
-        } catch (err) {
-            next(err);
+            response.send('ok');
+        } catch (error) {
+            next(error);
         }
     }
 
     async publicRoutes(): Promise<express.Router> {
-        const router = express.Router();
-        return router;
+        return express.Router();
     }
 
     async privateRoutes(): Promise<express.Router> {

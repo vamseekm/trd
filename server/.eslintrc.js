@@ -1,49 +1,24 @@
 module.exports = {
-    env: {
-        browser: true,
-        es2020: true,
-        node: true,
-    },
-    extends: [
-        'airbnb-base',
-        'plugin:react/recommended',
-        'prettier/@typescript-eslint', // Uses eslint-config-prettier to disable ESLint rules from @typescript-eslint/eslint-plugin that would conflict with prettier
-        'plugin:prettier/recommended',
-        'plugin:@typescript-eslint/recommended',
-    ],
-    parser: '@typescript-eslint/parser',
+    parser: '@typescript-eslint/parser', // Specifies the ESLint parser
+
     parserOptions: {
-        ecmaVersion: 11,
-        sourceType: 'module',
-        emcaFeatures: {
-            jsx: 'true',
-        },
+        ecmaVersion: 2020, // Allows for the parsing of modern ECMAScript features
+
+        sourceType: 'module', // Allows for the use of imports
     },
-    plugins: ['@typescript-eslint', 'react'],
+
+    extends: [
+        'eslint:recommended',
+        'plugin:@typescript-eslint/recommended', // Uses the recommended rules from the @typescript-eslint/eslint-plugin
+        'plugin:unicorn/recommended',
+        'plugin:sonarjs/recommended',
+        'prettier/@typescript-eslint', // Uses eslint-config-prettier to disable ESLint rules from @typescript-eslint/eslint-plugin that would conflict with prettier
+        'plugin:prettier/recommended', // Enables eslint-plugin-prettier and eslint-config-prettier. This will display prettier errors as ESLint errors. Make sure this is always the last configuration in the extends array.
+    ],
+    plugins: ['@typescript-eslint', 'sonarjs', 'simple-import-sort'],
     rules: {
-        'import/prefer-default-export': 'off',
-        'import/no-default-export': 'error',
-        'class-methods-use-this': 'off',
-        'no-console': 'off',
-        'import/extensions': [
-            'error',
-            'ignorePackages',
-            {
-                js: 'never',
-                jsx: 'never',
-                ts: 'never',
-                tsx: 'never',
-            },
-        ],
-    },
-    settings: {
-        'import/resolver': {
-            node: {
-                extensions: ['.js', '.jsx', '.ts', '.tsx'],
-            },
-        },
-        react: {
-            version: 'detect',
-        },
+        // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
+        // e.g. "@typescript-eslint/explicit-function-return-type": "off",
+        'simple-import-sort/sort': 'error',
     },
 };

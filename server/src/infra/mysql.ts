@@ -1,14 +1,15 @@
 /* eslint-disable no-useless-constructor */
 import { Service } from 'typedi';
-import { createConnection, Connection } from 'typeorm';
+import { Connection, createConnection } from 'typeorm';
+
 import { Config } from './config';
-import { Logger } from './logger';
+import { LoggerService } from './logger';
 
 @Service()
-export class MySQL {
+export class MySQLService {
     private conn?: Connection;
 
-    constructor(private config: Config, private logger: Logger) { }
+    constructor(private config: Config, private logger: LoggerService) {}
 
     async connection(): Promise<Connection> {
         if (!this.conn) {

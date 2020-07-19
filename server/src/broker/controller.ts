@@ -1,38 +1,39 @@
 /* eslint-disable camelcase */
 /* eslint-disable no-useless-constructor */
+import autoBind from 'auto-bind';
 import express from 'express';
 import { Service } from 'typedi';
-import autoBind from 'auto-bind';
+
+import { LoggerService } from '../infra';
 import { IController } from '../types';
-import { Logger } from '../infra';
 import { BrokerService } from './service';
 
 @Service()
 export class BrokerController implements IController {
-    constructor(private logger: Logger, private broker: BrokerService) {
+    constructor(private logger: LoggerService, private broker: BrokerService) {
         autoBind(this);
     }
 
-    async login(req: express.Request, res: express.Response): Promise<void> {
+    async login(request: express.Request, response: express.Response): Promise<void> {
         const loginUrl = await this.broker.getLoginUrl();
-        res.redirect(307, loginUrl);
+        response.redirect(307, loginUrl);
     }
 
-    async redirect(req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+    async redirect(request: express.Request, response: express.Response, next: express.NextFunction): Promise<void> {
         try {
-            const { request_token } = req.query;
+            const { request_token } = request.query;
             await this.broker.generateAccessToken(request_token as string);
-            res.send('generated access token');
-        } catch (err) {
-            this.logger.error('my error:', err);
-            next(err);
+            response.send('generated access token');
+        } catch (error) {
+            this.logger.error('my error:', error);
+            next(error);
             // next(JSON.stringify(err, null, 2));
         }
     }
 
-    async profile(req: express.Request, res: express.Response): Promise<void> {
+    async profile(request: express.Request, response: express.Response): Promise<void> {
         const profile = await this.broker.getProfile();
-        res.send(profile);
+        response.send(profile);
     }
 
     async privateRoutes(): Promise<express.Router> {

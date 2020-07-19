@@ -1,12 +1,13 @@
 /* eslint-disable no-useless-constructor */
 import { Service } from 'typedi';
-import { getRepository, getConnection } from 'typeorm';
+import { getConnection, getRepository } from 'typeorm';
+
 import { Redis } from '../infra';
 import { Pref } from './entity';
 
 @Service()
 export class PrefService {
-    constructor(private redis: Redis) { }
+    constructor(private redis: Redis) {}
 
     async configGet(key: string, defaultValue: string): Promise<string> {
         return this.redis.cachedGet({ key, expiry: 12 * 3600 * 1000 }, async () => {

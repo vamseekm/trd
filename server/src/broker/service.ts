@@ -1,8 +1,9 @@
 import { Service } from 'typedi';
-import { KiteService } from './kite';
-import { Config, Redis, Logger } from '../infra';
+
+import { Config, LoggerService, Redis } from '../infra';
 import { InstrumentService } from '../instrument';
 import { PrefService } from '../pref';
+import { KiteService } from './kite';
 
 @Service()
 export class BrokerService extends KiteService {
@@ -10,7 +11,7 @@ export class BrokerService extends KiteService {
         public config: Config,
         public instrumentSvc: InstrumentService,
         public redis: Redis,
-        public logger: Logger,
+        public logger: LoggerService,
         public prefSvc: PrefService,
     ) {
         super();

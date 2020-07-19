@@ -1,10 +1,11 @@
 import 'reflect-metadata';
 
 import { program } from 'commander';
-import { Container } from 'typedi';
 import { exit } from 'process';
+import { Container } from 'typedi';
+
+import { LoggerService } from '../infra';
 import { Cli } from './cli';
-import { Logger } from './lib/infra';
 
 async function run() {
     program.option('-x --force-exit', 'Force exit');
@@ -13,8 +14,7 @@ async function run() {
     program.option('-d --debug', 'Start debug main');
     program.parse(process.argv);
     const cli = Container.get(Cli);
-    const logger = Container.get(Logger);
-    cli.setup();
+    const logger = Container.get(LoggerService);
 
     if (program.apiServer) {
         await cli.dbInit();
@@ -28,18 +28,19 @@ async function run() {
     }
     if (program.forceExit) {
         logger.log('info', 'force exiting...');
+        // eslint-disable-next-line unicorn/no-process-exit
         process.exit(0);
     }
 }
 
 (async function main() {
     const startTime = new Date().getTime();
-    const logger = Container.get(Logger);
+    const logger = Container.get(LoggerService);
     try {
         await run();
         console.log('Action completed.');
-    } catch (err) {
-        logger.error('error', err);
+    } catch (error) {
+        logger.error('error', error);
     } finally {
         const endTime = new Date().getTime();
         logger.log('info', `Action elapsed time: ${((endTime - startTime) / 1000).toFixed(3)} sec.`);
@@ -48,16 +49,16 @@ async function run() {
 
 function cleanHandler(type: string) {
     return function handleExit(cause: any) {
-        console.log(`Exiting with cause [${type}]: ${JSON.stringify(cause, null, 2)}`);
+        console.log(`Exiting with cause [${type}]: ${JSON.stringify(cause, undefined, 2)}`);
         if (cause.stack) console.log(cause.stack);
         exit(0);
     };
 }
 
-function handleRejection(err: any, promise: any) {
-    console.error('unhandled promise rejection:', '\nerr:', err, '\npromise:', promise);
-    if (err && err.stack) {
-        console.error('stack:', err.stack);
+function handleRejection(error: any, promise: any) {
+    console.error('unhandled promise rejection:', '\nerr:', error, '\npromise:', promise);
+    if (error && error.stack) {
+        console.error('stack:', error.stack);
     }
 }
 

@@ -1,16 +1,17 @@
 /* eslint-disable no-useless-constructor */
+import { from } from 'rxjs';
+import { mergeMap, toArray } from 'rxjs/operators';
 import { Service } from 'typedi';
 import { getRepository } from 'typeorm';
-import { from } from 'rxjs';
-import { toArray, mergeMap } from 'rxjs/operators';
-import { Redis, Logger } from '../infra';
+
+import { LoggerService, Redis } from '../infra';
 import { IInstrument } from '../types';
-import { Instrument } from './entity';
 import { diffListOfObjects, mapFromObjectList } from '../util';
+import { Instrument } from './entity';
 
 @Service()
 export class InstrumentService {
-    constructor(private redis: Redis, private logger: Logger) { }
+    constructor(private redis: Redis, private logger: LoggerService) {}
 
     async insertInstrument(instrument: IInstrument): Promise<IInstrument> {
         await getRepository(Instrument).createQueryBuilder().insert().into(Instrument).values(instrument).execute();
@@ -25,12 +26,12 @@ export class InstrumentService {
     }
 
     async storeInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<void> {
-        const dbInstruments: IInstrument[] = (await this.getInstrumentsByExchange(exchange)).map((item) => {
+        const databaseInstruments: IInstrument[] = (await this.getInstrumentsByExchange(exchange)).map((item) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { live, track, rank, ...rest } = item;
             return rest;
         });
-        const diff = diffListOfObjects(dbInstruments, inputInstruments, 'instrumentToken');
+        const diff = diffListOfObjects(databaseInstruments, inputInstruments, 'instrumentToken');
         this.logger.info(`Instrument stats for exchange: ${exchange}`, diff.stats);
         const removedIds = diff.removed.map((item) => item.instrumentToken);
         if (removedIds.length > 0) {
@@ -73,8 +74,8 @@ export class InstrumentService {
                         toArray(),
                     )
                     .toPromise();
-            } catch (err) {
-                this.logger.error(err);
+            } catch (error) {
+                this.logger.error(error);
             }
         }
     }

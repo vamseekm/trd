@@ -14,8 +14,9 @@
         "server:dev": "npm run server:build:clean && tsc-watch --skipLibCheck --pretty --preserveWatchOutput -P tsconfig.json --onSuccess \"node -r source-map-support/register ./dist/server/index.js\"",
         "client:dev": "cd client && npx webpack-dev-server --content-base ./dist --hot --inline --color --port $WEBPACK_DEV_SERVER_PORT --host 0.0.0.0",
         "dev": "echo Hello; concurrently \"npm run server:dev\" \"npm run client:dev\"",
-        "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
-        "dist:run": "npx kill-port 3000; node -r source-map-support/register dist/server/index.js",
+        "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet",
+        "lint:watch": "nodemon -w src -e ts -x \"npm run lint || exit 0\"",
+        "dist:run": "npx kill-port 3000; node -r source-map-support/register dist/cli/index.js",
         "api-server": "npm run dist:run -- --api-server",
         "api-server:watch": "nodemon -w . -e js,ts -x \"npm run api-server || exit 0\""
     },
@@ -75,18 +76,21 @@
         "@types/node": "^14.0.13",
         "@types/react": "^16.9.36",
         "@types/react-dom": "^16.9.8",
-        "@typescript-eslint/eslint-plugin": "^3.2.0",
-        "@typescript-eslint/parser": "^3.2.0",
-        "eslint": "^7.2.0",
+        "@typescript-eslint/eslint-plugin": "^3.6.1",
+        "@typescript-eslint/parser": "^3.6.1",
+        "eslint": "^7.5.0",
         "eslint-config-airbnb-base": "^14.2.0",
         "eslint-config-prettier": "^6.11.0",
         "eslint-config-standard": "^14.1.1",
         "eslint-plugin-import": "^2.21.2",
         "eslint-plugin-node": "^11.1.0",
-        "eslint-plugin-prettier": "^3.1.3",
+        "eslint-plugin-prettier": "^3.1.4",
         "eslint-plugin-promise": "^4.2.1",
         "eslint-plugin-react": "^7.20.0",
+        "eslint-plugin-simple-import-sort": "^5.0.3",
+        "eslint-plugin-sonarjs": "^0.5.0",
         "eslint-plugin-standard": "^4.0.1",
-        "prettier": "^2.0.5"
+        "eslint-plugin-unicorn": "^21.0.0",
+        "prettier": "2.0.5"
     }
 }
