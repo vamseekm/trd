@@ -12,6 +12,8 @@ export class LoggerService {
 
     public info: any;
 
+    public json: any;
+
     constructor() {
         this.logger = winston.createLogger({
             format: format.combine(
@@ -31,5 +33,12 @@ export class LoggerService {
         this.log = this.logger.log.bind(this.logger);
         this.error = this.logger.error.bind(this.logger);
         this.info = this.logger.info.bind(this.logger);
+        this.json = (label: any, ...rest: any) => {
+            if (rest && rest.length > 0) {
+                this.logger.info(`${label}: ${JSON.stringify(rest)}`);
+            } else {
+                this.logger.info(JSON.stringify(label));
+            }
+        };
     }
 }

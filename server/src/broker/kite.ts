@@ -74,7 +74,7 @@ export abstract class KiteService implements IBrokerService {
 
     async getExchanges(): Promise<string[]> {
         const profile = await this.getProfile();
-        return profile.exchanges;
+        return profile.exchanges.filter((exchange) => exchange !== 'BSE');
     }
 
     async getInstrumentsByExchange(exchange: string): Promise<IInstrument[]> {
@@ -84,10 +84,7 @@ export abstract class KiteService implements IBrokerService {
             .pipe(
                 filter((item: any) => {
                     if (!item.instrument_token || item.instrument_token.length === 0) {
-                        this.logger.info(
-                            `Found invalid instrument in ${exchange}:`,
-                            JSON.stringify(item, undefined, 4),
-                        );
+                        this.logger.json('Invalid instrument', item);
                         return false;
                     }
                     return true;

@@ -21,12 +21,12 @@ export class TaskService {
     }
 
     async syncMeta(): Promise<void> {
-        console.log('Syncing meta ...');
+        this.logger.info('Syncing meta ...');
     }
 
     async syncInstruments(): Promise<void> {
         const exchanges = (await this.brokerSvc.getExchanges()).filter((ex) => ex !== 'MF');
-        this.logger.info({ exchanges });
+        this.logger.json({ exchanges });
         await from(exchanges)
             .pipe(
                 concatMap(async (exchange) => {
@@ -35,7 +35,7 @@ export class TaskService {
                         const instruments = await this.brokerSvc.getInstrumentsByExchange(exchange);
                         await this.instrumentSvc.storeInstruments(exchange, instruments);
                     } catch (error) {
-                        this.logger.error(error);
+                        this.logger.json('error', error);
                     }
                 }),
                 toArray(),
