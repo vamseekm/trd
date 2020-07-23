@@ -6,14 +6,14 @@ import { Service } from 'typedi';
 import { getRepository } from 'typeorm';
 
 import { BrokerService } from '../broker';
-import { LoggerService, Redis } from '../infra';
+import { LoggerService } from '../infra';
 import { IInstrument } from '../types';
 import { diffListOfObjects, mapFromObjectList } from '../util';
 import { Instrument } from './entity';
 
 @Service()
 export class InstrumentService {
-    constructor(private logger: LoggerService, private brokerSvc: BrokerService) { }
+    constructor(private logger: LoggerService, private brokerSvc: BrokerService) {}
 
     async insertInstrument(instrument: IInstrument): Promise<IInstrument> {
         await getRepository(Instrument).createQueryBuilder().insert().into(Instrument).values(instrument).execute();

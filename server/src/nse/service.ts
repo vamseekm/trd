@@ -1,20 +1,18 @@
 import axios from 'axios';
-import { setSeconds, subHours } from 'date-fns';
+import { subHours } from 'date-fns';
 import lodash from 'lodash';
-import { format } from 'path';
-import { exit } from 'process';
 import { from } from 'rxjs';
-import { concatMap, mergeMap, toArray } from 'rxjs/operators';
+import { mergeMap, toArray } from 'rxjs/operators';
 import { Service } from 'typedi';
 import { getRepository } from 'typeorm';
 
 import { LoggerService } from '../infra';
-import { Instrument, InstrumentService } from '../instrument';
+import { Instrument } from '../instrument';
 import { NSEInstrument } from './entity';
 
 @Service()
 export class NSEService {
-    constructor(private instrumentSvc: InstrumentService, private loggerSvc: LoggerService) { }
+    constructor(private loggerSvc: LoggerService) {}
 
     async syncMetaData(): Promise<void> {
         this.loggerSvc.info('Syncing NSE meta data ...');
@@ -56,7 +54,7 @@ export class NSEService {
             .getMany();
     }
 
-    async allInstruments() {
+    async allInstruments(): Promise<NSEInstrument[]> {
         return getRepository(NSEInstrument).createQueryBuilder().getMany();
     }
 

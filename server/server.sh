@@ -10,7 +10,7 @@ fi
 CMD="npm -s run dist:run -- $@"
 
 if [ "$WATCH" == "yes" ]; then
-    echo "**** Starting watch mode."
+    echo "**** Starting in watch mode."
     nodemon -w ./dist -e js -x "$CMD || exit 0"
 else
     echo "**** Staritng in normal mode..."

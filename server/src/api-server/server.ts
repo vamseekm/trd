@@ -1,22 +1,11 @@
-import chalk from 'chalk';
 import express from 'express';
 import morgan from 'morgan';
 import { Service } from 'typedi';
-import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
 
 import { BrokerController } from '../broker';
 import { Config, LoggerService } from '../infra';
 import { TaskController } from '../task';
 import { HTTP_API_PORT, IController } from '../types';
-
-const morganChalk = morgan(function (tokens, request, response) {
-    return [
-        chalk.green.bold(tokens.method(request, response)),
-        chalk.red.bold(tokens.status(request, response)),
-        chalk.white(tokens.url(request, response)),
-        chalk.yellow(tokens['response-time'](request, response) + ' ms'),
-    ].join(' ');
-});
 
 @Service()
 export class APIServer {

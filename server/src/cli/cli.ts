@@ -14,7 +14,7 @@ export class Cli {
         private taskSvc: TaskService,
         private loggerSvc: LoggerService,
         private nseSvc: NSEService,
-    ) { }
+    ) {}
 
     async dbInit(): Promise<void> {
         await this.mysqlSvc.init();
@@ -34,6 +34,6 @@ export class Cli {
         this.loggerSvc.info(`Debug start ...`);
         await this.nseSvc.syncMetaData();
         // eslint-disable-next-line @typescript-eslint/no-empty-function
-        return new Promise(() => { });
+        return new Promise(() => {});
     }
 }

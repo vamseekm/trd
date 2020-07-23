@@ -15,6 +15,7 @@
         "client:dev": "cd client && npx webpack-dev-server --content-base ./dist --hot --inline --color --port $WEBPACK_DEV_SERVER_PORT --host 0.0.0.0",
         "dev": "echo Hello; concurrently \"npm run server:dev\" \"npm run client:dev\"",
         "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet",
+        "lint:fix": "eslint '*/**/*.{js,ts,tsx}' --fix",
         "lint:watch": "nodemon -w src -e ts -x \"npm run lint || exit 0\"",
         "dist:run": "npm run timestamp; node -r source-map-support/register dist/cli/index.js",
         "api-server": "npm run dist:run -- --api-server",
@@ -98,6 +99,7 @@
         "eslint-plugin-sonarjs": "^0.5.0",
         "eslint-plugin-standard": "^4.0.1",
         "eslint-plugin-unicorn": "^21.0.0",
+        "eslint-plugin-unused-imports": "^0.1.3",
         "prettier": "2.0.5"
     }
 }
