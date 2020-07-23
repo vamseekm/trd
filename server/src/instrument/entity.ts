@@ -1,4 +1,13 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
+import {
+    Column,
+    CreateDateColumn,
+    Entity,
+    Index,
+    PrimaryColumn,
+    PrimaryGeneratedColumn,
+    Unique,
+    UpdateDateColumn,
+} from 'typeorm';
 
 import { IInstrument } from '../types';
 
@@ -70,5 +79,35 @@ export class Instrument implements IInstrument {
     updatedAt!: Date;
 
     @UpdateDateColumn()
+    createdAt!: Date;
+}
+
+@Entity()
+export class InstrumentMeta {
+    @PrimaryColumn('varchar', { length: 128 })
+    globalSymbol!: string;
+
+    @Column('varchar', { length: 64 })
+    tradingSymbol!: string;
+
+    @Column('varchar', { length: 16 })
+    exchange!: string;
+
+    @Column('double', { nullable: true, precision: 16, scale: 2 })
+    @Index()
+    freeFloatMarketCap!: number;
+
+    @Column('double', { nullable: true, precision: 5, scale: 2 })
+    @Index()
+    freeFloatPercent!: number;
+
+    @Column('double', { nullable: true, precision: 16, scale: 2 })
+    @Index()
+    totalMarketCap!: number;
+
+    @UpdateDateColumn({ type: 'timestamp' })
+    updatedAt!: Date;
+
+    @CreateDateColumn({ type: 'timestamp' })
     createdAt!: Date;
 }

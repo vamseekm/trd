@@ -1,3 +1,4 @@
+import { spawn } from 'child_process';
 import { from } from 'rxjs';
 import { reduce } from 'rxjs/operators';
 
@@ -50,4 +51,26 @@ export function diffListOfObjects<T, K extends keyof T>(
         same: results.same.length,
     };
     return Object.assign(results, { stats });
+}
+
+export async function runTask(cmd: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+        // const fullCmd = `bash ./server.sh --${cmd}`;
+        const child = spawn('npm', ['run', 'server', '--', `--${cmd}`, '-x']);
+        child.on('exit', (code, signal) => {
+            resolve({ code, signal });
+        });
+        child.on('error', (error) => {
+            reject(error);
+        });
+        child.on('close', () => {
+            resolve();
+        });
+        child.stdout.on('data', (data) => {
+            process.stdout.write(data.toString());
+        });
+        child.stderr.on('data', (data) => {
+            process.stdout.write(data.toString());
+        });
+    });
 }
