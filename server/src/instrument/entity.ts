@@ -1,11 +1,17 @@
-import { Column, Entity, Index, PrimaryColumn, Unique } from 'typeorm';
+import { Column, Entity, Index, PrimaryColumn, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
 
 import { IInstrument } from '../types';
 
 @Entity()
-@Unique('exchange_tradingSymbol2', ['exchange', 'tradingSymbol'])
+@Unique('globalSymbol', ['globalSymbol'])
 export class Instrument implements IInstrument {
-    @PrimaryColumn('varchar', { length: 32 })
+    @PrimaryGeneratedColumn()
+    id!: number;
+
+    @Column('varchar', { length: 128 })
+    globalSymbol!: string;
+
+    @Column('varchar', { length: 32 })
     instrumentToken!: string;
 
     @Column('varchar', { length: 32 })
@@ -59,4 +65,10 @@ export class Instrument implements IInstrument {
     @Column('int', { default: 100000 })
     @Index()
     rank!: number;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+
+    @UpdateDateColumn()
+    createdAt!: Date;
 }

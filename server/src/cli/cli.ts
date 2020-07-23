@@ -3,6 +3,7 @@ import { Service } from 'typedi';
 
 import { APIServer } from '../api-server';
 import { LoggerService, MySQLService } from '../infra';
+import { NSEService } from '../nse/service';
 import { TaskService } from '../task';
 
 @Service()
@@ -12,6 +13,7 @@ export class Cli {
         private apiServer: APIServer,
         private taskSvc: TaskService,
         private loggerSvc: LoggerService,
+        private nseSvc: NSEService,
     ) { }
 
     async dbInit(): Promise<void> {
@@ -29,7 +31,8 @@ export class Cli {
     }
 
     async debug(): Promise<void> {
-        this.loggerSvc.info(`Debug start.`);
+        this.loggerSvc.info(`Debug start ...`);
+        await this.nseSvc.syncMetaData();
         // eslint-disable-next-line @typescript-eslint/no-empty-function
         return new Promise(() => { });
     }

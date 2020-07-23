@@ -37,7 +37,7 @@ export class LoggerService {
             if (rest && rest.length > 0) {
                 this.logger.info(`${label}: ${JSON.stringify(rest)}`);
             } else {
-                this.logger.info(JSON.stringify(label));
+                this.logger.info(JSON.stringify(label, undefined, 2));
             }
         };
     }

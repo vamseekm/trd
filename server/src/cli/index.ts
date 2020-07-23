@@ -39,13 +39,8 @@ async function run() {
     const cli = Container.get(Cli);
     const logger = Container.get(LoggerService);
 
-    try {
-        await clearPort(3000);
-    } catch (error) {
-        logger.error(error);
-    }
-
     if (program.apiServer) {
+        await clearPort(3000);
         await cli.dbInit();
         await cli.startAPIServer();
     } else if (program.sync) {

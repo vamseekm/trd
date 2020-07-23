@@ -6,40 +6,14 @@ import { Service } from 'typedi';
 import { BrokerService } from '../broker';
 import { LoggerService } from '../infra';
 import { InstrumentService } from '../instrument';
+import { NSEService } from '../nse';
 
 @Service()
 export class TaskService {
-    constructor(
-        private brokerSvc: BrokerService,
-        private instrumentSvc: InstrumentService,
-        private logger: LoggerService,
-    ) { }
+    constructor(private instrumentSvc: InstrumentService, private nseSvc: NSEService) { }
 
     async sync(): Promise<void> {
-        await this.syncMeta();
-        await this.syncInstruments();
-    }
-
-    async syncMeta(): Promise<void> {
-        this.logger.info('Syncing meta ...');
-    }
-
-    async syncInstruments(): Promise<void> {
-        const exchanges = (await this.brokerSvc.getExchanges()).filter((ex) => ex !== 'MF');
-        this.logger.json({ exchanges });
-        await from(exchanges)
-            .pipe(
-                concatMap(async (exchange) => {
-                    try {
-                        this.logger.info(`Syncing exchange: ${exchange}`);
-                        const instruments = await this.brokerSvc.getInstrumentsByExchange(exchange);
-                        await this.instrumentSvc.storeInstruments(exchange, instruments);
-                    } catch (error) {
-                        this.logger.json('error', error);
-                    }
-                }),
-                toArray(),
-            )
-            .toPromise();
+        await this.instrumentSvc.syncInstruments();
+        await this.nseSvc.syncMetaData();
     }
 }

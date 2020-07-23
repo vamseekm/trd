@@ -1,5 +1,6 @@
 /* eslint-disable camelcase */
 export interface IInstrument {
+    globalSymbol: string;
     instrumentToken: string;
     exchangeToken: string;
     tradingSymbol: string;

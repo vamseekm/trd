@@ -36,16 +36,33 @@ services:
     ports:
       - "8081:8081"
 
-  api-server:
+  node-app:
     build:
-      context: ./server
+      context: "./server"
+      dockerfile: Dockerfile
+    image: node-app
+    command: "tail -f /dev/null"
+
+  api-server:
     image: node-app
     ports:
       - 3000:3000
-    command: "./server.sh"
+    command: "bash ./server.sh --api-server"
     environment:
       NODE_ENV: docker
     restart: always
+    depends_on:
+      - node-app
+
+  debug-command:
+    image: node-app
+    command: "bash ./server.sh --debug"
+    environment:
+      NODE_ENV: docker
+      WATCH: "yes"
+    restart: always
+    depends_on:
+      - node-app
 
 volumes:
   db-data:
