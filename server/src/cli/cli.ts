@@ -32,7 +32,6 @@ export class Cli {
 
     async debug(): Promise<void> {
         this.loggerSvc.info(`Debug start ...`);
-        await this.instrumentSvc.syncMetaData();
         // eslint-disable-next-line @typescript-eslint/no-empty-function
         return new Promise(() => {});
     }

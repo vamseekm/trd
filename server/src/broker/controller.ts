@@ -4,6 +4,7 @@ import autoBind from 'auto-bind';
 import express from 'express';
 import { Service } from 'typedi';
 
+import { expressWrap } from '../api-server';
 import { LoggerService } from '../infra';
 import { IController } from '../types';
 import { BrokerService } from './service';
@@ -20,15 +21,9 @@ export class BrokerController implements IController {
     }
 
     async redirect(request: express.Request, response: express.Response, next: express.NextFunction): Promise<void> {
-        try {
-            const { request_token } = request.query;
-            await this.broker.generateAccessToken(request_token as string);
-            response.send('generated access token');
-        } catch (error) {
-            this.logger.error('my error:', error);
-            next(error);
-            // next(JSON.stringify(err, null, 2));
-        }
+        const { request_token } = request.query;
+        await this.broker.generateAccessToken(request_token as string);
+        response.send('generated access token');
     }
 
     async profile(request: express.Request, response: express.Response): Promise<void> {
@@ -38,14 +33,14 @@ export class BrokerController implements IController {
 
     async privateRoutes(): Promise<express.Router> {
         const router = express.Router();
-        router.get('/profile', this.profile);
+        router.get('/profile', expressWrap(this.profile));
         return router;
     }
 
     async publicRoutes(): Promise<express.Router> {
         const router = express.Router();
-        router.get('/login', this.login);
-        router.get('/redirect', this.redirect);
+        router.get('/login', expressWrap(this.login));
+        router.get('/redirect', expressWrap(this.redirect));
         return router;
     }
 }
