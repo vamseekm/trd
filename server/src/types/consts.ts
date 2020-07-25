@@ -1,4 +1,4 @@
 export const KITE_API_KEY = 'KITE_API_KEY';
 export const KITE_API_SECRET = 'KITE_API_SECRET';
 export const KITE_ACCESS_TOKEN = 'KITE_ACCESS_TOKEN';
-export const HTTP_API_PORT = 'HTTP_API_PORT';
+export const HTTP_API_SERVER_PORT = 'HTTP_API_SERVER_PORT';

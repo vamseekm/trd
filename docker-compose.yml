@@ -1,8 +1,22 @@
 version: "3.1"
 
 services:
+  nginx:
+    build:
+      context: "./conf/nginx"
+    container_name: nginx
+    restart: always
+    ports:
+      - 3000:3000
+    environment:
+      - HTTP_API_SERVER_HOST:${HTTP_API_SERVER_HOST}
+      - HTTP_API_SERVER_PORT:${HTTP_API_SERVER_PORT}
+      - HTTP_CLIENT_SERVER_HOST:${HTTP_CLIENT_SERVER_HOST}
+      - HTTP_CLIENT_SERVER_PORT:${HTTP_CLIENT_SERVER_PORT}
+
   db:
     image: mariadb
+    container_name: mariadb
     restart: always
     ports:
       - 3306:3306
@@ -13,6 +27,7 @@ services:
 
   adminer:
     image: adminer
+    container_name: adminer
     restart: always
     ports:
       - 8080:8080
@@ -36,28 +51,32 @@ services:
     ports:
       - "8081:8081"
 
-  client-app:
+  client-server:
     build:
       context: "./client"
-    image: client-app
+    container_name: ${HTTP_CLIENT_SERVER_HOST}
+    image: ${HTTP_CLIENT_SERVER_HOST}
     command: "yarn client:dev"
     ports:
-      - 3100:3100
+      - ${HTTP_CLIENT_SERVER_PORT}:${HTTP_CLIENT_SERVER_PORT}
     environment:
-      WEBPACK_DEV_SERVER_PORT: 3100
+      HTTP_CLIENT_SERVER_PORT: ${HTTP_CLIENT_SERVER_PORT}
 
   node-app:
     build:
       context: "./server"
     image: node-app
+    container_name: node-app
     command: "tail -f /dev/null"
 
   api-server:
     image: node-app
+    container_name: ${HTTP_API_SERVER_HOST}
     ports:
-      - 3000:3000
+      - ${HTTP_API_SERVER_PORT}:${HTTP_API_SERVER_PORT}
     command: "bash ./server.sh --api-server"
     environment:
+      HTTP_API_SERVER_PORT: ${HTTP_API_SERVER_PORT}
       NODE_ENV: docker
       WATCH: "yes"
     restart: always
@@ -66,6 +85,7 @@ services:
 
   debug-command:
     image: node-app
+    container_name: debug-command
     command: "bash ./server.sh --debug"
     environment:
       NODE_ENV: docker

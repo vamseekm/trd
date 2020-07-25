@@ -1,0 +1,2 @@
+FROM nginx
+COPY reverse_proxy.conf /etc/nginx/conf.d

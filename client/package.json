@@ -4,7 +4,7 @@
   "description": "",
   "main": "webpack.config.js",
   "scripts": {
-    "client:dev": "npx webpack-dev-server --content-base ./dist --hot --inline --color --port $WEBPACK_DEV_SERVER_PORT --host 0.0.0.0"
+    "client:dev": "npx webpack-dev-server --content-base ./dist --hot --inline --color --port $HTTP_CLIENT_SERVER_PORT --host 0.0.0.0"
   },
   "author": "",
   "license": "ISC",

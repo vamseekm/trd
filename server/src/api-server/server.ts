@@ -1,7 +1,6 @@
 import express from 'express';
 import { graphqlHTTP } from 'express-graphql';
 import displayRoutes from 'express-routemap';
-import { getIntrospectionQuery } from 'graphql';
 import expressPlayground from 'graphql-playground-middleware-express';
 import morgan from 'morgan';
 import { buildSchema } from 'type-graphql';
@@ -11,7 +10,7 @@ import { BrokerController } from '../broker';
 import { Config, LoggerService } from '../infra';
 import { InstrumentResolver } from '../instrument';
 import { TaskController } from '../task';
-import { HTTP_API_PORT, IController } from '../types';
+import { HTTP_API_SERVER_PORT, IController } from '../types';
 import { handleError } from './middleware';
 
 const GRAPHQL_ENDPOINT = '/api/graphql';
@@ -79,7 +78,8 @@ export class APIServer {
         await this.setupGraphQL();
         await this.setupRoutes();
         this.app.use(handleError);
-        const port = this.config.get(HTTP_API_PORT);
+        const port = this.config.get(HTTP_API_SERVER_PORT);
+        console.log(port);
         return new Promise((resolve, reject) => {
             this.app
                 .listen(port, () => {
