@@ -36,10 +36,19 @@ services:
     ports:
       - "8081:8081"
 
+  client-app:
+    build:
+      context: "./client"
+    image: client-app
+    command: "yarn client:dev"
+    ports:
+      - 3100:3100
+    environment:
+      WEBPACK_DEV_SERVER_PORT: 3100
+
   node-app:
     build:
       context: "./server"
-      dockerfile: Dockerfile
     image: node-app
     command: "tail -f /dev/null"
 

@@ -7,3 +7,9 @@ docker_build("node-app", "./server",
         sync("./server", "/home/node/app"),
         run("npm i", trigger="package.json"),
     ])
+
+docker_build("client-app", "./client", 
+    live_update = [
+        sync("./client", "/home/node/app"),
+        run("npm i", trigger="package.json"),
+    ])
