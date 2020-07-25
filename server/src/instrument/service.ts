@@ -23,15 +23,27 @@ export class InstrumentService {
         return instrument;
     }
 
-    async getInstrumentsByExchange(exchange: string): Promise<Instrument[]> {
-        return getRepository(Instrument)
-            .createQueryBuilder('instrument')
-            .where('instrument.exchange = :exchange', { exchange })
-            .getMany();
+    async findByGlobalSymbol(globalSymbol: string): Promise<Instrument | undefined> {
+        return getRepository(Instrument).createQueryBuilder().where({ globalSymbol }).getOne();
+    }
+
+    async findByExchange(exchange: string): Promise<Instrument[]> {
+        return getRepository(Instrument).createQueryBuilder().where({ exchange }).getMany();
+    }
+
+    async exchangeList(): Promise<string[]> {
+        console.log('exchange list');
+        const instruments = await getRepository(Instrument)
+            .createQueryBuilder()
+            .select('exchange')
+            .distinct(true)
+            .where({ live: true })
+            .getRawMany();
+        return instruments.map((instrument) => instrument.exchange);
     }
 
     async storeInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<void> {
-        const databaseInstruments: IInstrument[] = (await this.getInstrumentsByExchange(exchange)).map((item) => {
+        const databaseInstruments: IInstrument[] = (await this.findByExchange(exchange)).map((item) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { id, live, track, rank, updatedAt, createdAt, ...rest } = item;
             return rest;

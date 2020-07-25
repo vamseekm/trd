@@ -1,15 +1,20 @@
 import express from 'express';
+import { graphqlHTTP } from 'express-graphql';
 import displayRoutes from 'express-routemap';
+import { getIntrospectionQuery } from 'graphql';
+import expressPlayground from 'graphql-playground-middleware-express';
 import morgan from 'morgan';
-import { Service } from 'typedi';
+import { buildSchema } from 'type-graphql';
+import Container, { Service } from 'typedi';
 
 import { BrokerController } from '../broker';
 import { Config, LoggerService } from '../infra';
-import { InstrumentController } from '../instrument';
+import { InstrumentResolver } from '../instrument';
 import { TaskController } from '../task';
 import { HTTP_API_PORT, IController } from '../types';
 import { handleError } from './middleware';
 
+const GRAPHQL_ENDPOINT = '/api/graphql';
 @Service()
 export class APIServer {
     app: express.Express;
@@ -23,14 +28,13 @@ export class APIServer {
         private brokerCtrl: BrokerController,
         private tasksCtrl: TaskController,
         private logger: LoggerService,
-        private instrumentCtrl: InstrumentController,
     ) {
         this.app = express();
         this.app.use(
             morgan('dev', {
                 stream: {
                     write: (message) => {
-                        this.logger.info(`http > ${message.trim()}`);
+                        if (!message.includes(GRAPHQL_ENDPOINT)) this.logger.info(`http > ${message.trim()}`);
                     },
                 },
             }),
@@ -47,7 +51,6 @@ export class APIServer {
     async setupRoutes(): Promise<void> {
         this.mountRoutes(this.brokerCtrl, '/broker');
         this.mountRoutes(this.tasksCtrl, '/tasks');
-        this.mountRoutes(this.instrumentCtrl, '/instrument');
         this.app.get('/health', (request, response) => {
             this.logger.info('heartbeat');
             response.send('ok');
@@ -56,7 +59,24 @@ export class APIServer {
         this.app.use('/api', this.privateRouter);
     }
 
+    async setupGraphQL(): Promise<void> {
+        const schema = await buildSchema({
+            resolvers: [InstrumentResolver],
+            container: Container,
+        });
+        this.app.use(
+            GRAPHQL_ENDPOINT,
+            graphqlHTTP(() => {
+                return {
+                    schema,
+                };
+            }),
+        );
+        this.app.use('/api/graphqlui', expressPlayground({ endpoint: '/api/graphql' }));
+    }
+
     async start(): Promise<unknown> {
+        await this.setupGraphQL();
         await this.setupRoutes();
         this.app.use(handleError);
         const port = this.config.get(HTTP_API_PORT);
