@@ -1,18 +1,18 @@
 version: "3.1"
 
 services:
-  nginx:
-    build:
-      context: "./conf/nginx"
-    container_name: nginx
-    restart: always
+  proxy:
+    image: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
     ports:
-      - 3000:3000
-    environment:
-      - HTTP_API_SERVER_HOST:${HTTP_API_SERVER_HOST}
-      - HTTP_API_SERVER_PORT:${HTTP_API_SERVER_PORT}
-      - HTTP_CLIENT_SERVER_HOST:${HTTP_CLIENT_SERVER_HOST}
-      - HTTP_CLIENT_SERVER_PORT:${HTTP_CLIENT_SERVER_PORT}
+      - "3000:80"
+      - "8082:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
   db:
     image: mariadb
@@ -31,6 +31,10 @@ services:
     restart: always
     ports:
       - 8080:8080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.adminer.rule=Path(`/db`)"
+      - "traefik.http.routers.adminer.entrypoints=web"
 
   redis:
     container_name: redis
@@ -47,9 +51,15 @@ services:
     image: rediscommander/redis-commander:latest
     restart: always
     environment:
-      - REDIS_HOSTS=local:redis:6379
+      REDIS_HOSTS: local:redis:6379
+      ADDRESS: 0.0.0.0
+      URL_PREFIX: /rc
     ports:
-      - "8081:8081"
+      - 8081:8081
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rediscommander.rule=PathPrefix(`/rc`)"
+      - "traefik.http.routers.rediscommander.entrypoints=web"
 
   client-server:
     build:
@@ -61,6 +71,10 @@ services:
       - ${HTTP_CLIENT_SERVER_PORT}:${HTTP_CLIENT_SERVER_PORT}
     environment:
       HTTP_CLIENT_SERVER_PORT: ${HTTP_CLIENT_SERVER_PORT}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.client-server.rule=PathPrefix(`/app`)"
+      - "traefik.http.routers.client-server.entrypoints=web"
 
   node-app:
     build:
@@ -82,6 +96,10 @@ services:
     restart: always
     depends_on:
       - node-app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-server.rule=(PathPrefix(`/api`) || Path(`/health`))"
+      - "traefik.http.routers.api-server.entrypoints=web"
 
   debug-command:
     image: node-app
