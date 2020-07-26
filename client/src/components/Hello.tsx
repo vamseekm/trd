@@ -11,7 +11,7 @@ export class Hello extends React.Component<HelloProps, {}> {
   render() {
     return (
       <h1>
-        hell 98765 11 43210 101 hello hi Ha, Hello 1234567891011 from{" "}
+        hell0 98765 11 43210 101 hello hi Ha, Hello 1234567891011 from{" "}
         {this.props.compiler} and {this.props.framework}! ha ha ha
       </h1>
     );
