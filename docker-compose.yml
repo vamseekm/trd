@@ -1,8 +1,9 @@
 version: "3.1"
 
 services:
-  proxy:
+  traefik:
     image: traefik
+    container_name: traefik
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -112,7 +113,8 @@ services:
   debug-command:
     image: node-app
     container_name: debug-command
-    command: "bash ./server.sh --debug"
+    command: "tail -f /dev/null"
+    # command: "bash ./server.sh --debug"
     environment:
       NODE_ENV: docker
       # WATCH: "yes"
