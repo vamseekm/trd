@@ -8,11 +8,15 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+      - "--accesslog=true"
+      - "--accesslog.filepath=/logs/access.log"
+      - "--accesslog.bufferingsize=100"
     ports:
       - "3000:80"
       - "8082:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./logs:/logs
 
   db:
     image: mariadb
