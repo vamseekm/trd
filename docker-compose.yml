@@ -83,15 +83,15 @@ services:
       - traefik.http.middlewares.compress.compress=true
       - traefik.http.routers.client-server.entrypoints=web
 
-  node-app:
+  server-img:
     build:
       context: "./server"
-    image: node-app
-    container_name: node-app
+    image: server-img
+    container_name: server-img
     command: "tail -f /dev/null"
 
   api-server:
-    image: node-app
+    image: server-img
     container_name: ${HTTP_API_SERVER_HOST}
     ports:
       - ${HTTP_API_SERVER_PORT}:${HTTP_API_SERVER_PORT}
@@ -102,7 +102,7 @@ services:
       WATCH: "yes"
     restart: always
     depends_on:
-      - node-app
+      - server-img
     labels:
       - traefik.enable=true
       - traefik.http.routers.api-server.rule=(PathPrefix(`/api`) || Path(`/health`))
@@ -111,7 +111,7 @@ services:
       - traefik.http.routers.api-server.entrypoints=web
 
   debug-command:
-    image: node-app
+    image: server-img
     container_name: debug-command
     command: "tail -f /dev/null"
     # command: "bash ./server.sh --debug"
@@ -120,7 +120,7 @@ services:
       # WATCH: "yes"
     restart: always
     depends_on:
-      - node-app
+      - server-img
 
 volumes:
   db-data:

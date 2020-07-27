@@ -11,6 +11,7 @@ import { Cli } from './cli';
 async function clearPort(port: number) {
     const logger = Container.get(LoggerService);
     return new Promise((resolve, reject) => {
+        logger.info('Starting ...');
         logger.info(`Killing any processes holding port :${port} ...`);
         exec(`fuser -k ${port}/tcp; sleep 0.1 | exit 0`, (error, stdout, stderr) => {
             if (error) {

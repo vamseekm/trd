@@ -1,4 +1,3 @@
-/* eslint-disable no-useless-constructor */
 import { Service } from 'typedi';
 
 import { APIServer } from '../api-server';
