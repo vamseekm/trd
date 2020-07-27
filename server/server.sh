@@ -8,7 +8,7 @@ if [ "$NODE_ENV" == "dev" ]; then
 fi
 
 CMD="npm -s run dist:run -- $@"
-
+npx depcheck
 if [ "$WATCH" == "yes" ]; then
     echo "**** Starting in watch mode."
     nodemon -w ./dist -e js -x "$CMD || exit 0"
