@@ -99,7 +99,7 @@ services:
     environment:
       HTTP_API_SERVER_PORT: ${HTTP_API_SERVER_PORT}
       NODE_ENV: docker
-      WATCH: "yes"
+      # WATCH: "yes"
     restart: always
     depends_on:
       - server-img
@@ -113,11 +113,11 @@ services:
   debug-command:
     image: server-img
     container_name: debug-command
-    command: "tail -f /dev/null"
-    # command: "bash ./server.sh --debug"
+    # command: "tail -f /dev/null"
+    command: "bash ./server.sh --debug"
     environment:
       NODE_ENV: docker
-      # WATCH: "yes"
+      WATCH: "yes"
     restart: always
     depends_on:
       - server-img

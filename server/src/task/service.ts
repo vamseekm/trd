@@ -10,5 +10,6 @@ export class TaskService {
     async sync(): Promise<void> {
         await this.instrumentSvc.syncInstruments();
         await this.instrumentSvc.syncMetaData();
+        await this.instrumentSvc.updateRanks();
     }
 }

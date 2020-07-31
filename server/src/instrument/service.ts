@@ -1,64 +1,40 @@
-/* eslint-disable no-useless-constructor */
 import axios from 'axios';
-import { subHours } from 'date-fns';
 import deepDiff from 'deep-diff';
 import lodash from 'lodash';
 import { from } from 'rxjs';
 import { concatMap, mergeMap, toArray } from 'rxjs/operators';
 import { Service } from 'typedi';
-import { getRepository } from 'typeorm';
 
 import { BrokerService } from '../broker';
 import { LoggerService } from '../infra';
 import { IInstrument } from '../types';
 import { diffListOfObjects, mapFromObjectList } from '../util';
-import { Instrument, InstrumentMeta } from './entity';
+import { Instrument } from './entity';
+import { InstrumentRepository } from './repository';
 
 @Service()
 export class InstrumentService {
-    constructor(private loggerSvc: LoggerService, private brokerSvc: BrokerService) {}
-
-    async insertInstrument(instrument: IInstrument): Promise<IInstrument> {
-        await getRepository(Instrument).createQueryBuilder().insert().into(Instrument).values(instrument).execute();
-        return instrument;
-    }
-
-    async findByGlobalSymbol(globalSymbol: string): Promise<Instrument | undefined> {
-        return getRepository(Instrument).createQueryBuilder().where({ globalSymbol }).getOne();
-    }
-
-    async findByExchange(exchange: string): Promise<Instrument[]> {
-        return getRepository(Instrument).createQueryBuilder().where({ exchange }).getMany();
-    }
-
-    async exchangeList(): Promise<string[]> {
-        console.log('exchange list');
-        const instruments = await getRepository(Instrument)
-            .createQueryBuilder()
-            .select('exchange')
-            .distinct(true)
-            .where({ live: true })
-            .getRawMany();
-        return instruments.map((instrument) => instrument.exchange);
-    }
+    constructor(
+        private loggerSvc: LoggerService,
+        private brokerSvc: BrokerService,
+        private instrumentRepo: InstrumentRepository,
+    ) {}
 
     async storeInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<void> {
-        const databaseInstruments: IInstrument[] = (await this.findByExchange(exchange)).map((item) => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { id, live, track, rank, updatedAt, createdAt, ...rest } = item;
-            return rest;
-        });
+        const databaseInstruments: IInstrument[] = (await this.instrumentRepo.findInstrumentsBy({ exchange })).map(
+            (item) => {
+                // exclude props that shouldn't be considered for comparison.
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { id, live, track, rank, updatedAt, createdAt, ...rest } = item;
+                return rest;
+            },
+        );
         const diff = diffListOfObjects(databaseInstruments, inputInstruments, 'globalSymbol');
         this.loggerSvc.info(`Instrument stats for exchange: ${exchange}`, diff.stats);
         const removedSymbols = diff.removed.map((item) => item.globalSymbol);
         this.loggerSvc.info(`Disabling ... ${removedSymbols.length}`);
         if (removedSymbols.length > 0) {
-            await getRepository(Instrument)
-                .createQueryBuilder()
-                .update()
-                .set({ live: false })
-                .where('globalSymbol IN (:globalSymbols)', { globalSymbols: removedSymbols })
-                .execute();
+            await this.instrumentRepo.markInstrumentsRemoved(removedSymbols);
         }
         const inputInstrumentMap = await mapFromObjectList(inputInstruments, 'globalSymbol');
         const databaseInstrumentMap = await mapFromObjectList(databaseInstruments, 'globalSymbol');
@@ -75,12 +51,10 @@ export class InstrumentService {
                                     inputInstrumentMap[item.globalSymbol],
                                 ),
                             });
-                            return getRepository(Instrument)
-                                .createQueryBuilder()
-                                .update()
-                                .set({ ...inputInstrumentMap[item.globalSymbol], live: true })
-                                .where('globalSymbol = :globalSymbol', { globalSymbol: item.globalSymbol })
-                                .execute();
+                            return this.instrumentRepo.updateInstrument(
+                                item.globalSymbol,
+                                inputInstrumentMap[item.globalSymbol],
+                            );
                         }, 4),
                         toArray(),
                     )
@@ -91,12 +65,7 @@ export class InstrumentService {
         }
         this.loggerSvc.info(`Inserting ... ${diff.added.length}`);
         if (diff.added.length > 0) {
-            await getRepository(Instrument)
-                .createQueryBuilder()
-                .insert()
-                .into('instrument')
-                .values(diff.added)
-                .execute();
+            return this.instrumentRepo.insertInstrumentsBulk(diff.added as Instrument[]);
         }
     }
 
@@ -109,7 +78,7 @@ export class InstrumentService {
                     try {
                         this.loggerSvc.info(`Syncing exchange: ${exchange}`);
                         const instruments = await this.brokerSvc.getInstrumentsByExchange(exchange);
-                        await this.storeInstruments(exchange, instruments);
+                        return this.storeInstruments(exchange, instruments);
                     } catch (error) {
                         this.loggerSvc.error(error);
                     }
@@ -122,9 +91,9 @@ export class InstrumentService {
     async syncMetaData(): Promise<void> {
         const exchange = 'NSE';
         this.loggerSvc.info('Syncing NSE meta data ...');
-        const missingInstruments = await this.missingMetaInstruments(exchange);
+        const missingInstruments = await this.instrumentRepo.findMetaInstrumentsNotPresent(exchange);
         this.loggerSvc.info(`Missng instruments: ${missingInstruments.length}`);
-        const outdatedInstruments = await this.outdatedMetaInstruments(exchange);
+        const outdatedInstruments = await this.instrumentRepo.findMetaInstrumentsOutdated(exchange);
         this.loggerSvc.info(`Outdated instruments: ${outdatedInstruments.length}`);
 
         await from(missingInstruments)
@@ -149,34 +118,6 @@ export class InstrumentService {
         this.loggerSvc.info('Done syncing NSE meta.');
     }
 
-    async missingMetaInstruments(exchange: string): Promise<Instrument[]> {
-        const nseInstruments = await this.allMetaInstruments(exchange);
-        const nseGlobalSymbols = nseInstruments.map((instrument) => instrument.globalSymbol);
-        const where =
-            nseGlobalSymbols.length > 0
-                ? 'globalSymbol NOT IN (:...globalSymbols) AND exchange = :exchange'
-                : 'exchange = :exchange';
-        return getRepository(Instrument)
-            .createQueryBuilder()
-            .where(where, {
-                globalSymbols: nseGlobalSymbols,
-                exchange,
-            })
-            .getMany();
-    }
-
-    async allMetaInstruments(exchange: string): Promise<InstrumentMeta[]> {
-        return getRepository(InstrumentMeta).createQueryBuilder().where({ exchange }).getMany();
-    }
-
-    async outdatedMetaInstruments(exchange: string): Promise<InstrumentMeta[]> {
-        const updatedAt = subHours(new Date(), 24);
-        return getRepository(InstrumentMeta)
-            .createQueryBuilder()
-            .where('updatedAt < :updatedAt AND exchange = :exchange', { updatedAt, exchange })
-            .getMany();
-    }
-
     async updateSymbolMeta({ exchange, tradingSymbol }: { tradingSymbol: string; exchange: string }): Promise<void> {
         try {
             const url = `https://www.nseindia.com/api/quote-equity?symbol=${tradingSymbol}&section=trade_info`;
@@ -186,37 +127,41 @@ export class InstrumentService {
                 throw new Error(response.statusText);
             }
             const totalMarketCap = lodash.get(response, 'data.marketDeptOrderBook.tradeInfo.totalMarketCap', 0);
-            const ffmc = lodash.get(response, 'data.marketDeptOrderBook.tradeInfo.ffmc', 0);
-            const freeFloatPercent = totalMarketCap && ffmc ? (ffmc * 100) / totalMarketCap : 0;
-            if ((await getRepository(InstrumentMeta).count({ globalSymbol: `${exchange}:${tradingSymbol}` })) === 0) {
-                await getRepository(InstrumentMeta)
-                    .createQueryBuilder()
-                    .insert()
-                    .values({
-                        tradingSymbol,
-                        freeFloatMarketCap: ffmc,
-                        totalMarketCap,
-                        freeFloatPercent,
-                        globalSymbol: `${exchange}:${tradingSymbol}`,
-                        exchange,
-                    })
-                    .execute();
-            } else {
-                await getRepository(InstrumentMeta)
-                    .createQueryBuilder()
-                    .update(InstrumentMeta)
-                    .set({
-                        freeFloatMarketCap: ffmc,
-                        totalMarketCap,
-                        freeFloatPercent,
-                        globalSymbol: `${exchange}:${tradingSymbol}`,
-                        exchange,
-                    })
-                    .where({ tradingSymbol })
-                    .execute();
-            }
+            const freeFloatMarketCap = lodash.get(response, 'data.marketDeptOrderBook.tradeInfo.ffmc', 0);
+            const freeFloatPercent =
+                totalMarketCap && freeFloatMarketCap ? (freeFloatMarketCap * 100) / totalMarketCap : 0;
+            const globalSymbol = `${exchange}:${tradingSymbol}`;
+            return this.instrumentRepo.upsertMetaInstrument(globalSymbol, {
+                tradingSymbol,
+                freeFloatMarketCap,
+                totalMarketCap,
+                freeFloatPercent,
+                globalSymbol,
+                exchange,
+            });
         } catch (error) {
             this.loggerSvc.error(error);
         }
+    }
+
+    async updateRanks(): Promise<void> {
+        this.loggerSvc.info('Updating ranks...');
+        const metaInstruments = (await this.instrumentRepo.findMetaInstrumentsBy({ exchange: 'NSE' }))
+            .filter((instrument) => instrument.freeFloatMarketCap)
+            .sort((a, b) => b.freeFloatMarketCap - a.freeFloatMarketCap);
+        await from(metaInstruments)
+            .pipe(
+                mergeMap(async (instrument, index) => {
+                    const { globalSymbol } = instrument;
+                    return this.instrumentRepo.updateInstrument(globalSymbol, { rank: index + 1 });
+                }),
+                toArray(),
+            )
+            .toPromise();
+        console.log('Done updating ranks.');
+    }
+
+    async trackInstruments(): Promise<void> {
+        console.log('Track instruments...');
     }
 }
