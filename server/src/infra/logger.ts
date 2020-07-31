@@ -18,14 +18,14 @@ export class LoggerService {
         this.logger = winston.createLogger({
             format: format.combine(
                 format.errors({ stack: true }),
-                format.timestamp({ format: 'YY/M/D|HH:mm:ss.SSS' }),
+                format.timestamp({ format: 'HH:mm:ss.SSS' }),
                 format.colorize(),
-                format.printf((options: any) => {
+                format.printf((options) => {
                     const { level, timestamp, stack, message } = options;
                     const { rss } = memoryUsage();
-                    const mem = (rss / (1024 * 1024)).toFixed(1);
-                    const first = `${timestamp}|${mem}M|${level.replace(/(nfo|rror|arn)/g, '')}| ${message}`;
-                    return stack ? `${first} ${stack}` : first;
+                    const mem = (rss / (1024 * 1024)).toFixed(1).padStart(5, ' ');
+                    const prefix = `${mem}M|${timestamp}|${level.replace(/(nfo|rror|arn)/gi, '')}| ${message}`;
+                    return stack ? `${prefix} ${stack}` : prefix;
                 }),
             ),
             transports: [new winston.transports.Console()],

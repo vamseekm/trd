@@ -20,7 +20,7 @@ export class InstrumentService {
         private instrumentRepo: InstrumentRepository,
     ) {}
 
-    async storeInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<void> {
+    async storeInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<any> {
         const databaseInstruments: IInstrument[] = (await this.instrumentRepo.findInstrumentsBy({ exchange })).map(
             (item) => {
                 // exclude props that shouldn't be considered for comparison.
@@ -65,7 +65,7 @@ export class InstrumentService {
         }
         this.loggerSvc.info(`Inserting ... ${diff.added.length}`);
         if (diff.added.length > 0) {
-            return this.instrumentRepo.insertInstrumentsBulk(diff.added as Instrument[]);
+            return this.instrumentRepo.insertInstruments(diff.added as Instrument[]);
         }
     }
 
@@ -162,6 +162,6 @@ export class InstrumentService {
     }
 
     async trackInstruments(): Promise<void> {
-        console.log('Track instruments...');
+        this.loggerSvc.info('Track instruments ...');
     }
 }

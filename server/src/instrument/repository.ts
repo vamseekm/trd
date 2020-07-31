@@ -10,7 +10,7 @@ export class InstrumentRepository {
         return getRepository(Instrument).createQueryBuilder().where(options).getMany();
     }
 
-    async insertInstrumentsBulk(instruments: Instrument[]): Promise<InsertResult> {
+    async insertInstruments(instruments: Instrument[]): Promise<InsertResult> {
         return getRepository(Instrument).createQueryBuilder().insert().into('instrument').values(instruments).execute();
     }
 
