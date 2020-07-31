@@ -1,6 +1,6 @@
 import { subHours } from 'date-fns';
 import { Service } from 'typedi';
-import { getRepository } from 'typeorm';
+import { getRepository, InsertResult, UpdateResult } from 'typeorm';
 
 import { Instrument, InstrumentMeta } from './entity';
 
@@ -10,15 +10,15 @@ export class InstrumentRepository {
         return getRepository(Instrument).createQueryBuilder().where(options).getMany();
     }
 
-    async insertInstrumentsBulk(instruments: Instrument[]): Promise<any> {
+    async insertInstrumentsBulk(instruments: Instrument[]): Promise<InsertResult> {
         return getRepository(Instrument).createQueryBuilder().insert().into('instrument').values(instruments).execute();
     }
 
-    async updateInstrument(globalSymbol: string, data: Partial<Instrument>): Promise<any> {
+    async updateInstrument(globalSymbol: string, data: Partial<Instrument>): Promise<UpdateResult> {
         return getRepository(Instrument).createQueryBuilder().update().set(data).where({ globalSymbol }).execute();
     }
 
-    async markInstrumentsRemoved(globalSymbols: string[]): Promise<any> {
+    async markInstrumentsRemoved(globalSymbols: string[]): Promise<UpdateResult> {
         return getRepository(Instrument)
             .createQueryBuilder()
             .update()
@@ -34,7 +34,7 @@ export class InstrumentRepository {
             .distinct(true)
             .where({ live: true })
             .getRawMany();
-        return instruments.map((instrument) => instrument.exchange);
+        return instruments.map((instrument: Instrument) => instrument.exchange);
     }
 
     async findMetaInstrumentsBy(options: { exchange?: string } = {}): Promise<InstrumentMeta[]> {
