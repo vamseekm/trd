@@ -31,7 +31,8 @@ export class Cli {
 
     async debug(): Promise<void> {
         this.loggerSvc.info(`Debug start ... `);
-        await this.instrumentSvc.trackInstruments();
+        //await this.instrumentSvc.trackInstruments();
+        await this.taskSvc.sync();
         this.loggerSvc.info('Debug done..');
         // eslint-disable-next-line @typescript-eslint/no-empty-function
         return new Promise(() => {});

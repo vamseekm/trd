@@ -20,7 +20,7 @@ export class InstrumentService {
         private instrumentRepo: InstrumentRepository,
     ) {}
 
-    async storeInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<any> {
+    async storeInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<void> {
         const databaseInstruments: IInstrument[] = (await this.instrumentRepo.findInstrumentsBy({ exchange })).map(
             (item) => {
                 // exclude props that shouldn't be considered for comparison.
@@ -43,17 +43,18 @@ export class InstrumentService {
             try {
                 await from(diff.updated)
                     .pipe(
-                        mergeMap(async (item) => {
+                        mergeMap(async (instrument) => {
                             this.loggerSvc.json({
                                 message: `Diff between downloaded instrument & dbInstrument for exchange: ${exchange}`,
                                 diff: deepDiff.diff(
-                                    databaseInstrumentMap[item.globalSymbol],
-                                    inputInstrumentMap[item.globalSymbol],
+                                    databaseInstrumentMap[instrument.globalSymbol],
+                                    inputInstrumentMap[instrument.globalSymbol],
                                 ),
                             });
-                            return this.instrumentRepo.updateInstrument(
-                                item.globalSymbol,
-                                inputInstrumentMap[item.globalSymbol],
+                            this.loggerSvc.info(`Updating instrument ${instrument.globalSymbol}`);
+                            return this.instrumentRepo.upsertInstrument(
+                                instrument.globalSymbol,
+                                inputInstrumentMap[instrument.globalSymbol],
                             );
                         }, 4),
                         toArray(),
@@ -65,7 +66,15 @@ export class InstrumentService {
         }
         this.loggerSvc.info(`Inserting ... ${diff.added.length}`);
         if (diff.added.length > 0) {
-            return this.instrumentRepo.insertInstruments(diff.added as Instrument[]);
+            await from(diff.added)
+                .pipe(
+                    mergeMap(async (instrument) => {
+                        // this.loggerSvc.info(`Inserting instrument ${instrument.globalSymbol}`);
+                        await this.instrumentRepo.upsertInstrument(instrument.globalSymbol, instrument);
+                    }, 4),
+                    toArray(),
+                )
+                .toPromise();
         }
     }
 
@@ -153,7 +162,7 @@ export class InstrumentService {
             .pipe(
                 mergeMap(async (instrument, index) => {
                     const { globalSymbol } = instrument;
-                    return this.instrumentRepo.updateInstrument(globalSymbol, { rank: index + 1 });
+                    return this.instrumentRepo.upsertInstrument(globalSymbol, { rank: index + 1 });
                 }),
                 toArray(),
             )
@@ -163,5 +172,40 @@ export class InstrumentService {
 
     async trackInstruments(): Promise<void> {
         this.loggerSvc.info('Track instruments ...');
+        const globalSymbolsToTrack: string[] = [
+            'NSE:INDIA_VIX',
+            'NSE:NIFTY_50',
+            'NSE:NIFTY_500',
+            'NSE:NIFTY_BANK',
+            'NSE:NIFTY_AUTO',
+            'NSE:NIFTY_COMMODITIES',
+            'NSE:NIFTY_CONSUMPTION',
+            'NSE:NIFTY_ENERGY',
+            'NSE:NIFTY_FMCG',
+            'NSE:NIFTY_INFRA',
+            'NSE:NIFTY_IT',
+            'NSE:NIFTY_MEDIA',
+            'NSE:NIFTY_METAL',
+            'NSE:NIFTY_MNC',
+            'NSE:NIFTY_PHARMA',
+            'NSE:NIFTY_PSE',
+            'NSE:NIFTY_REALTY',
+            'NSE:NIFTYBEES',
+            'NSE:BANKBEES',
+            'NSE:GOLDBEES',
+        ];
+        const topInstruments = await this.instrumentRepo.findTopInstruments({ exchange: 'NSE', limit: 200 });
+        topInstruments.forEach((instrument: Instrument) => {
+            globalSymbolsToTrack.push(instrument.globalSymbol);
+        });
+        await from(globalSymbolsToTrack)
+            .pipe(
+                mergeMap((globalSymbol, index) => {
+                    this.loggerSvc.info(`Tracking ${(index + 1).toString().padStart(3)}: ${globalSymbol}`);
+                    return this.instrumentRepo.upsertInstrument(globalSymbol, { track: true });
+                }),
+                toArray(),
+            )
+            .toPromise();
     }
 }

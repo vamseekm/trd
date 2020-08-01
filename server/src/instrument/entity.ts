@@ -11,12 +11,23 @@ import {
 } from 'typeorm';
 
 import { IInstrument } from '../types';
+
+@Entity()
+@Unique('globalSymbol', ['globalSymbol'])
+export class SymbolMap {
+    @PrimaryGeneratedColumn()
+    id!: number;
+
+    @Column('varchar', { length: 128 })
+    globalSymbol!: string;
+}
+
 @ObjectType()
 @Entity()
 @Unique('globalSymbol', ['globalSymbol'])
 export class Instrument implements IInstrument {
-    @Field((type) => ID)
-    @PrimaryGeneratedColumn()
+    @Field(() => ID)
+    @PrimaryColumn('bigint')
     id!: number;
 
     @Field()
@@ -87,7 +98,7 @@ export class Instrument implements IInstrument {
     @Index()
     live!: boolean;
 
-    @Field((type) => Int)
+    @Field(() => Int)
     @Column('int', { default: 100000 })
     @Index()
     rank!: number;
@@ -102,8 +113,13 @@ export class Instrument implements IInstrument {
 }
 
 @Entity()
+@Unique('globalSymbol', ['globalSymbol'])
 export class InstrumentMeta {
-    @PrimaryColumn('varchar', { length: 128 })
+    @Field(() => ID)
+    @PrimaryColumn('bigint')
+    id!: number;
+
+    @Column('varchar', { length: 128 })
     globalSymbol!: string;
 
     @Column('varchar', { length: 64 })

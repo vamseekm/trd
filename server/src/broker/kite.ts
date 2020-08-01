@@ -92,11 +92,12 @@ export abstract class KiteService implements IBrokerService {
                 map(
                     (ins: any): IInstrument => {
                         const expiry = ins.expiry ? Math.floor(ins.expiry / 1000) : 0;
+                        const tradingSymbol = ins.tradingsymbol.replace(/\s+/gi, '_');
                         return {
-                            globalSymbol: `${ins.exchange}:${ins.tradingsymbol}`,
+                            globalSymbol: `${ins.exchange}:${tradingSymbol}`,
                             instrumentToken: ins.instrument_token,
                             exchangeToken: ins.exchange_token,
-                            tradingSymbol: ins.tradingsymbol,
+                            tradingSymbol: tradingSymbol,
                             name: ins.name,
                             lastPrice: ins.last_price,
                             expiry,
