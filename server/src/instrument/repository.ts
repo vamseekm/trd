@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-fn-reference-in-iterator */
 import { subHours } from 'date-fns';
 import { Service } from 'typedi';
 import { getRepository, InsertResult, UpdateResult } from 'typeorm';
@@ -7,7 +8,7 @@ import { Instrument, InstrumentMeta, SymbolMap } from './entity';
 @Service()
 export class InstrumentRepository {
     async findInstrumentsBy(options: Partial<Instrument> = {}): Promise<Instrument[]> {
-        return getRepository(Instrument).createQueryBuilder().where(options).getMany();
+        return getRepository(Instrument).find(options);
     }
 
     async findTopInstruments({ exchange, limit }: { exchange: string; limit: number }): Promise<Instrument[]> {
@@ -52,8 +53,8 @@ export class InstrumentRepository {
         return instruments.map((instrument: Instrument) => instrument.exchange);
     }
 
-    async findMetaInstrumentsBy(options: { exchange?: string } = {}): Promise<InstrumentMeta[]> {
-        return getRepository(InstrumentMeta).createQueryBuilder().where(options).getMany();
+    async findMetaInstrumentsBy(options: Partial<InstrumentMeta> = {}): Promise<InstrumentMeta[]> {
+        return getRepository(InstrumentMeta).find(options);
     }
 
     async findMetaInstrumentsNotPresent(exchange: string): Promise<Instrument[]> {
@@ -94,15 +95,10 @@ export class InstrumentRepository {
     }
 
     async upsertSymbol(globalSymbol: string): Promise<SymbolMap> {
-        const symbol = await getRepository(SymbolMap).createQueryBuilder().where({ globalSymbol }).getOne();
-        if (!symbol) {
-            await getRepository(SymbolMap).createQueryBuilder().insert().values({ globalSymbol }).execute();
-            return (getRepository(SymbolMap)
-                .createQueryBuilder()
-                .where({ globalSymbol })
-                .getOne() as unknown) as SymbolMap;
-        } else {
-            return symbol;
-        }
+        const symbolRepo = getRepository(SymbolMap);
+        const symbol = await symbolRepo.findOne({ globalSymbol });
+        if (symbol) return symbol;
+        await symbolRepo.insert({ globalSymbol });
+        return (symbolRepo.findOne({ globalSymbol }) as unknown) as SymbolMap;
     }
 }
