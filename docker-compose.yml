@@ -9,11 +9,13 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
       - "--accesslog=true"
       - "--accesslog.filepath=/logs/access.log"
       - "--accesslog.bufferingsize=100"
     ports:
-      - "3000:80"
+      - "80:80"
+      - "443:443"
       - "8082:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -39,7 +41,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.adminer.rule=Path(`/db`)"
-      - "traefik.http.routers.adminer.entrypoints=web"
+      - "traefik.http.routers.adminer.entrypoints=websecure"
+      - "traefik.http.routers.adminer.tls=true"
 
   redis:
     container_name: redis
@@ -64,7 +67,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.rediscommander.rule=PathPrefix(`/rc`)"
-      - "traefik.http.routers.rediscommander.entrypoints=web"
+      - "traefik.http.routers.rediscommander.entrypoints=websecure"
+      - "traefik.http.routers.rediscommander.tls=true"
 
   client-server:
     build:
@@ -79,9 +83,10 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.client-server.rule=PathPrefix(`/app`)
+      - traefik.http.routers.client-server.entrypoints=websecure
+      - traefik.http.routers.client-server.tls=true
       - traefik.http.routers.client-server.middlewares=compress
       - traefik.http.middlewares.compress.compress=true
-      - traefik.http.routers.client-server.entrypoints=web
 
   server-img:
     build:
@@ -105,10 +110,11 @@ services:
       - server-img
     labels:
       - traefik.enable=true
-      - traefik.http.routers.api-server.rule=(PathPrefix(`/api`) || Path(`/health`))
-      - traefik.http.routers.api-server.middlewares=compress
+      - traefik.http.routers.api-secure.rule=(PathPrefix(`/api`) || Path(`/health`))
+      - traefik.http.routers.api-secure.entrypoints=websecure
+      - traefik.http.routers.api-secure.tls=true
+      - traefik.http.routers.api-secure.middlewares=compress
       - traefik.http.middlewares.compress.compress=true
-      - traefik.http.routers.api-server.entrypoints=web
 
   debug-command:
     image: server-img

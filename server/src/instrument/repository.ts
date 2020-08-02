@@ -26,7 +26,7 @@ export class InstrumentRepository {
 
     async upsertInstrument(globalSymbol: string, instrument: Partial<Instrument>): Promise<void> {
         const instrumentRepo = getRepository(Instrument);
-        const { id } = await this.upsertSymbol(globalSymbol);
+        const { id } = await this.generateSymbol(globalSymbol);
         if ((await instrumentRepo.count({ id })) === 0) {
             await instrumentRepo.save(instrumentRepo.create({ ...instrument, id }));
         } else {
@@ -86,7 +86,7 @@ export class InstrumentRepository {
 
     async upsertMetaInstrument(globalSymbol: string, data: Partial<InstrumentMeta>): Promise<void> {
         const instrumentRepo = getRepository(InstrumentMeta);
-        const { id } = await this.upsertSymbol(globalSymbol);
+        const { id } = await this.generateSymbol(globalSymbol);
         if ((await instrumentRepo.count({ id })) === 0) {
             instrumentRepo.save(instrumentRepo.create({ ...data, id }));
         } else {
@@ -94,7 +94,7 @@ export class InstrumentRepository {
         }
     }
 
-    async upsertSymbol(globalSymbol: string): Promise<SymbolMap> {
+    async generateSymbol(globalSymbol: string): Promise<SymbolMap> {
         const symbolRepo = getRepository(SymbolMap);
         const symbol = await symbolRepo.findOne({ globalSymbol });
         if (symbol) return symbol;

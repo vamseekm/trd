@@ -171,7 +171,6 @@ export class InstrumentService {
     }
 
     async trackInstruments(): Promise<void> {
-        this.loggerSvc.info('Track instruments ...');
         const globalSymbolsToTrack: string[] = [
             'NSE:INDIA_VIX',
             'NSE:NIFTY_50',
@@ -200,12 +199,13 @@ export class InstrumentService {
         });
         await from(globalSymbolsToTrack)
             .pipe(
-                mergeMap((globalSymbol, index) => {
-                    this.loggerSvc.info(`Tracking ${(index + 1).toString().padStart(3)}: ${globalSymbol}`);
+                mergeMap((globalSymbol) => {
+                    // this.loggerSvc.info(`Tracking ${(index + 1).toString().padStart(3)}: ${globalSymbol}`);
                     return this.instrumentRepo.upsertInstrument(globalSymbol, { track: true });
                 }),
                 toArray(),
             )
             .toPromise();
+        this.loggerSvc.info(`Tracking ${globalSymbolsToTrack.length} instruments.`);
     }
 }
