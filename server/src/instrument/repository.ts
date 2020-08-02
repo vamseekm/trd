@@ -27,10 +27,14 @@ export class InstrumentRepository {
     async upsertInstrument(globalSymbol: string, instrument: Partial<Instrument>): Promise<void> {
         const instrumentRepo = getRepository(Instrument);
         const { id } = await this.generateSymbol(globalSymbol);
-        if ((await instrumentRepo.count({ id })) === 0) {
+        const instrumentRow = await instrumentRepo.findOne({ globalSymbol });
+        if (!instrumentRow) {
+            throw new Error(`Can't find instrument ${globalSymbol}`);
+        }
+        if (!instrumentRow) {
             await instrumentRepo.save(instrumentRepo.create({ ...instrument, id }));
         } else {
-            await instrumentRepo.update({ id }, instrument);
+            await instrumentRepo.update({ globalSymbol }, { ...instrument, id });
         }
     }
 

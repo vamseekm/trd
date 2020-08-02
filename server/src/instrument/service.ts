@@ -162,7 +162,7 @@ export class InstrumentService {
             .pipe(
                 mergeMap(async (instrument, index) => {
                     const { globalSymbol } = instrument;
-                    return this.instrumentRepo.upsertInstrument(globalSymbol, { rank: index + 1 });
+                    await this.instrumentRepo.upsertInstrument(globalSymbol, { rank: index + 1 });
                 }),
                 toArray(),
             )
@@ -171,24 +171,25 @@ export class InstrumentService {
     }
 
     async trackInstruments(): Promise<void> {
+        console.log('Tracking instruments...');
         const globalSymbolsToTrack: string[] = [
-            'NSE:INDIA_VIX',
-            'NSE:NIFTY_50',
-            'NSE:NIFTY_500',
-            'NSE:NIFTY_BANK',
-            'NSE:NIFTY_AUTO',
-            'NSE:NIFTY_COMMODITIES',
-            'NSE:NIFTY_CONSUMPTION',
-            'NSE:NIFTY_ENERGY',
-            'NSE:NIFTY_FMCG',
-            'NSE:NIFTY_INFRA',
-            'NSE:NIFTY_IT',
-            'NSE:NIFTY_MEDIA',
-            'NSE:NIFTY_METAL',
-            'NSE:NIFTY_MNC',
-            'NSE:NIFTY_PHARMA',
-            'NSE:NIFTY_PSE',
-            'NSE:NIFTY_REALTY',
+            'NSE:INDIA VIX',
+            'NSE:NIFTY 50',
+            'NSE:NIFTY 500',
+            'NSE:NIFTY BANK',
+            'NSE:NIFTY AUTO',
+            'NSE:NIFTY COMMODITIES',
+            'NSE:NIFTY CONSUMPTION',
+            'NSE:NIFTY ENERGY',
+            'NSE:NIFTY FMCG',
+            'NSE:NIFTY INFRA',
+            'NSE:NIFTY IT',
+            'NSE:NIFTY MEDIA',
+            'NSE:NIFTY METAL',
+            'NSE:NIFTY MNC',
+            'NSE:NIFTY PHARMA',
+            'NSE:NIFTY PSE',
+            'NSE:NIFTY REALTY',
             'NSE:NIFTYBEES',
             'NSE:BANKBEES',
             'NSE:GOLDBEES',
@@ -197,15 +198,18 @@ export class InstrumentService {
         topInstruments.forEach((instrument: Instrument) => {
             globalSymbolsToTrack.push(instrument.globalSymbol);
         });
-        await from(globalSymbolsToTrack)
-            .pipe(
-                mergeMap((globalSymbol) => {
-                    // this.loggerSvc.info(`Tracking ${(index + 1).toString().padStart(3)}: ${globalSymbol}`);
-                    return this.instrumentRepo.upsertInstrument(globalSymbol, { track: true });
-                }),
-                toArray(),
-            )
-            .toPromise();
-        this.loggerSvc.info(`Tracking ${globalSymbolsToTrack.length} instruments.`);
+        try {
+            await from(globalSymbolsToTrack)
+                .pipe(
+                    mergeMap(async (globalSymbol) => {
+                        await this.instrumentRepo.upsertInstrument(globalSymbol, { track: true });
+                    }, 1),
+                    toArray(),
+                )
+                .toPromise();
+            this.loggerSvc.info(`Tracking ${globalSymbolsToTrack.length} instruments.`);
+        } catch (error) {
+            this.loggerSvc.error('Updating rank:', error);
+        }
     }
 }

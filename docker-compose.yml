@@ -41,7 +41,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.adminer.rule=Path(`/db`)"
-      - "traefik.http.routers.adminer.entrypoints=websecure"
+      - "traefik.http.routers.adminer.entrypoints=web"
       - "traefik.http.routers.adminer.tls=true"
 
   redis:
@@ -67,7 +67,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.rediscommander.rule=PathPrefix(`/rc`)"
-      - "traefik.http.routers.rediscommander.entrypoints=websecure"
+      - "traefik.http.routers.rediscommander.entrypoints=web"
       - "traefik.http.routers.rediscommander.tls=true"
 
   client-server:
@@ -83,10 +83,15 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.client-server.rule=PathPrefix(`/app`)
-      - traefik.http.routers.client-server.entrypoints=websecure
-      - traefik.http.routers.client-server.tls=true
-      - traefik.http.routers.client-server.middlewares=compress
-      - traefik.http.middlewares.compress.compress=true
+      - traefik.http.routers.client-server.entrypoints=web
+      - traefik.http.routers.client-server.middlewares=client-server-mw
+      - traefik.http.middlewares.client-server-mw.redirectscheme.scheme=https
+      - traefik.http.middlewares.client-server-mw.redirectscheme.permanent=true
+      - traefik.http.routers.client-server-secure.rule=PathPrefix(`/app`)
+      - traefik.http.routers.client-server-secure.entrypoints=websecure
+      - traefik.http.routers.client-server-secure.tls=true
+      - traefik.http.routers.client-server-secure.middlewares=client-server-secure-mw
+      - traefik.http.middlewares.client-server-secure-mw.compress=true
 
   server-img:
     build:
@@ -110,11 +115,16 @@ services:
       - server-img
     labels:
       - traefik.enable=true
-      - traefik.http.routers.api-secure.rule=(PathPrefix(`/api`) || Path(`/health`))
-      - traefik.http.routers.api-secure.entrypoints=websecure
-      - traefik.http.routers.api-secure.tls=true
-      - traefik.http.routers.api-secure.middlewares=compress
-      - traefik.http.middlewares.compress.compress=true
+      - traefik.http.routers.api-server.rule=(PathPrefix(`/api`) || Path(`/health`))
+      - traefik.http.routers.api-server.entrypoints=web
+      - traefik.http.routers.api-server.middlewares=api-server-mw
+      - traefik.http.middlewares.api-server-mw.redirectscheme.scheme=https
+      - traefik.http.middlewares.api-server-mw.redirectscheme.permanent=true
+      - traefik.http.routers.api-server-secure.rule=(PathPrefix(`/api`) || Path(`/health`))
+      - traefik.http.routers.api-server-secure.entrypoints=websecure
+      - traefik.http.routers.api-server-secure.tls=true
+      - traefik.http.routers.api-server-secure.middlewares=api-server-secure-mw
+      - traefik.http.middlewares.api-server-secure-mw.compress=true
 
   debug-command:
     image: server-img
