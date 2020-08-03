@@ -13,12 +13,15 @@ services:
       - "--accesslog=true"
       - "--accesslog.filepath=/logs/access.log"
       - "--accesslog.bufferingsize=100"
+      - --providers.file.directory=/etc/traefik/dynamic_conf
     ports:
       - "80:80"
       - "443:443"
       - "8082:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./conf/etc/certs:/etc/certs
+      - ./conf/etc/traefik/dynamic_conf:/etc/traefik/dynamic_conf:ro
       - ./logs:/logs
 
   db:
