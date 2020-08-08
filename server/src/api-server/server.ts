@@ -25,7 +25,7 @@ export class APIServer {
     constructor(
         private config: Config,
         private brokerCtrl: BrokerController,
-        private tasksCtrl: TaskController,
+        private taskCtrl: TaskController,
         private logger: LoggerService,
     ) {
         this.app = express();
@@ -49,7 +49,7 @@ export class APIServer {
 
     async setupRoutes(): Promise<void> {
         this.mountRoutes(this.brokerCtrl, '/broker');
-        this.mountRoutes(this.tasksCtrl, '/tasks');
+        this.mountRoutes(this.taskCtrl, '/task');
         this.app.get('/health', (request, response) => {
             this.logger.info('heartbeat');
             response.send('ok');

@@ -109,7 +109,7 @@ export class InstrumentService {
             .pipe(
                 mergeMap(
                     (instrument) => this.updateSymbolMeta({ exchange, tradingSymbol: instrument.tradingSymbol }),
-                    2,
+                    4,
                 ),
                 toArray(),
             )
@@ -119,7 +119,7 @@ export class InstrumentService {
             .pipe(
                 mergeMap(
                     (instrument) => this.updateSymbolMeta({ exchange, tradingSymbol: instrument.tradingSymbol }),
-                    2,
+                    4,
                 ),
                 toArray(),
             )
@@ -170,6 +170,13 @@ export class InstrumentService {
         console.log('Done updating ranks.');
     }
 
+    async fetchFuture(name: string, offset?: number): Promise<Instrument> {
+        const instruments = await this.instrumentRepo.fetchFutures(name);
+        offset = offset || 0;
+        if (instruments.length <= offset) throw new Error(`Can't find future at ${offset} for "${name}"`);
+        return instruments[offset];
+    }
+
     async trackInstruments(): Promise<void> {
         console.log('Tracking instruments...');
         const globalSymbolsToTrack: string[] = [
@@ -194,6 +201,10 @@ export class InstrumentService {
             'NSE:BANKBEES',
             'NSE:GOLDBEES',
         ];
+        globalSymbolsToTrack.push((await this.fetchFuture('NIFTY', 0)).globalSymbol);
+        globalSymbolsToTrack.push((await this.fetchFuture('NIFTY', 1)).globalSymbol);
+        globalSymbolsToTrack.push((await this.fetchFuture('BANKNIFTY', 0)).globalSymbol);
+        globalSymbolsToTrack.push((await this.fetchFuture('BANKNIFTY', 1)).globalSymbol);
         const topInstruments = await this.instrumentRepo.findTopInstruments({ exchange: 'NSE', limit: 200 });
         topInstruments.forEach((instrument: Instrument) => {
             globalSymbolsToTrack.push(instrument.globalSymbol);
@@ -211,5 +222,9 @@ export class InstrumentService {
         } catch (error) {
             this.loggerSvc.error('Updating rank:', error);
         }
+    }
+
+    async updateLTP(): Promise<void> {
+        console.log('Updating ltp of all instruments...');
     }
 }

@@ -11,6 +11,7 @@ export class TaskService {
         await this.instrumentSvc.syncInstruments();
         await this.instrumentSvc.syncMetaData();
         await this.instrumentSvc.updateRanks();
-        await this.instrumentSvc.trackInstruments();
+        await this.instrumentSvc.updateLTP();
+        // await this.instrumentSvc.trackInstruments();
     }
 }
