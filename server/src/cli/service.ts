@@ -6,7 +6,7 @@ import { InstrumentService } from '../instrument';
 import { TaskService } from '../task';
 
 @Service()
-export class Cli {
+export class CliService {
     constructor(
         private mysqlSvc: MySQLService,
         private apiServer: APIServer,
@@ -33,8 +33,8 @@ export class Cli {
         this.loggerSvc.info(`Debug start ... `);
         // await this.instrumentSvc.trackInstruments();
         // await this.taskSvc.sync();
-        await this.instrumentSvc.updateLTP();
-        this.loggerSvc.info('Debug done.');
+        await this.instrumentSvc.trackFnO();
+        this.loggerSvc.info('Debug done');
         // eslint-disable-next-line @typescript-eslint/no-empty-function
         return new Promise(() => {});
     }

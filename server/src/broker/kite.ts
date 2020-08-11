@@ -8,6 +8,7 @@ import { filter, map, toArray } from 'rxjs/operators';
 import { Config, LoggerService, Redis } from '../infra';
 import { PrefService } from '../pref';
 import {
+    BrokerQuoteLtp,
     IBrokerProfile,
     IBrokerService,
     IInstrument,
@@ -19,7 +20,6 @@ import {
 const { KiteConnect } = require('kiteconnect');
 
 type KiteConnectType = typeof KiteConnect;
-
 export abstract class KiteService implements IBrokerService {
     private kite: KiteConnectType | undefined;
 
@@ -53,6 +53,7 @@ export abstract class KiteService implements IBrokerService {
             const instance = await this.instance();
             const { access_token } = await instance.generateSession(requestToken, this.config.get(KITE_API_SECRET));
             await this.prefSvc.configSet(KITE_ACCESS_TOKEN, access_token);
+            console.log('Access token:', access_token);
             return access_token;
         } catch (error) {
             return Promise.reject(error);
@@ -75,6 +76,21 @@ export abstract class KiteService implements IBrokerService {
     async getExchanges(): Promise<string[]> {
         const profile = await this.getProfile();
         return profile.exchanges.filter((exchange) => exchange !== 'BSE');
+    }
+
+    async getLTP(globalSymbols: string[]): Promise<BrokerQuoteLtp[]> {
+        const kite = await this.instance();
+        const ltpObject = await kite.getLTP(globalSymbols);
+        const keys = Object.keys(ltpObject);
+        const response: BrokerQuoteLtp[] = [];
+        keys.forEach((globalSymbol) => {
+            response.push({
+                globalSymbol,
+                instrumentToken: ltpObject[globalSymbol].instrument_token,
+                lastPrice: ltpObject[globalSymbol].last_price,
+            });
+        });
+        return response;
     }
 
     async getInstrumentsByExchange(exchange: string): Promise<IInstrument[]> {

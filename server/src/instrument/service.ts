@@ -7,7 +7,7 @@ import { Service } from 'typedi';
 
 import { BrokerService } from '../broker';
 import { LoggerService } from '../infra';
-import { IInstrument } from '../types';
+import { BrokerQuoteLtp, IInstrument } from '../types';
 import { diffListOfObjects, mapFromObjectList } from '../util';
 import { Instrument } from './entity';
 import { InstrumentRepository } from './repository';
@@ -21,14 +21,14 @@ export class InstrumentService {
     ) {}
 
     async storeInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<void> {
-        const databaseInstruments: IInstrument[] = (await this.instrumentRepo.findInstrumentsBy({ exchange })).map(
-            (item) => {
-                // exclude props that shouldn't be considered for comparison.
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { id, live, track, rank, updatedAt, createdAt, ...rest } = item;
-                return rest;
-            },
-        );
+        const databaseInstruments: IInstrument[] = (
+            await this.instrumentRepo.findInstrumentsBy({ search: { exchange } })
+        ).map((item) => {
+            // exclude props that shouldn't be considered for comparison.
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { id, live, track, rank, updatedAt, createdAt, ...rest } = item;
+            return rest;
+        });
         const diff = diffListOfObjects(databaseInstruments, inputInstruments, 'globalSymbol');
         this.loggerSvc.info(`Instrument stats for exchange: ${exchange}`, diff.stats);
         const removedSymbols = diff.removed.map((item) => item.globalSymbol);
@@ -177,8 +177,33 @@ export class InstrumentService {
         return instruments[offset];
     }
 
+    async trackFnO(): Promise<string[]> {
+        // Update all future LTP.
+        const futures = await this.instrumentRepo.findInstrumentsBy({
+            search: {
+                exchange: 'NFO',
+                segment: 'NFO-FUT',
+            },
+        });
+        const globalSymbols = futures.map((future) => future.globalSymbol);
+        await this.updateLTP(await this.brokerSvc.getLTP(globalSymbols));
+        return [];
+    }
+
+    async updateLTP(ltpList: BrokerQuoteLtp[]): Promise<void> {
+        await from(ltpList)
+            .pipe(
+                mergeMap(async (ltpItem) => {
+                    return this.instrumentRepo.upsertInstrument(ltpItem.globalSymbol, ltpItem);
+                }),
+                toArray(),
+            )
+            .toPromise();
+    }
+
     async trackInstruments(): Promise<void> {
         console.log('Tracking instruments...');
+        await this.trackFnO();
         const globalSymbolsToTrack: string[] = [
             'NSE:INDIA VIX',
             'NSE:NIFTY 50',
@@ -201,10 +226,6 @@ export class InstrumentService {
             'NSE:BANKBEES',
             'NSE:GOLDBEES',
         ];
-        globalSymbolsToTrack.push((await this.fetchFuture('NIFTY', 0)).globalSymbol);
-        globalSymbolsToTrack.push((await this.fetchFuture('NIFTY', 1)).globalSymbol);
-        globalSymbolsToTrack.push((await this.fetchFuture('BANKNIFTY', 0)).globalSymbol);
-        globalSymbolsToTrack.push((await this.fetchFuture('BANKNIFTY', 1)).globalSymbol);
         const topInstruments = await this.instrumentRepo.findTopInstruments({ exchange: 'NSE', limit: 200 });
         topInstruments.forEach((instrument: Instrument) => {
             globalSymbolsToTrack.push(instrument.globalSymbol);
@@ -214,7 +235,7 @@ export class InstrumentService {
                 .pipe(
                     mergeMap(async (globalSymbol) => {
                         await this.instrumentRepo.upsertInstrument(globalSymbol, { track: true });
-                    }, 1),
+                    }),
                     toArray(),
                 )
                 .toPromise();
@@ -224,7 +245,7 @@ export class InstrumentService {
         }
     }
 
-    async updateLTP(): Promise<void> {
-        console.log('Updating ltp of all instruments...');
+    async updateLTPAll(): Promise<void> {
+        console.log('Update all LTP');
     }
 }

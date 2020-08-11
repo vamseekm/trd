@@ -144,3 +144,4 @@ services:
 volumes:
   db-data:
   redis-data:
+  rabbit-data:

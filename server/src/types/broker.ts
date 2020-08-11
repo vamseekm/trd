@@ -18,3 +18,4 @@ export interface IBrokerService {
 }
 
 export const BrokerService = new Token<IBrokerService>();
+export type BrokerQuoteLtp = Pick<IInstrument, 'globalSymbol' | 'lastPrice' | 'instrumentToken'>;

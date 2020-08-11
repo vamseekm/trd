@@ -6,7 +6,7 @@ import { exit } from 'process';
 import { Container } from 'typedi';
 
 import { LoggerService } from '../infra';
-import { Cli } from './cli';
+import { CliService } from './service';
 
 async function clearPort(port: number) {
     const logger = Container.get(LoggerService);
@@ -37,7 +37,7 @@ async function run() {
     program.option('-s --sync', 'Start debug main');
     program.option('-d --debug', 'Start debug main');
     program.parse(process.argv);
-    const cli = Container.get(Cli);
+    const cli = Container.get(CliService);
     const logger = Container.get(LoggerService);
 
     if (program.apiServer) {
