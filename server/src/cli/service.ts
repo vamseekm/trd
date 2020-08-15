@@ -3,6 +3,7 @@ import { Service } from 'typedi';
 import { APIServer } from '../api-server';
 import { LoggerService, MySQLService } from '../infra';
 import { InstrumentMetaService, InstrumentService } from '../instrument';
+import { PrefService } from '../pref';
 import { TaskService } from '../task';
 
 @Service()
@@ -14,10 +15,11 @@ export class CliService {
         private loggerSvc: LoggerService,
         private instrumentSvc: InstrumentService,
         private instrumentMetaSvc: InstrumentMetaService,
+        private prefService: PrefService,
     ) {}
 
     async dbInit(): Promise<void> {
-        await this.mysqlSvc.init();
+        await this.mysqlSvc.connect();
     }
 
     async startAPIServer(): Promise<void> {
@@ -32,7 +34,7 @@ export class CliService {
 
     async debug(): Promise<void> {
         this.loggerSvc.info(`Debug start... `);
-        await this.taskSvc.sync();
+        // await this.taskSvc.sync();
         // await this.instrumentSvc.trackInstruments();
         // await this.instrumentSvc.trackInstruments();
         // await this.instrumentSvc.trackFnO();

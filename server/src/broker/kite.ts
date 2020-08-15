@@ -33,7 +33,7 @@ export abstract class KiteService implements IBrokerService {
         if (!this.kite) {
             const apiKey = await this.config.get(KITE_API_KEY);
             this.kite = new KiteConnect({ api_key: apiKey });
-            const accessToken = await this.prefSvc.configGet(KITE_ACCESS_TOKEN, '');
+            const accessToken = await this.prefSvc.get(KITE_ACCESS_TOKEN, '');
             if (!accessToken || accessToken.length === 0) {
                 this.logger.error(`Access token not available: ${accessToken}`);
             }
@@ -50,7 +50,7 @@ export abstract class KiteService implements IBrokerService {
         try {
             const instance = await this.instance();
             const { access_token } = await instance.generateSession(requestToken, this.config.get(KITE_API_SECRET));
-            await this.prefSvc.configSet(KITE_ACCESS_TOKEN, access_token);
+            await this.prefSvc.set(KITE_ACCESS_TOKEN, access_token);
             console.log('Access token:', access_token);
             return access_token;
         } catch (error) {
