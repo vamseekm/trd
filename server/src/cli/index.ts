@@ -37,6 +37,7 @@ async function run() {
     program.option('-s --sync', 'Start debug main');
     program.option('-d --debug', 'Start debug main');
     program.parse(process.argv);
+
     const cli = Container.get(CliService);
     const logger = Container.get(LoggerService);
 
@@ -56,7 +57,6 @@ async function run() {
         // eslint-disable-next-line unicorn/no-process-exit
         process.exit(0);
     }
-    console.log('hi');
 }
 
 (async function main() {

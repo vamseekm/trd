@@ -1,17 +1,17 @@
 /* eslint-disable no-useless-constructor */
 import { Service } from 'typedi';
 
-import { InstrumentService } from '../instrument';
+import { InstrumentMetaService, InstrumentService } from '../instrument';
 
 @Service()
 export class TaskService {
-    constructor(private instrumentSvc: InstrumentService) {}
+    constructor(private instrumentSvc: InstrumentService, private instrumentMetaSvc: InstrumentMetaService) {}
 
     async sync(): Promise<void> {
         await this.instrumentSvc.syncInstruments();
         await this.instrumentSvc.syncMetaData();
         await this.instrumentSvc.updateRanks();
-        // await this.instrumentSvc.updateLTP();
-        // await this.instrumentSvc.trackInstruments();
+        await this.instrumentSvc.updateLTPAll();
+        await this.instrumentSvc.trackInstruments();
     }
 }

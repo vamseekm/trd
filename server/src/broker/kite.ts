@@ -2,8 +2,6 @@
 /* eslint-disable camelcase */
 /* eslint-disable no-useless-catch */
 /* eslint-disable no-useless-constructor */
-import { from } from 'rxjs';
-import { filter, map, toArray } from 'rxjs/operators';
 
 import { Config, LoggerService, Redis } from '../infra';
 import { PrefService } from '../pref';
@@ -96,38 +94,34 @@ export abstract class KiteService implements IBrokerService {
     async getInstrumentsByExchange(exchange: string): Promise<IInstrument[]> {
         const kite = await this.instance();
         const instruments: any = await kite.getInstruments(exchange);
-        return from(instruments)
-            .pipe(
-                filter((item: any) => {
-                    if (!item.instrument_token || item.instrument_token.length === 0) {
-                        this.logger.json('Invalid instrument', item);
-                        return false;
-                    }
-                    return true;
-                }),
-                map(
-                    (ins: any): IInstrument => {
-                        const expiry = ins.expiry ? Math.floor(ins.expiry / 1000) : 0;
-                        const tradingSymbol = ins.tradingsymbol;
-                        return {
-                            globalSymbol: `${ins.exchange}:${tradingSymbol}`,
-                            instrumentToken: ins.instrument_token,
-                            exchangeToken: ins.exchange_token,
-                            tradingSymbol,
-                            name: ins.name,
-                            lastPrice: ins.last_price,
-                            expiry,
-                            strike: ins.strike,
-                            tickSize: ins.tick_size,
-                            lotSize: ins.lot_size,
-                            instrumentType: ins.instrument_type,
-                            segment: ins.segment,
-                            exchange: ins.exchange,
-                        };
-                    },
-                ),
-                toArray(),
-            )
-            .toPromise();
+        return instruments
+            .filter((item: any) => {
+                if (!item.instrument_token || item.instrument_token.length === 0) {
+                    this.logger.json('Invalid instrument', item);
+                    return false;
+                }
+                return true;
+            })
+            .map(
+                (ins: any): IInstrument => {
+                    const expiry = ins.expiry ? Math.floor(ins.expiry / 1000) : 0;
+                    const tradingSymbol = ins.tradingsymbol;
+                    return {
+                        globalSymbol: `${ins.exchange}:${tradingSymbol}`,
+                        instrumentToken: ins.instrument_token,
+                        exchangeToken: ins.exchange_token,
+                        tradingSymbol,
+                        name: ins.name,
+                        lastPrice: ins.last_price,
+                        expiry,
+                        strike: ins.strike,
+                        tickSize: ins.tick_size,
+                        lotSize: ins.lot_size,
+                        instrumentType: ins.instrument_type,
+                        segment: ins.segment,
+                        exchange: ins.exchange,
+                    };
+                },
+            );
     }
 }

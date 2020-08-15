@@ -2,8 +2,8 @@ import { Arg, Query, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 
 import { Instrument } from './entity';
-import { InstrumentRepository } from './repository';
-import { InstrumentService } from './service';
+import { InstrumentRepository } from './repository/instrument';
+import { InstrumentService } from './service/instrument';
 
 @Service()
 @Resolver()

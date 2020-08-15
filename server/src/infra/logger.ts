@@ -24,7 +24,10 @@ export class LoggerService {
                     const { level, timestamp, stack, message } = options;
                     const { rss } = memoryUsage();
                     const mem = (rss / (1024 * 1024)).toFixed(1).padStart(5, ' ');
-                    const prefix = `${mem}M|${timestamp}|${level.replace(/(nfo|rror|arn)/gi, '')}| ${message}`;
+                    const prefix = `${process.pid}|${mem}M|${timestamp}|${level.replace(
+                        /(nfo|rror|arn)/gi,
+                        '',
+                    )}| ${message}`;
                     return stack ? `${prefix} ${stack}` : prefix;
                 }),
             ),

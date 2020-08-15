@@ -27,6 +27,7 @@
     "license": "ISC",
     "dependencies": {
         "@types/auto-bind": "^2.1.0",
+        "@types/cli-progress": "^3.8.0",
         "@types/deep-diff": "^1.0.0",
         "@types/express-routemap": "^1.1.1",
         "@types/morgan": "^1.9.1",
@@ -34,6 +35,7 @@
         "auto-bind": "^4.0.0",
         "axios": "^0.19.2",
         "class-validator": "^0.12.2",
+        "cli-progress": "^3.8.2",
         "commander": "^5.1.0",
         "concurrently": "^5.2.0",
         "config": "^3.3.1",
@@ -51,6 +53,7 @@
         "mysql": "^2.18.1",
         "node-config": "0.0.2",
         "nodemon": "^2.0.4",
+        "p-limit": "^3.0.2",
         "redis": "^3.0.2",
         "reflect-metadata": "^0.1.13",
         "rimraf": "^3.0.2",

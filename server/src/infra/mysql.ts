@@ -13,7 +13,7 @@ export class MySQLService {
 
     async connection(): Promise<Connection> {
         if (!this.conn) {
-            this.logger.info('Connecting to DB ...');
+            this.logger.info('Connecting to DB...');
             this.conn = await createConnection(this.config.get('db', {}));
         }
         return this.conn;
