@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { memoryUsage } from 'process';
 import { Service } from 'typedi';
 import winston, { format } from 'winston';

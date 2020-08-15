@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Arg, Query, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
 

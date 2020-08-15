@@ -40,22 +40,19 @@ export class InstrumentService {
         const inputInstrumentMap = await mapFromObjectList(inputInstruments, 'globalSymbol');
         this.loggerSvc.info(`Updating ... ${diff.updated.length}`);
         if (diff.updated.length > 0) {
-            const updates = diff.updated.map((instrument: IInstrument) => {
-                return { ...inputInstrumentMap[instrument.globalSymbol], live: true };
-            });
-            this.instrumentRepo.updateInstruments(updates);
+            const updateList: Partial<Instrument>[] = [];
+            for (const instrument of diff.updated) {
+                updateList.push({ ...inputInstrumentMap[instrument.globalSymbol], live: true });
+            }
+            this.instrumentRepo.updateInstruments(updateList);
         }
         this.loggerSvc.info(`Inserting ... ${diff.added.length}`);
         if (diff.added.length > 0) {
-            const inserts = diff.added.map(
-                (instrument: IInstrument): Partial<Instrument> => {
-                    return {
-                        ...instrument,
-                        live: true,
-                    };
-                },
-            );
-            await this.instrumentRepo.insertInstruments(inserts);
+            const insertList: Partial<Instrument>[] = [];
+            for (const instrument of diff.added) {
+                insertList.push({ ...instrument, live: true });
+            }
+            await this.instrumentRepo.insertInstruments(insertList);
         }
         this.loggerSvc.info(`Done processing instruments.`);
     }
@@ -79,14 +76,11 @@ export class InstrumentService {
         const metaInstruments = (await this.instrumentMetaRepo.findMetaInstrumentsBy({ exchange: 'NSE' }))
             .filter((instrument) => instrument.freeFloatMarketCap)
             .sort((a, b) => b.freeFloatMarketCap - a.freeFloatMarketCap);
-        const updates = metaInstruments.map((instrumentMeta: InstrumentMeta, index: number) => {
+        const updateList = metaInstruments.map((instrumentMeta: InstrumentMeta, index: number) => {
             const { globalSymbol } = instrumentMeta;
-            return {
-                globalSymbol,
-                rank: index + 1,
-            };
+            return { globalSymbol, rank: index + 1 };
         });
-        await this.instrumentRepo.updateInstruments(updates);
+        await this.instrumentRepo.updateInstruments(updateList);
         this.loggerSvc.info('Done updating ranks.');
     }
 

@@ -32,8 +32,8 @@ export class CliService {
 
     async debug(): Promise<void> {
         this.loggerSvc.info(`Debug start... `);
-        // await this.taskSvc.sync();
-        await this.instrumentSvc.trackInstruments();
+        await this.taskSvc.sync();
+        // await this.instrumentSvc.trackInstruments();
         // await this.instrumentSvc.trackInstruments();
         // await this.instrumentSvc.trackFnO();
         this.loggerSvc.info('Debug done');

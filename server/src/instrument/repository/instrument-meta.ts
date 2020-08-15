@@ -1,20 +1,13 @@
 import { subHours } from 'date-fns';
-import lodash from 'lodash';
 import { Service } from 'typedi';
 import { getRepository } from 'typeorm';
 
-import { Instrument, InstrumentMeta, SymbolMap } from '../entity';
+import { Instrument, InstrumentMeta } from '../entity';
+import { SymbolMapRepository } from './symbol-map';
 
 @Service()
 export class InstrumentMetaRepository {
-    async generateSymbol(globalSymbol: string): Promise<SymbolMap> {
-        const symbolRepo = getRepository(SymbolMap);
-        const symbol = await symbolRepo.findOne({ globalSymbol });
-        if (symbol) return symbol;
-        await symbolRepo.insert({ globalSymbol });
-        return (symbolRepo.findOne({ globalSymbol }) as unknown) as SymbolMap;
-    }
-
+    constructor(private symbolMapRepo: SymbolMapRepository) {}
     async fetchInstrumentMetaList(globalSymbolList: string[]): Promise<InstrumentMeta[]> {
         return getRepository(InstrumentMeta)
             .createQueryBuilder()
@@ -55,7 +48,7 @@ export class InstrumentMetaRepository {
 
     async upsertMetaInstrument(globalSymbol: string, data: Partial<InstrumentMeta>): Promise<void> {
         const instrumentRepo = getRepository(InstrumentMeta);
-        const { id } = await this.generateSymbol(globalSymbol);
+        const { id } = await this.symbolMapRepo.generateSymbol(globalSymbol);
         if ((await instrumentRepo.count({ id })) === 0) {
             instrumentRepo.save(instrumentRepo.create({ ...data, id }));
         } else {

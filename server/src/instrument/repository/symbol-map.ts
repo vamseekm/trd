@@ -5,6 +5,11 @@ import { SymbolMap } from '../entity';
 
 @Service()
 export class SymbolMapRepository {
+    async generateSymbol(globalSymbol: string): Promise<SymbolMap> {
+        const symbolMap = await this.generateSymbolMap([globalSymbol]);
+        return symbolMap[globalSymbol];
+    }
+
     async symbolList(globalSymbolList: string[]): Promise<SymbolMap[]> {
         return getRepository(SymbolMap)
             .createQueryBuilder()
