@@ -2,7 +2,7 @@ import { Service } from 'typedi';
 
 import { APIServer } from '../api-server';
 import { LoggerService, MySQLService } from '../infra';
-import { InstrumentMeta, InstrumentMetaService, InstrumentService } from '../instrument';
+import { InstrumentMetaService, InstrumentService } from '../instrument';
 import { TaskService } from '../task';
 
 @Service()
