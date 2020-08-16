@@ -5,6 +5,6 @@ export class Pref {
     @PrimaryColumn()
     key!: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, type: 'text' })
     value!: string;
 }
