@@ -1,4 +1,3 @@
-import { Service } from 'typedi';
 import { getRepository, InsertResult } from 'typeorm';
 
 import { Tick } from './entity';

@@ -1,5 +1,3 @@
-import { Token } from 'typedi';
-
 import { IInstrument } from './instrument';
 
 export interface IBrokerProfile {
@@ -17,5 +15,4 @@ export interface IBrokerService {
     getInstrumentsByExchange(exchange: string): Promise<IInstrument[]>;
 }
 
-export const BrokerService = new Token<IBrokerService>();
 export type BrokerQuoteLtp = Pick<IInstrument, 'globalSymbol' | 'lastPrice' | 'instrumentToken'>;

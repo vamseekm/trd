@@ -16,7 +16,7 @@ async function connection(): Promise<Connection> {
     return _connection;
 }
 
-export async function rabbitChannel(): Promise<Channel> {
+export async function channel(): Promise<Channel> {
     if (_channel != undefined) {
         return _channel;
     }
@@ -33,13 +33,13 @@ async function setupQueue({
     queue: string;
     binding_key: string;
 }): Promise<void> {
-    const ch = await rabbitChannel();
+    const ch = await channel();
     await ch.assertExchange(exchange, 'topic', { durable: true });
     await ch.assertQueue(queue, { durable: true });
     await ch.bindQueue(queue, exchange, binding_key);
 }
 
-export async function rabbitSetup(): Promise<void> {
+export async function setup(): Promise<void> {
     await setupQueue({ exchange: 'ticker_ex', queue: 'tick_raw_queue', binding_key: 'tick_raw' });
     await setupQueue({ exchange: 'ticker_ex', queue: 'order_update_queue', binding_key: 'order_update' });
     await setupQueue({ exchange: 'ticker_ex', queue: 'tick_queue', binding_key: 'tick' });
@@ -47,3 +47,8 @@ export async function rabbitSetup(): Promise<void> {
     await setupQueue({ exchange: 'replay_ex', queue: 'tick_queue', binding_key: 'tick' });
     await setupQueue({ exchange: 'replay_ex', queue: 'order_update_queue', binding_key: 'order_update' });
 }
+
+export const Rabbit = {
+    setup,
+    channel,
+};

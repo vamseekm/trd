@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { get, Log, redisCachedGet } from '../infra';
+import { get, Log, Redis } from '../infra';
 import { PrefService } from '../pref';
 import {
     BrokerQuoteLtp,
@@ -46,7 +46,7 @@ async function generateAccessToken(requestToken: string): Promise<string> {
 }
 
 async function getProfile(): Promise<IBrokerProfile> {
-    return redisCachedGet({ key: 'Broker.getProfile', expiry: 8 * 3600 * 1000 }, async () => {
+    return Redis.cacheGet({ key: 'Broker.getProfile', expiry: 8 * 3600 * 1000 }, async () => {
         const instance = await kiteInstance();
         const profile = await instance.getProfile();
         return {

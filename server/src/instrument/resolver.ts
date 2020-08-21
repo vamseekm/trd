@@ -1,12 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Arg, Query, Resolver } from 'type-graphql';
-import { Service } from 'typedi';
 
 import { Instrument } from './entity';
 import { InstrumentRepository } from './repository/instrument';
-import { InstrumentService } from './service/instrument';
 
-@Service()
 @Resolver()
 export class InstrumentResolver {
     @Query((returns) => [Instrument])

@@ -3,13 +3,13 @@ import { ConsumeMessage } from 'amqplib';
 import plimit from 'p-limit';
 
 import { CacheService } from '../../cache';
-import { Log, rabbitChannel } from '../../infra';
+import { Log, Rabbit } from '../../infra';
 import { TickRepository } from '../repository';
 
 async function startRawTickConsumer(): Promise<void> {
     const stats = { totalCount: 0 };
     const limit = plimit(32);
-    const channel = await rabbitChannel();
+    const channel = await Rabbit.channel();
     channel.prefetch(1);
     channel.consume('tick_raw_queue', async (message: ConsumeMessage | null) => {
         if (message === null) return;
@@ -60,16 +60,20 @@ async function startRawTickConsumer(): Promise<void> {
 }
 
 async function startTickStoreConsumer(): Promise<void> {
-    const channel = await rabbitChannel();
+    const channel = await Rabbit.channel();
     channel.prefetch(1);
     const stats = { totalTicks: 0, messagesProcessed: 0 };
     channel.consume('store', async (message: ConsumeMessage | null) => {
         if (message == null) return;
         const content = JSON.parse(message.content.toString());
-        const tickRows = content.ticks.map((tick: any) => {
-            const { timestamp } = tick;
-            return TickRepository.create({ timestamp, tickString: JSON.stringify(tick) });
-        });
+        const tickRows = content.ticks
+            .filter((tick: any) => {
+                return tick.timestamp != undefined;
+            })
+            .map((tick: any) => {
+                const { timestamp } = tick;
+                return TickRepository.create({ timestamp, tickString: JSON.stringify(tick) });
+            });
         await TickRepository.bulkInsert(tickRows);
         await channel.ack(message);
         stats.totalTicks += tickRows.length;

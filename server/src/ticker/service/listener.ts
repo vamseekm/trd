@@ -1,11 +1,11 @@
 import { BrokerService } from '../../broker';
-import { Log, rabbitChannel } from '../../infra';
+import { Log, Rabbit } from '../../infra';
 import { InstrumentService } from '../../instrument';
 
 async function start(): Promise<any> {
     const instruments = await InstrumentService.getTrackedInstruments();
     const tokens = instruments.map((instrument) => instrument.instrumentToken);
-    const channel = await rabbitChannel();
+    const channel = await Rabbit.channel();
     let stats = { total_count: 0, total_size: 0 };
     await BrokerService.ticker(
         tokens,

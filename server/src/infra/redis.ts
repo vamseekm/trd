@@ -4,13 +4,13 @@
 import redis from 'redis';
 
 import { Log } from '.';
-import { get } from './config';
+import { Config } from './config';
 
 function redisCacheKey(key: string): string {
     return `cache:${key}`;
 }
 
-const client = redis.createClient(get('redis'));
+const client = redis.createClient(Config.get('redis'));
 client.on('error', (error) => Log.error(error));
 
 function proxyCommand(name: string, arguments_: any[]): Promise<any> {
@@ -26,24 +26,21 @@ function proxyCommand(name: string, arguments_: any[]): Promise<any> {
     });
 }
 
-export function redisGet(...arguments_: any[]): Promise<string> {
+function get(...arguments_: any[]): Promise<string> {
     return proxyCommand('get', arguments_);
 }
 
-export function redisSet(...arguments_: any[]): Promise<void> {
+function set(...arguments_: any[]): Promise<void> {
     return proxyCommand('set', arguments_);
 }
 
-export function redisDel(...arguments_: any[]): Promise<void> {
+function del(...arguments_: any[]): Promise<void> {
     return proxyCommand('del', arguments_);
 }
 
-export async function redisCachedGet(
-    { key, expiry }: { key: string; expiry?: number },
-    callback: () => Promise<any>,
-): Promise<any> {
+async function cacheGet({ key, expiry }: { key: string; expiry?: number }, callback: () => Promise<any>): Promise<any> {
     const arguments_: any[] = [redisCacheKey(key)];
-    const item = await redisGet(...arguments_);
+    const item = await get(...arguments_);
     if (item) {
         return JSON.parse(item).value;
     }
@@ -52,10 +49,16 @@ export async function redisCachedGet(
     if (expiry) {
         arguments_.push('PX', expiry);
     }
-    await redisSet(...arguments_);
+    await set(...arguments_);
     return value;
 }
 
 // export async function cacheDel(key: string): Promise<void> {
 //     return redisDel(redisCacheKey(key));
 // }
+export const Redis = {
+    get,
+    set,
+    del,
+    cacheGet,
+};
