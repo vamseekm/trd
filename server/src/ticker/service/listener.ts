@@ -6,15 +6,16 @@ async function start(): Promise<any> {
     const instruments = await InstrumentService.getTrackedInstruments();
     const tokens = instruments.map((instrument) => instrument.instrumentToken);
     const channel = await Rabbit.channel();
-    let stats = { totalCount: 0, totalSize: 0 };
+    let stats = { totalTicks: 0, totalMessages: 0, totalSize: 0 };
     await BrokerService.ticker(
         tokens,
         async (ticks: any) => {
             const payload = JSON.stringify({ ticks, received_on: new Date().getTime() });
             channel.publish('ticker_ex', 'tick_raw', Buffer.from(payload), { persistent: true });
             if (ticks) {
-                stats.totalCount += ticks.length;
+                stats.totalTicks += ticks.length;
                 stats.totalSize += JSON.stringify(ticks).length;
+                stats.totalMessages += 1;
             }
         },
         (order_update: any) => {
@@ -22,8 +23,8 @@ async function start(): Promise<any> {
         },
     );
     setInterval(() => {
-        Log.json('Raw ticks published', stats);
-        stats = { totalCount: 0, totalSize: 0 };
+        Log.json('Ticks published', stats);
+        stats = { totalTicks: 0, totalMessages: 0, totalSize: 0 };
     }, 10000);
     return new Promise(() => {
         Log.info('Ticker started...');

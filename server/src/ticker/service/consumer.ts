@@ -43,7 +43,7 @@ async function startRawTickConsumer(): Promise<void> {
     });
 
     setInterval(() => {
-        Log.json('Raw ticks processed', stats);
+        Log.json('Ticks processed', stats);
         stats.totalCount = 0;
         stats.totalMessages = 0;
     }, 10000);
@@ -55,7 +55,7 @@ async function startRawTickConsumer(): Promise<void> {
 async function startTickStoreConsumer(): Promise<void> {
     const channel = await Rabbit.channel();
     channel.prefetch(1);
-    const stats = { totalTicks: 0, messagesProcessed: 0 };
+    const stats = { totalTicks: 0, totalMessages: 0 };
     channel.consume('store', async (message: ConsumeMessage | null) => {
         if (message == null) return;
         const content = JSON.parse(message.content.toString());
@@ -70,12 +70,12 @@ async function startTickStoreConsumer(): Promise<void> {
         await TickRepository.bulkInsert(tickRows);
         await channel.ack(message);
         stats.totalTicks += tickRows.length;
-        stats.messagesProcessed += 1;
+        stats.totalMessages += 1;
     });
     setInterval(() => {
-        Log.json('Ticks stored', stats);
+        Log.json('Ticks stored   ', stats);
         stats.totalTicks = 0;
-        stats.messagesProcessed = 0;
+        stats.totalMessages = 0;
     }, 10000);
     return new Promise(() => {
         Log.info('Starting tick store consumer...');
