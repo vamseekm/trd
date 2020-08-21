@@ -6,25 +6,24 @@ import { program } from 'commander';
 import { exit } from 'process';
 import { Container } from 'typedi';
 
-import { LoggerService } from '../infra';
+import { logError, logInfo, rabbitSetup } from '../infra';
 import { CliService } from './service';
 
 async function clearPort(port: number) {
-    const logger = Container.get(LoggerService);
     return new Promise((resolve, reject) => {
-        logger.info('Starting ...');
-        logger.info(`Killing any processes holding port :${port} ...`);
+        logInfo('Starting ...');
+        logInfo(`Killing any processes holding port :${port} ...`);
         exec(`fuser -k ${port}/tcp; sleep 0.1 | exit 0`, (error, stdout, stderr) => {
             if (error) {
-                if (error) logger.error(error);
+                if (error) logError(error);
                 return reject(error);
             }
             if (stdout && stdout.length > 0) {
-                logger.info('stdout: ');
+                logInfo('stdout: ');
                 console.log(stdout);
             }
             if (stderr && stderr.length > 0) {
-                logger.info('stderr: ');
+                logInfo('stderr: ');
                 console.log(stderr);
             }
             return resolve({ stdout, stderr });
@@ -35,26 +34,39 @@ async function clearPort(port: number) {
 async function run() {
     program.option('-x --force-exit', 'Force exit');
     program.option('-a --api-server', 'Start API server.');
-    program.option('-s --sync', 'Start debug main');
-    program.option('-d --debug', 'Start debug main');
+    program.option('-s --sync', 'Cron sync.');
+    program.option('-d --debug', 'Start debug main.');
+    program.option('-t --tick-listener', 'Listen for raw ticks');
+    program.option('--raw-tick-consumer', 'Consume raw ticks');
+    program.option('--tick-store-consumer', 'Start tick store.');
     program.parse(process.argv);
 
     const cli = Container.get(CliService);
-    const logger = Container.get(LoggerService);
-
+    await rabbitSetup();
+    const actions: Promise<any>[] = [];
+    await cli.dbInit();
     if (program.apiServer) {
-        await clearPort(3000);
-        await cli.dbInit();
-        await cli.startAPIServer();
-    } else if (program.sync) {
-        await cli.dbInit();
-        await cli.sync();
-    } else if (program.debug) {
-        await cli.dbInit();
-        await cli.debug();
+        actions.push(clearPort(3000));
+        actions.push(cli.startAPIServer());
     }
+    if (program.sync) {
+        actions.push(cli.sync());
+    }
+    if (program.debug) {
+        actions.push(cli.debug());
+    }
+    if (program.tickListener) {
+        actions.push(cli.startTickListener());
+    }
+    if (program.rawTickConsumer) {
+        actions.push(cli.startRawTickConsumer());
+    }
+    if (program.tickStoreConsumer) {
+        actions.push(cli.startTickStoreConsumer());
+    }
+    await Promise.all(actions);
     if (program.forceExit) {
-        logger.log('info', 'force exiting ...');
+        logInfo('force exiting ...');
         // eslint-disable-next-line unicorn/no-process-exit
         process.exit(0);
     }
@@ -62,15 +74,14 @@ async function run() {
 
 (async function main() {
     const startTime = new Date().getTime();
-    const logger = Container.get(LoggerService);
     try {
         await run();
         console.log('Action completed.');
     } catch (error) {
-        logger.error('error', error);
+        logError('error', error);
     } finally {
         const endTime = new Date().getTime();
-        logger.log('info', `Action elapsed time: ${((endTime - startTime) / 1000).toFixed(3)} sec.`);
+        logInfo(`Action elapsed time: ${((endTime - startTime) / 1000).toFixed(3)} sec.`);
     }
 })();
 

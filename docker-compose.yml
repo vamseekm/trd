@@ -24,6 +24,17 @@ services:
       - ./conf/etc/traefik/dynamic_conf:/etc/traefik/dynamic_conf:ro
       - ./logs:/logs
 
+  rabbit:
+    image: rabbitmq:3-management
+    container_name: rabbit
+    hostname: rabbit
+    restart: always
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbit-data:/var/lib/rabbitmq:delegated
+
   db:
     image: mariadb:10
     container_name: mariadb
@@ -142,7 +153,30 @@ services:
     depends_on:
       - server-img
 
+  tick-listener:
+    image: server-img
+    container_name: tick-listener
+    # command: "tail -f /dev/null"
+    command: "bash ./server.sh -t"
+    environment:
+      NODE_ENV: docker
+    restart: always
+    depends_on:
+      - server-img
+
+  tick-processor:
+    image: server-img
+    container_name: tick-processor
+    # command: "tail -f /dev/null"
+    command: "bash ./server.sh --raw-tick-consumer"
+    environment:
+      NODE_ENV: docker
+    restart: always
+    depends_on:
+      - server-img
+
 volumes:
   db-data:
   redis-data:
   rabbit-data:
+  stan-data:

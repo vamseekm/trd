@@ -36,6 +36,7 @@ export class Instrument implements IInstrument {
 
     @Field()
     @Column('varchar', { length: 32 })
+    @Index()
     instrumentToken!: string;
 
     @Field()

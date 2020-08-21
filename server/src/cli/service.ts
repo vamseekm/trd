@@ -1,44 +1,50 @@
 import { Service } from 'typedi';
 
 import { APIServer } from '../api-server';
-import { LoggerService, MySQLService } from '../infra';
-import { InstrumentMetaService, InstrumentService } from '../instrument';
-import { PrefService } from '../pref';
+import { logInfo, mysqlConnect } from '../infra';
 import { TaskService } from '../task';
+import { TickService } from '../ticker';
 
 @Service()
 export class CliService {
-    constructor(
-        private mysqlSvc: MySQLService,
-        private apiServer: APIServer,
-        private taskSvc: TaskService,
-        private loggerSvc: LoggerService,
-        private instrumentSvc: InstrumentService,
-        private instrumentMetaSvc: InstrumentMetaService,
-        private prefService: PrefService,
-    ) {}
+    constructor(private apiServer: APIServer, private taskSvc: TaskService, private tickService: TickService) {}
 
     async dbInit(): Promise<void> {
-        await this.mysqlSvc.connect();
+        await mysqlConnect();
     }
 
     async startAPIServer(): Promise<void> {
-        this.loggerSvc.info('Starting API server...');
+        logInfo('Starting API server...');
         await this.apiServer.start();
     }
 
+    async startTickListener(): Promise<void> {
+        await this.tickService.startTickListener();
+    }
+
+    async startRawTickConsumer(): Promise<void> {
+        await this.tickService.startRawTickConsumer();
+    }
+
+    async startTickStoreConsumer(): Promise<void> {
+        await this.tickService.startTickStoreConsumer();
+    }
+
     async sync(): Promise<void> {
-        this.loggerSvc.info(`Syncing instruments...`);
+        logInfo(`Syncing instruments...`);
         return this.taskSvc.sync();
     }
 
     async debug(): Promise<void> {
-        this.loggerSvc.info(`Debug start... `);
+        logInfo(`Debug start... `);
+        // await this.startTickStoreConsumer();
+        // await this.tickService.startTickConsumer();
+        // await this.tickService.startTickListener();
         // await this.taskSvc.sync();
         // await this.instrumentSvc.trackInstruments();
         // await this.instrumentSvc.trackInstruments();
         // await this.instrumentSvc.trackFnO();
-        this.loggerSvc.info('Debug done');
+        logInfo('Debug done');
         // eslint-disable-next-line @typescript-eslint/no-empty-function
         return new Promise(() => {});
     }

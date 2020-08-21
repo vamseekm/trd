@@ -7,7 +7,7 @@ import { buildSchema } from 'type-graphql';
 import Container, { Service } from 'typedi';
 
 import { BrokerController } from '../broker';
-import { Config, LoggerService } from '../infra';
+import { configGet, logError, logInfo } from '../infra';
 import { InstrumentResolver } from '../instrument';
 import { TaskController } from '../task';
 import { HTTP_API_SERVER_PORT, IController } from '../types';
@@ -22,18 +22,13 @@ export class APIServer {
 
     privateRouter: express.Router;
 
-    constructor(
-        private config: Config,
-        private brokerCtrl: BrokerController,
-        private taskCtrl: TaskController,
-        private logger: LoggerService,
-    ) {
+    constructor(private taskCtrl: TaskController) {
         this.app = express();
         this.app.use(
             morgan('dev', {
                 stream: {
                     write: (message) => {
-                        if (!message.includes(GRAPHQL_ENDPOINT)) this.logger.info(`http > ${message.trim()}`);
+                        if (!message.includes(GRAPHQL_ENDPOINT)) logInfo(`http > ${message.trim()}`);
                     },
                 },
             }),
@@ -48,10 +43,10 @@ export class APIServer {
     }
 
     async setupRoutes(): Promise<void> {
-        this.mountRoutes(this.brokerCtrl, '/broker');
-        this.mountRoutes(this.taskCtrl, '/task');
+        this.mountRoutes(BrokerController, '/broker');
+        this.mountRoutes(BrokerController, '/task');
         this.app.get('/health', (request, response) => {
-            this.logger.info('heartbeat');
+            logInfo('heartbeat');
             response.send('ok');
         });
         this.app.use('/api/open/', this.publicRouter);
@@ -78,17 +73,17 @@ export class APIServer {
         await this.setupGraphQL();
         await this.setupRoutes();
         this.app.use(handleError);
-        const port = this.config.get(HTTP_API_SERVER_PORT);
+        const port = configGet(HTTP_API_SERVER_PORT);
         console.log(port);
         return new Promise((resolve, reject) => {
             this.app
                 .listen(port, () => {
-                    this.logger.info(`API server available at 0.0.0.0:${port}`);
+                    logInfo(`API server available at 0.0.0.0:${port}`);
                     displayRoutes(this.app);
                     // resolve();
                 })
                 .on('error', (error) => {
-                    this.logger.error(error);
+                    logError(error);
                     reject(error);
                 });
         });

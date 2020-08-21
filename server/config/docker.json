@@ -13,5 +13,6 @@
     "redis": {
         "host": "redis",
         "port": 6379
-    }
+    },
+    "RABBIT_URL": "amqp://rabbit:5672"
 }

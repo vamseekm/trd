@@ -3,16 +3,15 @@ import lodash from 'lodash';
 import plimit from 'p-limit';
 import { Service } from 'typedi';
 
-import { LoggerService } from '../../infra';
+import { logError, logInfo } from '../../infra';
 import { InstrumentMetaRepository } from '../repository/instrument-meta';
 
 @Service()
 export class InstrumentMetaService {
-    constructor(private loggerSvc: LoggerService, private instrumentMetaRepo: InstrumentMetaRepository) {}
     async updateSymbolMeta({ exchange, tradingSymbol }: { tradingSymbol: string; exchange: string }): Promise<void> {
         try {
             const url = `https://www.nseindia.com/api/quote-equity?symbol=${tradingSymbol}&section=trade_info`;
-            this.loggerSvc.info(`Fetching meta for ${exchange}:${tradingSymbol} ...`);
+            logInfo(`Fetching meta for ${exchange}:${tradingSymbol} ...`);
             const response = await axios(url);
             if (response.status !== 200) {
                 throw new Error(response.statusText);
@@ -22,7 +21,7 @@ export class InstrumentMetaService {
             const freeFloatPercent =
                 totalMarketCap && freeFloatMarketCap ? (freeFloatMarketCap * 100) / totalMarketCap : 0;
             const globalSymbol = `${exchange}:${tradingSymbol}`;
-            return this.instrumentMetaRepo.upsertMetaInstrument(globalSymbol, {
+            return InstrumentMetaRepository.upsertMetaInstrument(globalSymbol, {
                 tradingSymbol,
                 freeFloatMarketCap,
                 totalMarketCap,
@@ -31,16 +30,16 @@ export class InstrumentMetaService {
                 exchange,
             });
         } catch (error) {
-            this.loggerSvc.error(error);
+            logError(error);
         }
     }
     async syncMetaData(): Promise<void> {
         const exchange = 'NSE';
-        this.loggerSvc.info('Syncing NSE meta data ...');
-        const missingInstruments = await this.instrumentMetaRepo.findMetaInstrumentsNotPresent(exchange);
-        this.loggerSvc.info(`Missng instruments: ${missingInstruments.length}`);
-        const outdatedInstruments = await this.instrumentMetaRepo.findMetaInstrumentsOutdated(exchange);
-        this.loggerSvc.info(`Outdated instruments: ${outdatedInstruments.length}`);
+        logInfo('Syncing NSE meta data ...');
+        const missingInstruments = await InstrumentMetaRepository.findMetaInstrumentsNotPresent(exchange);
+        logInfo(`Missng instruments: ${missingInstruments.length}`);
+        const outdatedInstruments = await InstrumentMetaRepository.findMetaInstrumentsOutdated(exchange);
+        logInfo(`Outdated instruments: ${outdatedInstruments.length}`);
         const limit = plimit(4);
         const allInstruments = [...missingInstruments, ...outdatedInstruments];
         await Promise.all(
@@ -48,6 +47,6 @@ export class InstrumentMetaService {
                 return limit(() => this.updateSymbolMeta({ exchange, tradingSymbol: instrument.tradingSymbol }));
             }),
         );
-        this.loggerSvc.info('Done syncing NSE meta.');
+        logInfo('Done syncing NSE meta.');
     }
 }

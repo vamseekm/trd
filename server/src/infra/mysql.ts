@@ -1,21 +1,16 @@
 /* eslint-disable no-useless-constructor */
-import { Service } from 'typedi';
 import { Connection, createConnection } from 'typeorm';
 
-import { Config } from './config';
-import { LoggerService } from './logger';
+import { logInfo } from '.';
+import { configGet } from './config';
+let _conn: Connection | undefined;
 
-@Service()
-export class MySQLService {
-    private conn?: Connection;
-
-    constructor(private config: Config, private logger: LoggerService) {}
-
-    async connect(): Promise<Connection> {
-        if (!this.conn) {
-            this.logger.info('Connecting to DB...');
-            this.conn = await createConnection(this.config.get('db', {}));
-        }
-        return this.conn;
+export async function mysqlConnect(): Promise<Connection> {
+    if (_conn == undefined) {
+        logInfo('Connecting to DB...');
+        _conn = await createConnection(configGet('db', {}));
+        return _conn;
+    } else {
+        return _conn;
     }
 }
