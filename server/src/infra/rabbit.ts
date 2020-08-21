@@ -1,7 +1,7 @@
 import amqplib, { Channel, Connection } from 'amqplib';
 
-import { configGet } from './config';
-import { logInfo } from './logger';
+import { get } from './config';
+import { Log } from './logger';
 
 let _connection: Connection | undefined;
 let _channel: Channel | undefined;
@@ -10,9 +10,9 @@ async function connection(): Promise<Connection> {
     if (_connection != undefined) {
         return _connection;
     }
-    const RABBIT_URL = configGet('RABBIT_URL');
-    logInfo(`Connecting to Rabbit(${RABBIT_URL})...`);
-    _connection = await amqplib.connect(configGet('RABBIT_URL'));
+    const RABBIT_URL = get('RABBIT_URL');
+    Log.info(`Connecting to Rabbit(${RABBIT_URL})...`);
+    _connection = await amqplib.connect(get('RABBIT_URL'));
     return _connection;
 }
 

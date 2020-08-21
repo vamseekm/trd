@@ -3,15 +3,15 @@
 /* eslint-disable no-useless-constructor */
 import redis from 'redis';
 
-import { logError } from '.';
-import { configGet } from './config';
+import { Log } from '.';
+import { get } from './config';
 
 function redisCacheKey(key: string): string {
     return `cache:${key}`;
 }
 
-const client = redis.createClient(configGet('redis'));
-client.on('error', (error) => logError(error));
+const client = redis.createClient(get('redis'));
+client.on('error', (error) => Log.error(error));
 
 function proxyCommand(name: string, arguments_: any[]): Promise<any> {
     return new Promise((resolve: any, reject: any) => {
@@ -38,14 +38,6 @@ export function redisDel(...arguments_: any[]): Promise<void> {
     return proxyCommand('del', arguments_);
 }
 
-function redisXadd(...arguments_: any[]): Promise<void> {
-    return proxyCommand('xadd', arguments_);
-}
-
-function redisXread(...arguments_: any[]): Promise<void> {
-    return proxyCommand('xread', arguments_);
-}
-
 export async function redisCachedGet(
     { key, expiry }: { key: string; expiry?: number },
     callback: () => Promise<any>,
@@ -64,6 +56,6 @@ export async function redisCachedGet(
     return value;
 }
 
-async function cacheDel(key: string): Promise<void> {
-    return redisDel(redisCacheKey(key));
-}
+// export async function cacheDel(key: string): Promise<void> {
+//     return redisDel(redisCacheKey(key));
+// }

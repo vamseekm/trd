@@ -4,26 +4,25 @@ import 'reflect-metadata';
 import { exec } from 'child_process';
 import { program } from 'commander';
 import { exit } from 'process';
-import { Container } from 'typedi';
 
-import { logError, logInfo, rabbitSetup } from '../infra';
+import { Log, rabbitSetup } from '../infra';
 import { CliService } from './service';
 
 async function clearPort(port: number) {
     return new Promise((resolve, reject) => {
-        logInfo('Starting ...');
-        logInfo(`Killing any processes holding port :${port} ...`);
+        Log.info('Starting ...');
+        Log.info(`Killing any processes holding port :${port} ...`);
         exec(`fuser -k ${port}/tcp; sleep 0.1 | exit 0`, (error, stdout, stderr) => {
             if (error) {
-                if (error) logError(error);
+                if (error) Log.error(error);
                 return reject(error);
             }
             if (stdout && stdout.length > 0) {
-                logInfo('stdout: ');
+                Log.info('stdout: ');
                 console.log(stdout);
             }
             if (stderr && stderr.length > 0) {
-                logInfo('stderr: ');
+                Log.info('stderr: ');
                 console.log(stderr);
             }
             return resolve({ stdout, stderr });
@@ -41,32 +40,31 @@ async function run() {
     program.option('--tick-store-consumer', 'Start tick store.');
     program.parse(process.argv);
 
-    const cli = Container.get(CliService);
     await rabbitSetup();
     const actions: Promise<any>[] = [];
-    await cli.dbInit();
+    await CliService.databaseInit();
     if (program.apiServer) {
         actions.push(clearPort(3000));
-        actions.push(cli.startAPIServer());
+        actions.push(CliService.startAPIServer());
     }
     if (program.sync) {
-        actions.push(cli.sync());
+        actions.push(CliService.sync());
     }
     if (program.debug) {
-        actions.push(cli.debug());
+        actions.push(CliService.debug());
     }
     if (program.tickListener) {
-        actions.push(cli.startTickListener());
+        actions.push(CliService.startTickListener());
     }
     if (program.rawTickConsumer) {
-        actions.push(cli.startRawTickConsumer());
+        actions.push(CliService.startRawTickConsumer());
     }
     if (program.tickStoreConsumer) {
-        actions.push(cli.startTickStoreConsumer());
+        actions.push(CliService.startTickStoreConsumer());
     }
     await Promise.all(actions);
     if (program.forceExit) {
-        logInfo('force exiting ...');
+        Log.info('force exiting ...');
         // eslint-disable-next-line unicorn/no-process-exit
         process.exit(0);
     }
@@ -78,10 +76,10 @@ async function run() {
         await run();
         console.log('Action completed.');
     } catch (error) {
-        logError('error', error);
+        Log.error('error', error);
     } finally {
         const endTime = new Date().getTime();
-        logInfo(`Action elapsed time: ${((endTime - startTime) / 1000).toFixed(3)} sec.`);
+        Log.info(`Action elapsed time: ${((endTime - startTime) / 1000).toFixed(3)} sec.`);
     }
 })();
 

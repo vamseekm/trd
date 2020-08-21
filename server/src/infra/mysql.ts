@@ -1,16 +1,20 @@
 /* eslint-disable no-useless-constructor */
 import { Connection, createConnection } from 'typeorm';
 
-import { logInfo } from '.';
-import { configGet } from './config';
+import { Log } from '.';
+import { Config } from './config';
 let _conn: Connection | undefined;
 
-export async function mysqlConnect(): Promise<Connection> {
+async function connect(): Promise<Connection> {
     if (_conn == undefined) {
-        logInfo('Connecting to DB...');
-        _conn = await createConnection(configGet('db', {}));
+        Log.info('Connecting to DB...');
+        _conn = await createConnection(Config.get('db', {}));
         return _conn;
     } else {
         return _conn;
     }
 }
+
+export const MySQL = {
+    connect,
+};

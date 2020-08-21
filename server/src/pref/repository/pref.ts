@@ -1,5 +1,3 @@
-import { Service } from 'typedi';
-
 import { PrefDBRepostiory } from './pref-database';
 import { PrefMemoryRepository } from './pref-memory';
 

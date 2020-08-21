@@ -3,13 +3,15 @@ import { getRepository, InsertResult } from 'typeorm';
 
 import { Tick } from './entity';
 
-@Service()
-export class TickRepository {
-    bulkInsert(items: Tick[]): Promise<InsertResult> {
-        return getRepository(Tick).insert(items);
-    }
-
-    create(tick: Partial<Tick>): Tick {
-        return getRepository(Tick).create(tick);
-    }
+function bulkInsert(items: Tick[]): Promise<InsertResult> {
+    return getRepository(Tick).insert(items);
 }
+
+function create(tick: Partial<Tick>): Tick {
+    return getRepository(Tick).create(tick);
+}
+
+export const TickRepository = {
+    bulkInsert,
+    create,
+};

@@ -18,12 +18,18 @@ const logger = winston.createLogger({
     transports: [new winston.transports.Console()],
 });
 
-export const logError = logger.error.bind(logger);
-export const logInfo = logger.info.bind(logger);
-export const logJson = (label: string, ...rest: any[]): void => {
+const error = logger.error.bind(logger);
+const info = logger.info.bind(logger);
+const json = (label: string, ...rest: any[]): void => {
     if (rest && rest.length > 0) {
-        logInfo(`${label}: ${JSON.stringify(rest)}`);
+        Log.info(`${label}: ${JSON.stringify(rest)}`);
     } else {
-        logInfo(JSON.stringify(label, undefined, 2));
+        Log.info(JSON.stringify(label, undefined, 2));
     }
+};
+
+export const Log = {
+    error,
+    info,
+    json,
 };

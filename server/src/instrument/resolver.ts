@@ -9,8 +9,6 @@ import { InstrumentService } from './service/instrument';
 @Service()
 @Resolver()
 export class InstrumentResolver {
-    constructor(private instrumentSvc: InstrumentService) {}
-
     @Query((returns) => [Instrument])
     async searchInstruments(): Promise<Instrument[]> {
         return [];

@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import config from 'config';
+import configLib from 'config';
 
-export function configGet(key: string, defaultValue?: any): string {
-    if (config.has(key)) {
-        return config.get(key);
+export function get(key: string, defaultValue?: any): string {
+    if (configLib.has(key)) {
+        return configLib.get(key);
     }
     return defaultValue || '';
 }
+export const Config = {
+    get,
+};

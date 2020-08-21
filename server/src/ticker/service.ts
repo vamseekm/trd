@@ -1,21 +1,20 @@
-import { Service } from 'typedi';
-
-import { logInfo } from '../infra';
+import { Log } from '../infra';
 import { TickConsumerService } from './service/consumer';
 import { TickListenerService } from './service/listener';
-
-@Service()
-export class TickService {
-    constructor(private tickPublisherService: TickListenerService, private tickConsumerSvc: TickConsumerService) {}
-    async startTickListener(): Promise<void> {
-        logInfo('Starting tick publisher...');
-        await this.tickPublisherService.start();
-    }
-    async startRawTickConsumer(): Promise<void> {
-        await this.tickConsumerSvc.startRawTickConsumer();
-    }
-
-    async startTickStoreConsumer(): Promise<void> {
-        await this.tickConsumerSvc.startTickStoreConsumer();
-    }
+async function startTickListener(): Promise<void> {
+    Log.info('Starting tick publisher...');
+    await TickListenerService.start();
 }
+async function startRawTickConsumer(): Promise<void> {
+    await TickConsumerService.startRawTickConsumer();
+}
+
+async function startTickStoreConsumer(): Promise<void> {
+    await TickConsumerService.startTickStoreConsumer();
+}
+
+export const TickService = {
+    startTickListener,
+    startRawTickConsumer,
+    startTickStoreConsumer,
+};

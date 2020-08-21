@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { configGet, logError, logInfo, logJson, redisCachedGet } from '../infra';
+import { get, Log, redisCachedGet } from '../infra';
 import { PrefService } from '../pref';
 import {
     BrokerQuoteLtp,
@@ -18,11 +18,11 @@ type KiteConnectType = typeof KiteConnect;
 let kite: KiteConnectType | undefined;
 async function kiteInstance(): Promise<KiteConnectType> {
     if (!kite) {
-        const apiKey = await configGet(KITE_API_KEY);
+        const apiKey = await get(KITE_API_KEY);
         kite = new KiteConnect({ api_key: apiKey });
         const accessToken = await PrefService.get(KITE_ACCESS_TOKEN, '');
         if (!accessToken || accessToken.length === 0) {
-            logError(`Access token not available: ${accessToken}`);
+            Log.error(`Access token not available: ${accessToken}`);
         }
         kite.setAccessToken(accessToken);
     }
@@ -36,7 +36,7 @@ async function getLoginUrl(): Promise<string> {
 async function generateAccessToken(requestToken: string): Promise<string> {
     try {
         const instance = await kiteInstance();
-        const { access_token } = await instance.generateSession(requestToken, configGet(KITE_API_SECRET));
+        const { access_token } = await instance.generateSession(requestToken, get(KITE_API_SECRET));
         await PrefService.set(KITE_ACCESS_TOKEN, access_token);
         console.log('Access token:', access_token);
         return access_token;
@@ -84,7 +84,7 @@ async function getInstrumentsByExchange(exchange: string): Promise<IInstrument[]
     return instruments
         .filter((item: any) => {
             if (!item.instrument_token || item.instrument_token.length === 0) {
-                logJson('Invalid instrument', item);
+                Log.json('Invalid instrument', item);
                 return false;
             }
             return true;
@@ -113,7 +113,7 @@ async function getInstrumentsByExchange(exchange: string): Promise<IInstrument[]
 }
 
 async function ticker(ids: string[], tick_handler: any, order_update_handler?: any): Promise<any> {
-    const api_key = configGet(KITE_API_KEY);
+    const api_key = get(KITE_API_KEY);
     const access_token = await PrefService.get(KITE_ACCESS_TOKEN);
 
     return new Promise((resolve, reject) => {
@@ -127,15 +127,15 @@ async function ticker(ids: string[], tick_handler: any, order_update_handler?: a
         }
         ticker.autoReconnect(true, -1, 5);
         ticker.on('disconnect', (error: any) => {
-            logError('Kite: ticker disconnnected with error.', error);
+            Log.error('Kite: ticker disconnnected with error.', error);
         });
         ticker.on('error', (error: any) => {
-            logError(error);
+            Log.error(error);
             reject(error);
         });
         ticker.on('connect', () => {
-            logInfo('Kite: Connected...');
-            logInfo(`Kite: Subscribing to ${ids.length} instruments with full quote mode...`);
+            Log.info('Kite: Connected...');
+            Log.info(`Kite: Subscribing to ${ids.length} instruments with full quote mode...`);
             const numberIds = ids.map((id) => Number.parseInt(id));
             ticker.subscribe(numberIds);
             ticker.setMode(ticker.modeFull, numberIds);
