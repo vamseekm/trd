@@ -15,18 +15,19 @@ import {
 const { KiteConnect, KiteTicker } = require('kiteconnect');
 
 type KiteConnectType = typeof KiteConnect;
-let kite: KiteConnectType | undefined;
+let _kite: KiteConnectType | undefined;
+
 async function kiteInstance(): Promise<KiteConnectType> {
-    if (!kite) {
+    if (!_kite) {
         const apiKey = await get(KITE_API_KEY);
-        kite = new KiteConnect({ api_key: apiKey });
+        _kite = new KiteConnect({ api_key: apiKey });
         const accessToken = await PrefService.get(KITE_ACCESS_TOKEN, '');
         if (!accessToken || accessToken.length === 0) {
             Log.error(`Access token not available: ${accessToken}`);
         }
-        kite.setAccessToken(accessToken);
+        _kite.setAccessToken(accessToken);
     }
-    return kite;
+    return _kite;
 }
 
 async function getLoginUrl(): Promise<string> {
@@ -35,8 +36,8 @@ async function getLoginUrl(): Promise<string> {
 
 async function generateAccessToken(requestToken: string): Promise<string> {
     try {
-        const instance = await kiteInstance();
-        const { access_token } = await instance.generateSession(requestToken, get(KITE_API_SECRET));
+        const kite = await kiteInstance();
+        const { access_token } = await kite.generateSession(requestToken, get(KITE_API_SECRET));
         await PrefService.set(KITE_ACCESS_TOKEN, access_token);
         console.log('Access token:', access_token);
         return access_token;
@@ -47,8 +48,8 @@ async function generateAccessToken(requestToken: string): Promise<string> {
 
 async function getProfile(): Promise<IBrokerProfile> {
     return Redis.cacheGet({ key: 'Broker.getProfile', expiry: 8 * 3600 * 1000 }, async () => {
-        const instance = await kiteInstance();
-        const profile = await instance.getProfile();
+        const kite = await kiteInstance();
+        const profile = await kite.getProfile();
         return {
             name: profile.user_shortname,
             exchanges: profile.exchanges,
@@ -64,8 +65,8 @@ async function getExchanges(): Promise<string[]> {
 }
 
 async function getLTP(globalSymbols: string[]): Promise<BrokerQuoteLtp[]> {
-    const instance = await kiteInstance();
-    const ltpObject = await instance.getLTP(globalSymbols);
+    const kite = await kiteInstance();
+    const ltpObject = await kite.getLTP(globalSymbols);
     const keys = Object.keys(ltpObject);
     const response: BrokerQuoteLtp[] = [];
     keys.forEach((globalSymbol) => {
@@ -79,8 +80,8 @@ async function getLTP(globalSymbols: string[]): Promise<BrokerQuoteLtp[]> {
 }
 
 async function getInstrumentsByExchange(exchange: string): Promise<IInstrument[]> {
-    const instance = await kiteInstance();
-    const instruments: any = await instance.getInstruments(exchange);
+    const kite = await kiteInstance();
+    const instruments: any = await kite.getInstruments(exchange);
     return instruments
         .filter((item: any) => {
             if (!item.instrument_token || item.instrument_token.length === 0) {

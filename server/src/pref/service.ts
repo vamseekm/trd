@@ -1,4 +1,5 @@
 import { PrefRepository } from './repository/pref';
+
 async function get(key: string, defaultValue?: string): Promise<string> {
     return PrefRepository.get(key, defaultValue);
 }

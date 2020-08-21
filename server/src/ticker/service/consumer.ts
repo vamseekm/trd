@@ -4,10 +4,11 @@ import plimit from 'p-limit';
 
 import { CacheService } from '../../cache';
 import { Log, Rabbit } from '../../infra';
+import { ITick } from '../../types';
 import { TickRepository } from '../repository';
 
 async function startRawTickConsumer(): Promise<void> {
-    const stats = { totalCount: 0 };
+    const stats = { totalCount: 0, totalMessages: 0 };
     const limit = plimit(32);
     const channel = await Rabbit.channel();
     channel.prefetch(1);
@@ -27,9 +28,8 @@ async function startRawTickConsumer(): Promise<void> {
                 }),
             );
             stats.totalCount += ticks.length;
-        }
-        if (ticks) {
-            const processedTicks = ticks.map((tick: any) => formatTick(tick));
+            stats.totalMessages += 1;
+            const processedTicks: ITick[] = ticks.map((tick: any): ITick => formatTick(tick));
             await channel.publish(
                 'ticker_ex',
                 'tick',
@@ -45,6 +45,7 @@ async function startRawTickConsumer(): Promise<void> {
     setInterval(() => {
         Log.json('Raw ticks processed', stats);
         stats.totalCount = 0;
+        stats.totalMessages = 0;
     }, 10000);
     return new Promise(() => {
         console.log('Starting tick consumer...');
@@ -59,10 +60,10 @@ async function startTickStoreConsumer(): Promise<void> {
         if (message == null) return;
         const content = JSON.parse(message.content.toString());
         const tickRows = content.ticks
-            .filter((tick: any) => {
+            .filter((tick: ITick) => {
                 return tick.timestamp != undefined;
             })
-            .map((tick: any) => {
+            .map((tick: ITick) => {
                 const { timestamp } = tick;
                 return TickRepository.create({ timestamp, tickString: JSON.stringify(tick) });
             });
@@ -81,7 +82,7 @@ async function startTickStoreConsumer(): Promise<void> {
     });
 }
 
-function formatTick(tick: any) {
+function formatTick(tick: any): ITick {
     const {
         globalSymbol,
         last_price,
@@ -92,7 +93,6 @@ function formatTick(tick: any) {
         last_trade_time,
         oi,
         depth,
-        ...rest
     } = tick;
     return {
         globalSymbol,

@@ -1,4 +1,4 @@
-import { Column, Entity, Index, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class Tick {

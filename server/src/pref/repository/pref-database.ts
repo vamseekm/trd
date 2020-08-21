@@ -1,6 +1,7 @@
 import { getRepository } from 'typeorm';
 
 import { Pref } from '../entity';
+
 async function findBy(search: Partial<Pref>): Promise<Pref | undefined> {
     return getRepository(Pref).findOne(search);
 }

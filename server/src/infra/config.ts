@@ -8,6 +8,7 @@ export function get(key: string, defaultValue?: any): string {
     }
     return defaultValue || '';
 }
+
 export const Config = {
     get,
 };

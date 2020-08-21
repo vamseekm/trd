@@ -4,6 +4,7 @@ import plimit from 'p-limit';
 
 import { Log } from '../../infra';
 import { InstrumentMetaRepository } from '../repository/instrument-meta';
+
 async function updateSymbolMeta({
     exchange,
     tradingSymbol,
@@ -34,6 +35,7 @@ async function updateSymbolMeta({
         Log.error(error);
     }
 }
+
 async function syncMetaData(): Promise<void> {
     const exchange = 'NSE';
     Log.info('Syncing NSE meta data ...');

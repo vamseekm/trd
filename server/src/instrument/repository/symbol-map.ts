@@ -1,6 +1,7 @@
 import { getRepository } from 'typeorm';
 
 import { SymbolMap } from '../entity';
+
 async function generateSymbol(globalSymbol: string): Promise<SymbolMap> {
     const symbolMap = await generateSymbolMap([globalSymbol]);
     return symbolMap[globalSymbol];
