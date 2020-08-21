@@ -63,7 +63,6 @@ async function start(): Promise<unknown> {
     await setupRoutes();
     app.use(handleError);
     const port = get(HTTP_API_SERVER_PORT);
-    console.log(port);
     return new Promise((resolve, reject) => {
         app.listen(port, () => {
             Log.info(`API server available at 0.0.0.0:${port}`);

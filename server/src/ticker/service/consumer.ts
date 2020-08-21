@@ -39,19 +39,11 @@ async function startRawTickConsumer(): Promise<void> {
                 },
             );
         }
-        // if (ticks[0].timestamp) {
-        //     const time = new Date(ticks[0].timestamp);
-        //     const lag = new Date().getTime() - time.getTime();
-        //     Log.info(`Lag: ${lag}`);
-        // }
-        // if (received_on) {
-        //     Log.info(`Rabbit Received lag: ${new Date().getTime() - received_on}`);
-        // }
         if (message) channel.ack(message);
     });
 
     setInterval(() => {
-        Log.json('Raw ticks processed:', stats);
+        Log.json('Raw ticks processed', stats);
         stats.totalCount = 0;
     }, 10000);
     return new Promise(() => {
