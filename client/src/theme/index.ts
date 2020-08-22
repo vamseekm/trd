@@ -1,13 +1,5 @@
 import { createMuiTheme } from "@material-ui/core";
-import {
-  purple,
-  blue,
-  lightGreen,
-  orange,
-  grey,
-  teal,
-  amber,
-} from "@material-ui/core/colors";
+import { grey, amber } from "@material-ui/core/colors";
 
 export const theme = createMuiTheme({
   palette: {
@@ -16,7 +8,7 @@ export const theme = createMuiTheme({
       main: amber[900],
     },
     background: {
-      default: blue[900],
+      default: grey[900],
     },
   },
   overrides: {

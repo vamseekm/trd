@@ -91,18 +91,17 @@ services:
     container_name: ${HTTP_CLIENT_SERVER_HOST}
     image: ${HTTP_CLIENT_SERVER_HOST}
     command: "yarn client:dev"
-    ports:
-      - ${HTTP_CLIENT_SERVER_PORT}:${HTTP_CLIENT_SERVER_PORT}
     environment:
       HTTP_CLIENT_SERVER_PORT: ${HTTP_CLIENT_SERVER_PORT}
     labels:
       - traefik.enable=true
-      - traefik.http.routers.client-server.rule=PathPrefix(`/app`)
+      - traefik.http.routers.client-server.rule=(PathPrefix(`/app`) || PathPrefix(`/sockjs-node`))
       - traefik.http.routers.client-server.entrypoints=web
       - traefik.http.routers.client-server.middlewares=client-server-mw
       - traefik.http.middlewares.client-server-mw.redirectscheme.scheme=https
       - traefik.http.middlewares.client-server-mw.redirectscheme.permanent=true
-      - traefik.http.routers.client-server-secure.rule=PathPrefix(`/app`)
+      - traefik.http.services.client-server-secure.loadbalancer.server.port=${HTTP_CLIENT_SERVER_PORT}
+      - traefik.http.routers.client-server-secure.rule=(PathPrefix(`/app`) || PathPrefix(`/sockjs-node`))
       - traefik.http.routers.client-server-secure.entrypoints=websecure
       - traefik.http.routers.client-server-secure.tls=true
       - traefik.http.routers.client-server-secure.middlewares=client-server-secure-mw
@@ -123,7 +122,7 @@ services:
     command: "bash ./server.sh --api-server"
     environment:
       HTTP_API_SERVER_PORT: ${HTTP_API_SERVER_PORT}
-      NODE_ENV: docker
+      NODE_ENV: production
       # WATCH: "yes"
     restart: always
     depends_on:
@@ -147,8 +146,8 @@ services:
     # command: "tail -f /dev/null"
     command: "bash ./server.sh --debug"
     environment:
-      NODE_ENV: docker
       WATCH: "yes"
+      NODE_ENV: production
     restart: always
     depends_on:
       - server-img
@@ -159,7 +158,7 @@ services:
     # command: "tail -f /dev/null"
     command: "bash ./server.sh -t"
     environment:
-      NODE_ENV: docker
+      NODE_ENV: production
     restart: always
     depends_on:
       - server-img
@@ -170,7 +169,7 @@ services:
     # command: "tail -f /dev/null"
     command: "bash ./server.sh --raw-tick-consumer"
     environment:
-      NODE_ENV: docker
+      NODE_ENV: production
     restart: always
     depends_on:
       - server-img

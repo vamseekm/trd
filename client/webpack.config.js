@@ -9,6 +9,7 @@ module.exports = {
     compress: true,
     disableHostCheck: true,
     clientLogLevel: "silent",
+    sockPort: 443,
   },
 
   output: {
