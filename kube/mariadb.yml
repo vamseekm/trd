@@ -11,7 +11,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: "/var/storage/mariadb"
+    path: "/home/vamsee/storage/mariadb"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
