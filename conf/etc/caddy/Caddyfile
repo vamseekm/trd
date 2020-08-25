@@ -1,16 +1,15 @@
 trd.local  {
-    log {
-        output stdout
-    }
     tls internal {
         on_demand
     }
+    redir / /app
     reverse_proxy /api/* localhost:3100
     reverse_proxy /health localhost:3100
     reverse_proxy /app localhost:3200
     reverse_proxy /app/* localhost:3200
     reverse_proxy /app* localhost:3200
     reverse_proxy /sockjs-node/* localhost:3200 
+    reverse_proxy /db localhost:8080
 }
 
 localhost {
