@@ -1,28 +1,28 @@
 version: "3.1"
 
 services:
-  traefik:
-    image: traefik
-    container_name: traefik
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--accesslog=true"
-      - "--accesslog.filepath=/logs/access.log"
-      - "--accesslog.bufferingsize=100"
-      - --providers.file.directory=/etc/traefik/dynamic_conf
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8082:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./conf/etc/certs:/etc/certs
-      - ./conf/etc/traefik/dynamic_conf:/etc/traefik/dynamic_conf:ro
-      - ./logs:/logs
+  # traefik:
+  #   image: traefik
+  #   container_name: traefik
+  #   command:
+  #     - "--api.insecure=true"
+  #     - "--providers.docker=true"
+  #     - "--providers.docker.exposedbydefault=false"
+  #     - "--entrypoints.web.address=:80"
+  #     - "--entrypoints.websecure.address=:443"
+  #     - "--accesslog=true"
+  #     - "--accesslog.filepath=/logs/access.log"
+  #     - "--accesslog.bufferingsize=100"
+  #     - --providers.file.directory=/etc/traefik/dynamic_conf
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #     - "8082:8080"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - ./conf/etc/certs:/etc/certs
+  #     - ./conf/etc/traefik/dynamic_conf:/etc/traefik/dynamic_conf:ro
+  #     - ./logs:/logs
 
   rabbit:
     image: rabbitmq:3-management
@@ -91,8 +91,11 @@ services:
     container_name: ${HTTP_CLIENT_SERVER_HOST}
     image: ${HTTP_CLIENT_SERVER_HOST}
     command: "yarn client:dev"
+    ports:
+      - ${HTTP_CLIENT_SERVER_PORT}:${HTTP_CLIENT_SERVER_PORT}
     environment:
       HTTP_CLIENT_SERVER_PORT: ${HTTP_CLIENT_SERVER_PORT}
+      DEBUG: "express:*"
     labels:
       - traefik.enable=true
       - traefik.http.routers.client-server.rule=(PathPrefix(`/app`) || PathPrefix(`/sockjs-node`))
@@ -167,7 +170,7 @@ services:
     image: server-img
     container_name: tick-processor
     # command: "tail -f /dev/null"
-    command: "bash ./server.sh --raw-tick-consumer"
+    command: "bash ./server.sh --raw-tick-consumer --tick-store-consumer"
     environment:
       NODE_ENV: docker
     restart: always

@@ -1,0 +1,25 @@
+trd.local  {
+    log {
+        output stdout
+    }
+    tls internal {
+        on_demand
+    }
+    reverse_proxy /api/* localhost:3100
+    reverse_proxy /health localhost:3100
+    reverse_proxy /app localhost:3200
+    reverse_proxy /app/* localhost:3200
+    reverse_proxy /app* localhost:3200
+    reverse_proxy /sockjs-node/* localhost:3200 
+}
+
+localhost {
+    respond "Hello from, localhost"
+    log {
+        output stdout
+    }
+    tls internal {
+        on_demand
+    }
+
+}

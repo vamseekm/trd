@@ -8,7 +8,7 @@ export class App extends React.Component {
           <Toolbar variant="dense"></Toolbar>
         </AppBar>
         <Box flexGrow="1">
-          <h1>Hello 123</h1>
+          <h1>Hi man 123 hello</h1>
         </Box>
       </Box>
     );
