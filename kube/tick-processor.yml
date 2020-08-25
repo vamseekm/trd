@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tick-listener
+spec:
+  selector:
+    matchLabels:
+      app: tick-listener
+  template:
+    metadata:
+      labels:
+        app: tick-listener
+    spec:
+      containers:
+        - name: tick-listener
+          image: localhost:32000/trd-server
+          imagePullPolicy: "Always"
+          command:
+            - "bash"
+            - "./server.sh"
+            - "--tick-listener"
+          env:
+            - name: "NODE_ENV"
+              value: "docker"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tick-consumer
+spec:
+  selector:
+    matchLabels:
+      app: tick-consumer
+  template:
+    metadata:
+      labels:
+        app: tick-consumer
+    spec:
+      containers:
+        - name: tick-consumer
+          image: localhost:32000/trd-server
+          imagePullPolicy: "Always"
+          command:
+            - "bash"
+            - "./server.sh"
+            - "--raw-tick-consumer"
+            - "--tick-store-consumer"
+          env:
+            - name: "NODE_ENV"
+              value: "docker"

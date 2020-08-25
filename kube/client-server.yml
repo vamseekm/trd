@@ -25,6 +25,7 @@ spec:
       containers:
         - name: client-server
           image: localhost:32000/trd-client
+          imagePullPolicy: "Always"
           command:
             - "yarn"
             - "client:dev"

@@ -25,6 +25,7 @@ spec:
       containers:
         - name: api-server
           image: localhost:32000/trd-server
+          imagePullPolicy: "Always"
           command:
             - "bash"
             - "./server.sh"
@@ -36,4 +37,4 @@ spec:
             - name: "HTTP_API_SERVER_PORT"
               value: "3100"
             - name: "NODE_ENV"
-              value: "production"
+              value: "docker"

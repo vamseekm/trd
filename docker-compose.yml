@@ -122,7 +122,7 @@ services:
     command: "bash ./server.sh --api-server"
     environment:
       HTTP_API_SERVER_PORT: ${HTTP_API_SERVER_PORT}
-      NODE_ENV: production
+      NODE_ENV: docker
       # WATCH: "yes"
     restart: always
     depends_on:
@@ -147,7 +147,7 @@ services:
     command: "bash ./server.sh --debug"
     environment:
       WATCH: "yes"
-      NODE_ENV: production
+      NODE_ENV: docker
     restart: always
     depends_on:
       - server-img
@@ -156,9 +156,9 @@ services:
     image: server-img
     container_name: tick-listener
     # command: "tail -f /dev/null"
-    command: "bash ./server.sh -t"
+    command: "bash ./server.sh --tick-listener"
     environment:
-      NODE_ENV: production
+      NODE_ENV: docker
     restart: always
     depends_on:
       - server-img
@@ -169,7 +169,7 @@ services:
     # command: "tail -f /dev/null"
     command: "bash ./server.sh --raw-tick-consumer"
     environment:
-      NODE_ENV: production
+      NODE_ENV: docker
     restart: always
     depends_on:
       - server-img
