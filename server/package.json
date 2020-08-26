@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "timestamp": "date",
-        "wait_for_infra": "npx wait-on -l tcp:db:3306 tcp:redis:6379 tcp:rabbit:5672",
+        "wait_for_infra": "npx wait-on -l tcp:i_db:3306 tcp:i_redis:6379 tcp:i_rabbit:5672",
         "rimraf": "./node_modules/rimraf/bin.js",
         "build": "tsc -P tsconfig.json",
         "build:watch": "npm run build -- --watch --preserveWatchOutput --pretty",

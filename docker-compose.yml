@@ -1,9 +1,8 @@
 version: "3.1"
 
 services:
-  rabbit:
+  i_rabbit:
     image: rabbitmq:3-management
-    container_name: infra_rabbit
     restart: always
     ports:
       - 127.0.0.1:5672:5672
@@ -11,9 +10,8 @@ services:
     volumes:
       - rabbit-data:/var/lib/rabbitmq:delegated
 
-  db:
+  i_db:
     image: mariadb:10
-    container_name: infra_db
     restart: always
     command: "--innodb_flush_log_at_trx_commit=0"
     environment:
@@ -21,45 +19,40 @@ services:
     volumes:
       - db-data:/var/lib/mysql:delegated
 
-  adminer:
+  i_adminer:
     image: adminer
-    container_name: infra_db_interface
     restart: always
     ports:
       - 127.0.0.1:8080:8080
 
-  redis:
+  i_redis:
     image: redis
-    container_name: infra_redis
     volumes:
       - redis-data:/data:delegated
     ports:
       - 127.0.0.1:6379:6379
 
-  redis-commander:
+  i_redis_interface:
     image: rediscommander/redis-commander:latest
-    container_name: infra_redis_interface
     restart: always
     environment:
-      REDIS_HOSTS: local:redis:6379
+      REDIS_HOSTS: local:i_redis:6379
       ADDRESS: 0.0.0.0
       URL_PREFIX: /rc
     ports:
       - 8081:8081
 
-  redis-insight:
+  i_redis_insight:
     image: redislabs/redisinsight:latest
-    container_name: infra_redis_insight
     restart: always
     ports:
       - 8001:8001
     volumes:
       - redis-insight-db:/db
 
-  client-server:
+  c_client_server:
     build:
       context: "./client"
-    container_name: code_client_server
     image: ${HTTP_CLIENT_SERVER_HOST}
     command: "yarn client:dev"
     ports:
@@ -72,16 +65,14 @@ services:
       timeout: "1s"
       retries: 5
 
-  server-img:
+  c_server_img:
     build:
       context: "./server"
-    container_name: code_server_img
-    image: server-img
+    image: c_server_img
     command: "tail -f /dev/null"
 
-  api-server:
-    image: server-img
-    container_name: code_api_server
+  c_api_server:
+    image: c_server_img
     ports:
       - ${HTTP_API_SERVER_PORT}:${HTTP_API_SERVER_PORT}
     command: "bash ./server.sh --api-server"
@@ -91,44 +82,41 @@ services:
       # WATCH: "yes"
     restart: always
     depends_on:
-      - server-img
+      - c_server_img
     healthcheck:
       test: "curl --fail localhost:${HTTP_API_SERVER_PORT}/health || exit 1"
       interval: "20s"
       timeout: "1s"
       retries: 3
 
-  debug-command:
-    image: server-img
-    container_name: code_debug_command
+  c_debug_command:
+    image: c_server_img
     command: "bash ./server.sh --debug"
     environment:
       WATCH: "yes"
       NODE_ENV: docker
     restart: always
     depends_on:
-      - server-img
+      - c_server_img
 
-  tick-listener:
-    image: server-img
-    container_name: code_tick_publisher
+  c_tick_listener:
+    image: c_server_img
     command: "bash ./server.sh --tick-listener"
     environment:
       NODE_ENV: docker
     restart: always
     depends_on:
-      - server-img
+      - c_server_img
 
-  tick-processor:
-    image: server-img
-    container_name: code_tick_processor
+  c_tick_processor:
+    image: c_server_img
     # command: "tail -f /dev/null"
     command: "bash ./server.sh --raw-tick-consumer --tick-store-consumer"
     environment:
       NODE_ENV: docker
     restart: always
     depends_on:
-      - server-img
+      - c_server_img
 
 volumes:
   db-data:

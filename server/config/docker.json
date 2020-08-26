@@ -1,7 +1,7 @@
 {
     "db": {
         "type": "mariadb",
-        "host": "db",
+        "host": "i_db",
         "port": 3306,
         "username": "root",
         "password": "example",
@@ -11,8 +11,8 @@
         "entities": ["dist/**/entity.js"]
     },
     "redis": {
-        "host": "redis",
+        "host": "i_redis",
         "port": 6379
     },
-    "RABBIT_URL": "amqp://rabbit:5672"
+    "RABBIT_URL": "amqp://i_rabbit:5672"
 }
