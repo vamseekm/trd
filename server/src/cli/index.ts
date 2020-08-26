@@ -5,7 +5,7 @@ import { exec } from 'child_process';
 import { program } from 'commander';
 import { exit } from 'process';
 
-import { setupEventSource } from '../eventsource';
+import { setupEventSource } from '../bridge';
 import { Log } from '../infra';
 import { CliService } from './service';
 

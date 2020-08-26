@@ -1,9 +1,9 @@
 /* eslint-disable unicorn/no-null */
 import plimit from 'p-limit';
 
+import { BIND_TICKS, EX_TICKER, QUEUE_RAW_TICKS, QUEUE_STORE_TICKS } from '../../bridge';
+import { consumeFromQueue } from '../../bridge';
 import { CacheService } from '../../cache';
-import { QUEUE_RAW_TICKS, QUEUE_STORE_TICKS } from '../../eventsource';
-import { consumeFromQueue } from '../../eventsource';
 import { Log } from '../../infra';
 import { ITick } from '../../types';
 import { TickRepository } from '../repository';
@@ -26,8 +26,8 @@ async function startRawTickConsumer(): Promise<void> {
             );
             const processedTicks: ITick[] = ticks.map((tick: any): ITick => formatTick(tick));
             await channel.publish(
-                'ticker_ex',
-                'ticks',
+                EX_TICKER,
+                BIND_TICKS,
                 Buffer.from(JSON.stringify({ ticks: processedTicks, received_on })),
                 {
                     persistent: true,

@@ -1,12 +1,12 @@
+import { BIND_ORDER, BIND_RAW_TICKS, EX_TICKER } from '../../bridge';
 import { BrokerService } from '../../broker';
-import { BIND_ORDER, BIND_RAW_TICKS, EX_TICKER, Rabbit } from '../../eventsource';
-import { Log } from '../../infra';
+import { Log, Rabbit } from '../../infra';
 import { InstrumentService } from '../../instrument';
 
 async function start(): Promise<any> {
     const instruments = await InstrumentService.getTrackedInstruments();
     const tokens = instruments.map((instrument) => instrument.instrumentToken);
-    const channel = await Rabbit.channel();
+    const channel = await Rabbit.createChannel();
     let stats = { totalTicks: 0, totalMessages: 0, totalSize: 0 };
     await BrokerService.ticker(
         tokens,

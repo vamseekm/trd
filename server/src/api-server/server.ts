@@ -35,8 +35,7 @@ async function mountRoutes(ctrl: IController, prefix: string): Promise<void> {
 async function setupRoutes(): Promise<void> {
     mountRoutes(BrokerController, '/broker');
     mountRoutes(TaskController, '/task');
-    app.get('/health', (request, response) => {
-        Log.info('heartbeat');
+    app.get('/health', (_request, response) => {
         response.send('ok');
     });
     app.use('/api/open/', publicRouter);

@@ -31,7 +31,7 @@ async function sync(): Promise<void> {
 
 async function debug(): Promise<void> {
     Log.info(`Debug start... `);
-    await startTickStoreConsumer();
+    // await startTickStoreConsumer();
     // await TickService.startTickConsumer();
     // await TickService.startTickListener();
     // await this.taskSvc.sync();
