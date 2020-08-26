@@ -1,6 +1,6 @@
 import { Log } from '../infra';
-import { TickConsumerService } from './service/consumer';
-import { TickListenerService } from './service/listener';
+import { TickConsumerService } from './consumer';
+import { TickListenerService } from './publisher';
 
 async function startTickListener(): Promise<void> {
     Log.info('Starting tick publisher...');

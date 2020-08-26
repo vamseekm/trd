@@ -1,12 +1,12 @@
 /* eslint-disable unicorn/no-null */
 import plimit from 'p-limit';
 
-import { BIND_TICKS, EX_TICKER, QUEUE_RAW_TICKS, QUEUE_STORE_TICKS } from '../../bridge';
-import { consumeFromQueue } from '../../bridge';
-import { CacheService } from '../../cache';
-import { Log } from '../../infra';
-import { ITick } from '../../types';
-import { TickRepository } from '../repository';
+import { BIND_TICKS, EX_TICKER, QUEUE_RAW_TICKS, QUEUE_STORE_TICKS } from '../bridge';
+import { consumeFromQueue } from '../bridge';
+import { CacheService } from '../cache';
+import { Log } from '../infra';
+import { ITick } from '../types';
+import { TickRepository } from './repository';
 
 async function startRawTickConsumer(): Promise<void> {
     const limit = plimit(32);

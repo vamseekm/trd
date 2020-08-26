@@ -1,7 +1,7 @@
-import { BIND_ORDER, BIND_RAW_TICKS, EX_TICKER } from '../../bridge';
-import { BrokerService } from '../../broker';
-import { Log, Rabbit } from '../../infra';
-import { InstrumentService } from '../../instrument';
+import { BIND_ORDER, BIND_RAW_TICKS, EX_TICKER } from '../bridge';
+import { BrokerService } from '../broker';
+import { Log, Rabbit } from '../infra';
+import { InstrumentService } from '../instrument';
 
 async function start(): Promise<any> {
     const instruments = await InstrumentService.getTrackedInstruments();
