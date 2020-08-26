@@ -5,7 +5,8 @@ import { exec } from 'child_process';
 import { program } from 'commander';
 import { exit } from 'process';
 
-import { Log, setup } from '../infra';
+import { setupEventSource } from '../eventsource';
+import { Log } from '../infra';
 import { CliService } from './service';
 
 async function clearPort(port: number) {
@@ -40,7 +41,7 @@ async function run() {
     program.option('--tick-store-consumer', 'Start tick store.');
     program.parse(process.argv);
 
-    await setup();
+    await setupEventSource();
     const actions: Promise<any>[] = [];
     await CliService.databaseInit();
     if (program.apiServer) {

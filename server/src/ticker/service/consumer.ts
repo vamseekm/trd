@@ -1,19 +1,16 @@
 /* eslint-disable unicorn/no-null */
-import { ConsumeMessage } from 'amqplib';
 import plimit from 'p-limit';
 
 import { CacheService } from '../../cache';
-import { Log, Rabbit } from '../../infra';
+import { QUEUE_RAW_TICKS, QUEUE_STORE_TICKS } from '../../eventsource';
+import { consumeFromQueue } from '../../eventsource';
+import { Log } from '../../infra';
 import { ITick } from '../../types';
 import { TickRepository } from '../repository';
 
 async function startRawTickConsumer(): Promise<void> {
-    const stats = { totalCount: 0, totalMessages: 0 };
     const limit = plimit(32);
-    const channel = await Rabbit.channel();
-    channel.prefetch(1);
-    channel.consume('tick_raw_queue', async (message: ConsumeMessage | null) => {
-        if (message === null) return;
+    await consumeFromQueue({ queueName: QUEUE_RAW_TICKS }, async ({ message, channel, statsUpdateCallback }) => {
         const { ticks, received_on } = JSON.parse(message.content.toString());
         if (ticks) {
             await Promise.all(
@@ -27,37 +24,26 @@ async function startRawTickConsumer(): Promise<void> {
                     });
                 }),
             );
-            stats.totalCount += ticks.length;
-            stats.totalMessages += 1;
             const processedTicks: ITick[] = ticks.map((tick: any): ITick => formatTick(tick));
             await channel.publish(
                 'ticker_ex',
-                'tick',
+                'ticks',
                 Buffer.from(JSON.stringify({ ticks: processedTicks, received_on })),
                 {
                     persistent: true,
                 },
             );
+            statsUpdateCallback({ totalCount: ticks.length });
         }
         if (message) channel.ack(message);
     });
-
-    setInterval(() => {
-        Log.json('Ticks processed', stats);
-        stats.totalCount = 0;
-        stats.totalMessages = 0;
-    }, 10000);
     return new Promise(() => {
         console.log('Starting tick consumer...');
     });
 }
 
 async function startTickStoreConsumer(): Promise<void> {
-    const channel = await Rabbit.channel();
-    channel.prefetch(1);
-    const stats = { totalTicks: 0, totalMessages: 0 };
-    channel.consume('store', async (message: ConsumeMessage | null) => {
-        if (message == null) return;
+    await consumeFromQueue({ queueName: QUEUE_STORE_TICKS }, async ({ message, channel, statsUpdateCallback }) => {
         const content = JSON.parse(message.content.toString());
         const tickRows = content.ticks
             .filter((tick: ITick) => {
@@ -69,14 +55,8 @@ async function startTickStoreConsumer(): Promise<void> {
             });
         await TickRepository.bulkInsert(tickRows);
         await channel.ack(message);
-        stats.totalTicks += tickRows.length;
-        stats.totalMessages += 1;
+        statsUpdateCallback({ totalCount: tickRows.length });
     });
-    setInterval(() => {
-        Log.json('Ticks stored   ', stats);
-        stats.totalTicks = 0;
-        stats.totalMessages = 0;
-    }, 10000);
     return new Promise(() => {
         Log.info('Starting tick store consumer...');
     });
