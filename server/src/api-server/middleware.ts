@@ -1,4 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
+
+import { Log } from '../infra';
 export class ErrorHandler extends Error {
     constructor(public statusCode: number, public errorMessage: string) {
         super();
@@ -30,6 +32,7 @@ export function expressWrap(handler: handlerType): handlerType {
         try {
             await handler(request, response, next);
         } catch (error) {
+            Log.error(error);
             next(error);
         }
     };

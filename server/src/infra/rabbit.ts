@@ -10,8 +10,7 @@ async function connection(): Promise<Connection> {
     if (_connection != undefined) {
         return _connection;
     }
-    const RABBIT_URL = get('RABBIT_URL');
-    Log.info(`Connecting to Rabbit(${RABBIT_URL})...`);
+    Log.info(`Connecting to Rabbit...`);
     _connection = await amqplib.connect(get('RABBIT_URL'));
     return _connection;
 }

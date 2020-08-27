@@ -84,7 +84,7 @@ async function run() {
     }
 })();
 
-function cleanHandler(type: string) {
+function signalHandler(type: string) {
     return function handleExit(cause: any) {
         console.log(`Exiting with cause [${type}]: ${JSON.stringify(cause, undefined, 2)}`);
         if (cause.stack) console.log(cause.stack);
@@ -92,14 +92,19 @@ function cleanHandler(type: string) {
     };
 }
 
-function handleRejection(error: any, promise: any) {
+process.on('SIGINT', signalHandler('SIGINT'));
+process.on('SIGTERM', signalHandler('SIGTERM'));
+process.on('SIGUSR2', signalHandler('SIGUSR2'));
+
+process.on('unhandledRejection', function (error: any, promise: any) {
     console.error('unhandled promise rejection:', '\nerr:', error, '\npromise:', promise);
     if (error && error.stack) {
-        console.error('stack:', error.stack);
+        console.error(error.stack);
     }
-}
+});
 
-process.on('unhandledRejection', handleRejection);
-process.on('SIGINT', cleanHandler('SIGINT'));
-process.on('SIGTERM', cleanHandler('SIGTERM'));
-process.on('SIGUSR2', cleanHandler('SIGUSR2'));
+process.on('uncaughtException', function (error: Error) {
+    if (error) {
+        console.log('uncaught exception:', error.message, error.stack);
+    }
+});
