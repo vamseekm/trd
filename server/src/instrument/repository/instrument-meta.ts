@@ -2,7 +2,6 @@ import { subHours } from 'date-fns';
 import { getRepository } from 'typeorm';
 
 import { Instrument, InstrumentMeta } from '../entity';
-import { SymbolMapRepository } from './symbol-map';
 
 // async function fetchInstrumentMetaList(globalSymbolList: string[]): Promise<InstrumentMeta[]> {
 //     return getRepository(InstrumentMeta)
@@ -44,11 +43,10 @@ async function findMetaInstrumentsOutdated(exchange: string): Promise<Instrument
 
 async function upsertMetaInstrument(globalSymbol: string, data: Partial<InstrumentMeta>): Promise<void> {
     const instrumentRepo = getRepository(InstrumentMeta);
-    const { id } = await SymbolMapRepository.generateSymbol(globalSymbol);
-    if ((await instrumentRepo.count({ id })) === 0) {
-        instrumentRepo.save(instrumentRepo.create({ ...data, id }));
+    if ((await instrumentRepo.count({ globalSymbol })) === 0) {
+        instrumentRepo.save(instrumentRepo.create({ ...data, globalSymbol }));
     } else {
-        instrumentRepo.update({ id }, data);
+        instrumentRepo.update({ globalSymbol }, data);
     }
 }
 

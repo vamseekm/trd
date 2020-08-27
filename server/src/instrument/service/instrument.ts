@@ -16,7 +16,7 @@ async function storeInstruments(exchange: string, inputInstruments: IInstrument[
     ).map((item) => {
         // exclude props that shouldn't be considered for comparison.
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, live, track, rank, updatedAt, createdAt, ...rest } = item;
+        const { live, track, rank, updatedAt, createdAt, ...rest } = item;
         return { ...rest, lastPrice: 0 };
     });
     const diff = diffListOfObjects(databaseInstruments, inputInstruments, 'globalSymbol');

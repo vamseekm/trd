@@ -1,7 +1,6 @@
 import { getRepository, UpdateResult } from 'typeorm';
 
 import { Instrument } from '../entity';
-import { SymbolMapRepository } from './symbol-map';
 
 async function findInstrumentsBy({
     search,
@@ -45,26 +44,12 @@ async function findTopInstruments({ exchange, limit }: { exchange: string; limit
 }
 
 async function insertInstruments(instruments: Partial<Instrument>[]): Promise<any> {
-    const symbolMap = await SymbolMapRepository.generateSymbolMap(
-        instruments.map((instrument) => {
-            if (instrument.globalSymbol == undefined) throw new Error("globalSymbol can't be null");
-            return instrument.globalSymbol;
-        }),
-    );
-    const inserts = instruments.map((instrument: Partial<Instrument>) => {
-        const { globalSymbol } = instrument;
-        if (globalSymbol == undefined) {
-            throw new Error("globalSymbol can't be null");
-        }
-        const id = symbolMap[globalSymbol].id;
-        return { ...instrument, id };
-    });
     // return getRepository(Instrument).insert(inserts);
     await getRepository(Instrument)
         .createQueryBuilder()
         .insert()
         .into('instrument')
-        .values(inserts)
+        .values(instruments)
         .updateEntity(false)
         .execute();
     return true;

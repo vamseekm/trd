@@ -1,37 +1,13 @@
 import { Field, ID, Int, ObjectType } from 'type-graphql';
-import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    Index,
-    PrimaryColumn,
-    PrimaryGeneratedColumn,
-    Unique,
-    UpdateDateColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, Unique, UpdateDateColumn } from 'typeorm';
 
 import { IInstrument } from '../types';
 
-@Entity()
-@Unique('globalSymbol', ['globalSymbol'])
-export class SymbolMap {
-    @PrimaryGeneratedColumn()
-    id!: number;
-
-    @Column('varchar', { length: 128 })
-    globalSymbol!: string;
-}
-
 @ObjectType()
 @Entity()
-@Unique('globalSymbol', ['globalSymbol'])
 export class Instrument implements IInstrument {
     @Field(() => ID)
-    @PrimaryColumn('bigint')
-    id!: number;
-
-    @Field()
-    @Column('varchar', { length: 128 })
+    @PrimaryColumn('varchar', { length: 128 })
     globalSymbol!: string;
 
     @Field()
@@ -114,13 +90,9 @@ export class Instrument implements IInstrument {
 }
 
 @Entity()
-@Unique('globalSymbol', ['globalSymbol'])
 export class InstrumentMeta {
     @Field(() => ID)
-    @PrimaryColumn('bigint')
-    id!: number;
-
-    @Column('varchar', { length: 128 })
+    @PrimaryColumn({ type: 'varchar', length: 128 })
     globalSymbol!: string;
 
     @Column('varchar', { length: 64 })

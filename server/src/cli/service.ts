@@ -1,5 +1,6 @@
 import { APIServer } from '../api-server';
 import { Log, MySQL } from '../infra';
+import { InstrumentService } from '../instrument';
 import { TaskService } from '../task';
 import { TickService } from '../ticker';
 
@@ -31,15 +32,8 @@ async function sync(): Promise<void> {
 
 async function debug(): Promise<void> {
     Log.info(`Debug start... `);
-    // await startTickStoreConsumer();
-    // await TickService.startTickConsumer();
-    // await TickService.startTickListener();
-    // await this.taskSvc.sync();
-    // await InstrumentService.trackInstruments();
-    // await InstrumentService.trackInstruments();
-    // await InstrumentService.trackFnO();
+    await TaskService.sync();
     Log.info('Debug done');
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     return new Promise(() => {});
 }
 
