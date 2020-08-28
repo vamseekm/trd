@@ -1,6 +1,6 @@
 docker_compose("./docker-compose.yml")
 
-local_resource("tsc-compile", serve_cmd="cd server && npm run build:watch")
+#local_resource("tsc-compile", serve_cmd="cd server && npm run build:watch")
 
 docker_build("c_server_img", "./server", 
     live_update = [

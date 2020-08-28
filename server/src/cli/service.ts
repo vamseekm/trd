@@ -32,7 +32,8 @@ async function sync(): Promise<void> {
 
 async function debug(): Promise<void> {
     Log.info(`Debug start... `);
-    await TaskService.sync();
+    await TickService.fixTicks();
+    // await TaskService.sync();
     Log.info('Debug done');
     return new Promise(() => {});
 }

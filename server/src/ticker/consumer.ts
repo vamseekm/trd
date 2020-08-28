@@ -50,8 +50,8 @@ async function startTickStoreConsumer(): Promise<void> {
                 return tick.timestamp != undefined;
             })
             .map((tick: ITick) => {
-                const { timestamp } = tick;
-                return TickRepository.create({ timestamp, tickString: JSON.stringify(tick) });
+                const { timestamp, globalSymbol } = tick;
+                return TickRepository.create({ timestamp, tickString: JSON.stringify(tick), globalSymbol });
             });
         await TickRepository.bulkInsert(tickRows);
         await channel.ack(message);
