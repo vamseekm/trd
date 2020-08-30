@@ -4,29 +4,64 @@ import { Instrument } from '../entity';
 
 async function findInstrumentsBy({
     search,
+    searchParams,
     order,
     limit,
     offset,
 }: {
-    search?: Partial<Instrument>;
+    search?: Partial<Instrument> | string;
+    searchParams?: any;
     order?: { by?: keyof Instrument; sort?: 'ASC' | 'DESC' };
     limit?: number;
     offset?: number;
 }): Promise<Instrument[]> {
     const query = getRepository(Instrument).createQueryBuilder();
-    if (search != undefined) query.where({ live: true, ...search });
+    if (searchParams != undefined && search != undefined) {
+        query.where(search, searchParams);
+    } else if (search != undefined) {
+        query.where({ live: true, ...(search as Partial<Instrument>) });
+    }
     if (order != undefined && order.by != undefined) query.orderBy(order.by, order.sort || 'ASC');
     if (offset != undefined) query.limit(offset);
     if (limit != undefined) query.limit(limit);
     return query.getMany();
 }
 
-async function fetchFutures(name: string): Promise<Instrument[]> {
-    return await findInstrumentsBy({
+async function fetchFnoInstruments({
+    name,
+    exchange = 'NFO',
+    segment = 'NFO-FUT',
+    expiry = new Date(),
+    limit,
+}: {
+    name: string;
+    exchange?: string;
+    segment?: string;
+    expiry?: Date;
+    limit?: number;
+}): Promise<Instrument[]> {
+    const instrumentRepo = getRepository(Instrument);
+    const query = instrumentRepo
+        .createQueryBuilder()
+        .where('name = :name AND exchange = :exchange AND segment = :segment AND expiry > :expiry', {
+            name,
+            exchange,
+            segment,
+            expiry,
+        })
+        .orderBy('expiry', 'ASC');
+    if (limit != undefined) {
+        query.limit(limit);
+    }
+    return query.getMany();
+}
+
+async function fetchOptions(name: string): Promise<Instrument[]> {
+    return findInstrumentsBy({
         search: {
             name,
             exchange: 'NFO',
-            segment: 'NFO-FUT',
+            segment: 'NFO-OPT',
         },
         order: {
             by: 'expiry',
@@ -65,6 +100,16 @@ async function updateInstruments(instrumentList: Array<Partial<Instrument>>): Pr
     );
 }
 
+async function trackInstruments(globalSymbolList: string[]): Promise<UpdateResult> {
+    const instrumentRepo = getRepository(Instrument);
+    return instrumentRepo
+        .createQueryBuilder()
+        .update()
+        .set({ track: true })
+        .where('globalSymbol IN (:...globalSymbolList)', { globalSymbolList })
+        .execute();
+}
+
 async function markInstrumentsRemoved(globalSymbols: string[]): Promise<UpdateResult> {
     return getRepository(Instrument)
         .createQueryBuilder()
@@ -89,7 +134,9 @@ export const InstrumentRepository = {
     updateInstruments,
     insertInstruments,
     markInstrumentsRemoved,
-    fetchFutures,
+    fetchFnoInstruments,
+    fetchOptions,
     findTopInstruments,
     exchangeList,
+    trackInstruments,
 };

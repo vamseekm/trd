@@ -5,7 +5,7 @@ export interface IInstrument {
     tradingSymbol: string;
     name: string;
     lastPrice: number;
-    expiry: number;
+    expiry: Date;
     strike: number;
     tickSize: number;
     lotSize: number;

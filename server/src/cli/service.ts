@@ -1,6 +1,5 @@
 import { APIServer } from '../api-server';
 import { Log, MySQL } from '../infra';
-import { InstrumentService } from '../instrument';
 import { TaskService } from '../task';
 import { TickService } from '../ticker';
 
@@ -32,8 +31,9 @@ async function sync(): Promise<void> {
 
 async function debug(): Promise<void> {
     Log.info(`Debug start... `);
-    await TickService.fixTicks();
-    // await TaskService.sync();
+    // await InstrumentService.sync();
+    await TaskService.sync();
+    //await InstrumentService.trackInstruments();
     Log.info('Debug done');
     return new Promise(() => {});
 }

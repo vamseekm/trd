@@ -1,4 +1,6 @@
 import CliProgress from 'cli-progress';
+import { subDays } from 'date-fns';
+import { diff as diffObj} from 'deep-diff';
 import lodash from 'lodash';
 
 import { BrokerService } from '../../broker';
@@ -16,7 +18,7 @@ async function storeInstruments(exchange: string, inputInstruments: IInstrument[
     ).map((item) => {
         // exclude props that shouldn't be considered for comparison.
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { live, track, rank, updatedAt, createdAt, ...rest } = item;
+        const { lastPrice, lastPriceUpdatedOn, live, track, rank, updatedAt, createdAt, ...rest } = item;
         return { ...rest, lastPrice: 0 };
     });
     const diff = diffListOfObjects(databaseInstruments, inputInstruments, 'globalSymbol');
@@ -29,11 +31,14 @@ async function storeInstruments(exchange: string, inputInstruments: IInstrument[
     const inputInstrumentMap = await mapFromObjectList(inputInstruments, 'globalSymbol');
     Log.info(`Updating ... ${diff.updated.length}`);
     if (diff.updated.length > 0) {
+        //show first diff to understand which things have changed.
+        const databaseInstrumentsMap = await mapFromObjectList(databaseInstruments, 'globalSymbol');
+        console.log(diffObj(diff.updated[0], databaseInstrumentsMap[diff.updated[0].globalSymbol]);
         const updateList: Partial<Instrument>[] = [];
         for (const instrument of diff.updated) {
             updateList.push({ ...inputInstrumentMap[instrument.globalSymbol], live: true });
         }
-        InstrumentRepository.updateInstruments(updateList);
+        await InstrumentRepository.updateInstruments(updateList);
     }
     Log.info(`Inserting ... ${diff.added.length}`);
     if (diff.added.length > 0) {
@@ -73,27 +78,65 @@ async function updateRanks(): Promise<void> {
     Log.info('Done updating ranks.');
 }
 
-async function fetchFuture(name: string, offset?: number): Promise<Instrument> {
-    const instruments = await InstrumentRepository.fetchFutures(name);
-    offset = offset || 0;
-    if (instruments.length <= offset) throw new Error(`Can't find future at ${offset} for "${name}"`);
-    return instruments[offset];
+async function getOptionExpiryListToTrack(name: string): Promise<Date[]> {
+    const futureInstruments = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', limit: 2 });
+    const instruments = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-OPT' });
+    const optionExpirySet = new Set<string>(instruments.map((instrument) => instrument.expiry.toISOString()));
+    const expiryList = [...optionExpirySet]
+        .sort()
+        .slice(0, 2)
+        .concat(futureInstruments.map((instrument) => instrument.expiry.toISOString()))
+        .sort();
+    return [...new Set(expiryList)].map((expiry) => new Date(expiry));
 }
 
-async function trackFnO(): Promise<void> {
-    // Update all future LTP.
-    const futures = await InstrumentRepository.findInstrumentsBy({
-        search: {
-            exchange: 'NFO',
-            segment: 'NFO-FUT',
-        },
-    });
-    const globalSymbols = futures.map((future) => future.globalSymbol);
+async function getFnoInstrumentsToTrack(name: string): Promise<Instrument[]> {
+    const futures = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', limit: 2 });
+    const expiryList = await getOptionExpiryListToTrack(name);
+    const stirkeIntervalMap: Record<string, number> = {
+        NIFTY: 100,
+    };
+    const instruments = [...futures];
+    const strikeInterval = stirkeIntervalMap[name] || 1;
+    const strikeLimitPercent = 0.1;
+    if (futures.length > 0) {
+        const { lastPrice } = futures[0];
+        const strikeLimitHigh = lastPrice * (1 + strikeLimitPercent);
+        const strikeLimitLow = lastPrice * (1 - strikeLimitPercent);
+        for (const expiry of expiryList) {
+            const allOptionList = await InstrumentRepository.findInstrumentsBy({
+                search: `expiry = :expiry AND 
+                         name = :name AND
+                         segment = :segment AND
+                         strike >= :strikeLimitLow AND strike <= :strikeLimitHigh AND
+                         MOD(strike, :strikeInterval) = 0`,
+                searchParams: {
+                    expiry,
+                    name,
+                    segment: 'NFO-OPT',
+                    strikeLimitHigh,
+                    strikeLimitLow,
+                    strikeInterval,
+                },
+                order: { by: 'strike' },
+            });
+            for (const option of allOptionList) {
+                instruments.push(option);
+            }
+        }
+    }
+    return instruments;
+}
+
+async function getTrackableFnoInstruments(): Promise<string[]> {
+    return (await getFnoInstrumentsToTrack('NIFTY'))
+        .concat(await getFnoInstrumentsToTrack('BANKNIFTY'))
+        .map((instrument) => instrument.globalSymbol);
 }
 
 async function trackInstruments(): Promise<void> {
     Log.info('Tracking instruments...');
-    const globalSymbolsToTrack: string[] = [
+    const indices: string[] = [
         'NSE:INDIA VIX',
         'NSE:NIFTY 50',
         'NSE:NIFTY 500',
@@ -115,18 +158,15 @@ async function trackInstruments(): Promise<void> {
         'NSE:BANKBEES',
         'NSE:GOLDBEES',
     ];
-    const topInstruments = await InstrumentRepository.findTopInstruments({ exchange: 'NSE', limit: 500 });
-    topInstruments.forEach((instrument: Instrument) => {
-        globalSymbolsToTrack.push(instrument.globalSymbol);
-    });
-    await InstrumentRepository.updateInstruments(
-        globalSymbolsToTrack.map(
-            (globalSymbol): Partial<Instrument> => {
-                return { globalSymbol, track: true };
-            },
-        ),
+
+    const topInstruments = await (await InstrumentRepository.findTopInstruments({ exchange: 'NSE', limit: 50 })).map(
+        (instrument) => instrument.globalSymbol,
     );
-    Log.info('Done tracking.');
+    const fnoInstruments = await getTrackableFnoInstruments();
+    const allInstruments = [...indices, ...topInstruments, ...fnoInstruments];
+
+    const result = await InstrumentRepository.trackInstruments(allInstruments);
+    Log.info(`Tracking ${result.affected} instruments.`);
 }
 
 async function updateLTP(globalSymbols: string[]): Promise<void> {
@@ -139,7 +179,11 @@ async function updateLTP(globalSymbols: string[]): Promise<void> {
     bar.start(totalInstruments, 0);
     for (const chunk of chunks) {
         const ltpList: BrokerQuoteLtp[] = await BrokerService.getLTP(chunk);
-        await InstrumentRepository.updateInstruments(ltpList);
+        await InstrumentRepository.updateInstruments(
+            ltpList.map((ltp: Partial<Instrument>) => {
+                return { ...ltp, lastPriceUpdatedOn: new Date() };
+            }),
+        );
         bar.increment(chunk.length);
     }
     bar.stop();
@@ -147,7 +191,10 @@ async function updateLTP(globalSymbols: string[]): Promise<void> {
 
 async function updateLTPAll(): Promise<void> {
     Log.info('Update all LTP');
-    const instruments = await InstrumentRepository.findInstrumentsBy({ search: { live: true } });
+    const instruments = await InstrumentRepository.findInstrumentsBy({
+        search: 'live = :live AND lastPriceUpdatedOn < :lastPriceUpdatedOnBefore ',
+        searchParams: { live: true, lastPriceUpdatedOnBefore: subDays(new Date(), 1) },
+    });
     await updateLTP(instruments.map((instrument) => instrument.globalSymbol));
 }
 

@@ -63,3 +63,11 @@ export async function runTask(cmd: string): Promise<any> {
         });
     });
 }
+
+export function currentUnixTimeInMs(): number {
+    return new Date().getTime();
+}
+
+export function currentUnixTimeInSec(): number {
+    return currentUnixTimeInMs() / 1000;
+}

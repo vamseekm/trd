@@ -32,10 +32,14 @@ export class Instrument implements IInstrument {
     @Column('double')
     lastPrice!: number;
 
-    @Field()
-    @Column('int')
+    @Column()
     @Index()
-    expiry!: number;
+    lastPriceUpdatedOn!: Date;
+
+    @Field()
+    @Column()
+    @Index()
+    expiry!: Date;
 
     @Field()
     @Column('double')

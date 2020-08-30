@@ -92,7 +92,6 @@ async function getInstrumentsByExchange(exchange: string): Promise<IInstrument[]
         })
         .map(
             (ins: any): IInstrument => {
-                const expiry = ins.expiry ? Math.floor(ins.expiry / 1000) : 0;
                 const tradingSymbol = ins.tradingsymbol;
                 return {
                     globalSymbol: `${ins.exchange}:${tradingSymbol}`,
@@ -101,7 +100,7 @@ async function getInstrumentsByExchange(exchange: string): Promise<IInstrument[]
                     tradingSymbol,
                     name: ins.name,
                     lastPrice: ins.last_price,
-                    expiry,
+                    expiry: ins.expiry || 0,
                     strike: ins.strike,
                     tickSize: ins.tick_size,
                     lotSize: ins.lot_size,
