@@ -33,6 +33,8 @@ async function storeInstruments(exchange: string, inputInstruments: IInstrument[
     if (diff.updated.length > 0) {
         //show first diff to understand which things have changed.
         const databaseInstrumentsMap = await mapFromObjectList(databaseInstruments, 'globalSymbol');
+        // console.log(diff.updated[0]);
+        // console.log(databaseInstrumentsMap[diff.updated[0].globalSymbol]);
         console.log(diffObj(diff.updated[0], databaseInstrumentsMap[diff.updated[0].globalSymbol]);
         const updateList: Partial<Instrument>[] = [];
         for (const instrument of diff.updated) {
@@ -44,7 +46,7 @@ async function storeInstruments(exchange: string, inputInstruments: IInstrument[
     if (diff.added.length > 0) {
         const insertList: Partial<Instrument>[] = [];
         for (const instrument of diff.added) {
-            insertList.push({ ...instrument, live: true });
+            insertList.push({ ...instrument, live: true, lastPriceUpdatedOn: new Date(0) });
         }
         await InstrumentRepository.insertInstruments(insertList);
     }

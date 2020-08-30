@@ -100,7 +100,7 @@ async function getInstrumentsByExchange(exchange: string): Promise<IInstrument[]
                     tradingSymbol,
                     name: ins.name,
                     lastPrice: ins.last_price,
-                    expiry: ins.expiry || 0,
+                    expiry: ins.expiry || new Date(0),
                     strike: ins.strike,
                     tickSize: ins.tick_size,
                     lotSize: ins.lot_size,
