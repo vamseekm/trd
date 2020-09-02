@@ -1,3 +1,4 @@
+import { Candle } from '../candle/entity';
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -5,6 +6,8 @@ import { get, Log, Redis } from '../infra';
 import { PrefService } from '../pref';
 import {
     BrokerQuoteLtp,
+    CandleInterval,
+    IBrokerCandle,
     IBrokerProfile,
     IInstrument,
     KITE_ACCESS_TOKEN,
@@ -145,6 +148,32 @@ async function ticker(ids: string[], tick_handler: any, order_update_handler?: a
     });
 }
 
+const kiteIntervalMap: Record<CandleInterval, string> = {
+    [CandleInterval.MIN_01]: 'minute',
+    [CandleInterval.MIN_05]: '5minute',
+    [CandleInterval.MIN_10]: '10minute',
+    [CandleInterval.MIN_15]: '15minute',
+    [CandleInterval.MIN_30]: '30minute',
+    [CandleInterval.MIN_60]: '60minute',
+    [CandleInterval.DAY_01]: 'day',
+};
+
+async function getHistorical({
+    instrumentToken,
+    interval,
+    from,
+    to,
+}: {
+    instrumentToken: string;
+    interval: CandleInterval;
+    from: Date;
+    to: Date;
+}): Promise<IBrokerCandle[]> {
+    const kite = await kiteInstance();
+    const kiteInterval = kiteIntervalMap[interval];
+    return kite.getHistoricalData(instrumentToken, kiteInterval, from, to);
+}
+
 export const BrokerService = {
     generateAccessToken,
     getExchanges,
@@ -153,4 +182,5 @@ export const BrokerService = {
     getLTP,
     getLoginUrl,
     ticker,
+    getHistorical,
 };

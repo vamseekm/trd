@@ -32,6 +32,7 @@ async function clearPort(port: number) {
 }
 
 async function run() {
+    console.log(process.cwd());
     program.option('-x --force-exit', 'Force exit');
     program.option('-a --api-server', 'Start API server.');
     program.option('-s --sync', 'Cron sync.');
@@ -45,7 +46,7 @@ async function run() {
     const actions: Promise<any>[] = [];
     await CliService.databaseInit();
     if (program.apiServer) {
-        actions.push(clearPort(3000));
+        await clearPort(3000);
         actions.push(CliService.startAPIServer());
     }
     if (program.sync) {

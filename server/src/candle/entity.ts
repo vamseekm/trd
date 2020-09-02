@@ -2,11 +2,11 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class Candle {
-    @PrimaryColumn('bigint')
-    iid!: number;
+    @PrimaryColumn({ type: 'varchar', length: 128 })
+    k!: string;
 
-    @PrimaryColumn('int')
-    t!: number;
+    @Column()
+    t!: Date;
 
     @Column('double')
     o!: number;
@@ -23,12 +23,12 @@ export class Candle {
     @Column('bigint')
     v!: number;
 
-    @Column('bigint')
-    tv!: number;
-
-    @Column('bigint')
+    @Column({ type: 'bigint', default: 0 })
     oi!: number;
 
-    @Column('varchar', { length: 4 })
-    p!: string;
+    @Column({ type: 'bigint', default: 0 })
+    tv!: number;
+
+    @Column({ type: 'bigint', default: 0 })
+    toi!: number;
 }

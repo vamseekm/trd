@@ -59,8 +59,8 @@ export const BIND_ORDER = 'order';
 export async function setupEventSource(): Promise<void> {
     await Rabbit.setupQueue({ exchange: EX_TICKER, queue: QUEUE_RAW_TICKS, binding_key: BIND_RAW_TICKS });
     await Rabbit.setupQueue({ exchange: EX_TICKER, queue: QUEUE_STORE_TICKS, binding_key: BIND_TICKS });
-    await Rabbit.setupQueue({ exchange: EX_TICKER, queue: QUEUE_TICKS, binding_key: BIND_TICKS });
-    await Rabbit.setupQueue({ exchange: EX_REPLAY, queue: QUEUE_TICKS, binding_key: BIND_TICKS });
+    //await Rabbit.setupQueue({ exchange: EX_TICKER, queue: QUEUE_TICKS, binding_key: BIND_TICKS });
+    //await Rabbit.setupQueue({ exchange: EX_REPLAY, queue: QUEUE_TICKS, binding_key: BIND_TICKS });
     await Rabbit.setupQueue({ exchange: EX_TICKER, queue: QUEUE_ORDER, binding_key: BIND_ORDER });
     await Rabbit.setupQueue({ exchange: EX_REPLAY, queue: QUEUE_ORDER, binding_key: BIND_ORDER });
 }

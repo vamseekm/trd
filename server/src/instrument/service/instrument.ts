@@ -1,6 +1,6 @@
 import CliProgress from 'cli-progress';
 import { subDays } from 'date-fns';
-import { diff as diffObj} from 'deep-diff';
+import { diff as diffObject } from 'deep-diff';
 import lodash from 'lodash';
 
 import { BrokerService } from '../../broker';
@@ -35,7 +35,7 @@ async function storeInstruments(exchange: string, inputInstruments: IInstrument[
         const databaseInstrumentsMap = await mapFromObjectList(databaseInstruments, 'globalSymbol');
         // console.log(diff.updated[0]);
         // console.log(databaseInstrumentsMap[diff.updated[0].globalSymbol]);
-        console.log(diffObj(diff.updated[0], databaseInstrumentsMap[diff.updated[0].globalSymbol]);
+        console.log(diffObject(diff.updated[0], databaseInstrumentsMap[diff.updated[0].globalSymbol]));
         const updateList: Partial<Instrument>[] = [];
         for (const instrument of diff.updated) {
             updateList.push({ ...inputInstrumentMap[instrument.globalSymbol], live: true });
@@ -215,6 +215,19 @@ async function fetchInstrumentByToken(instrumentToken: string): Promise<Instrume
     }
 }
 
+async function getTrackedFutures(name: string): Promise<Instrument[]> {
+    return await InstrumentRepository.findInstrumentsBy({
+        search: {
+            name,
+            segment: 'NFO-FUT',
+            track: true,
+        },
+        order: {
+            by: 'expiry',
+        },
+    });
+}
+
 export const InstrumentService = {
     fetchInstrumentByToken,
     syncInstruments,
@@ -223,4 +236,5 @@ export const InstrumentService = {
     updateLTPAll,
     trackInstruments,
     getTrackedInstruments,
+    getTrackedFutures,
 };

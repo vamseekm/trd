@@ -11,7 +11,7 @@ CMD="npm -s run dist:run -- $@"
 npx depcheck
 if [ "$WATCH" == "yes" ]; then
     echo "**** Starting in watch mode."
-    nodemon -w ./dist -w ./src -e js,ts -x "./kill.sh; $CMD || exit 0"
+    npx nodemon -w ./dist -w ./src -e js,ts -x "./kill.sh; $CMD || exit 0"
 else
     echo "**** Staritng in normal mode..."
     $CMD

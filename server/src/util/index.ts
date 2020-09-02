@@ -71,3 +71,8 @@ export function currentUnixTimeInMs(): number {
 export function currentUnixTimeInSec(): number {
     return currentUnixTimeInMs() / 1000;
 }
+
+export function waitForever(): Promise<any> {
+    console.log('Waiting forever...');
+    return new Promise(() => {});
+}
