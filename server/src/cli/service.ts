@@ -1,12 +1,14 @@
 import { APIServer } from '../api-server';
 import { CandleService } from '../candle/service';
-import { Log, MySQL } from '../infra';
+import { Log, mongoConnect } from '../infra';
+import { InstrumentService } from '../instrument';
+import { PrefService } from '../pref';
 import { TaskService } from '../task';
 import { TickService } from '../ticker';
 import { waitForever } from '../util';
 
 async function databaseInit(): Promise<void> {
-    await MySQL.connect();
+    await mongoConnect();
 }
 
 async function startAPIServer(): Promise<void> {
@@ -33,11 +35,12 @@ async function sync(): Promise<void> {
 
 async function debug(): Promise<void> {
     Log.info(`Debug start... `);
+    // await PrefService.set("hello", "world");
     // await InstrumentService.sync();
-    await CandleService.sync();
-    // await TaskService.sync();
-    //await InstrumentService.trackInstruments();
-    Log.info('Debug done');
+    // await CandleService.sync();
+    await TaskService.sync();
+    // await InstrumentService.syncInstruments();
+    // Log.info('Debug done');
     await waitForever();
 }
 

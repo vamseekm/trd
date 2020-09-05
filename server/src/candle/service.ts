@@ -4,19 +4,21 @@ import enGB from 'date-fns/locale/en-GB';
 
 import { BrokerService } from '../broker';
 import { Log } from '../infra';
-import { Instrument, InstrumentService } from '../instrument';
+import { InstrumentService } from '../instrument';
+import { InstrumentClass } from '../instrument/model';
 import { CandleInterval, IBrokerCandle } from '../types';
 import { Candle } from './entity';
+import { CandleRepository } from './repository';
 
 const tzOptions = { timeZone: 'Asia/Kolkata', locale: enGB };
-const candleTimeFmt = 'ddMMyy/HHmm';
+const candleTimeFmt = 'yyMMdd/HHmm';
 
 async function candleKey({
     instrument,
     interval,
     date,
 }: {
-    instrument: Instrument;
+    instrument: InstrumentClass;
     interval: CandleInterval;
     date: Date;
 }): Promise<string> {
@@ -26,7 +28,7 @@ async function candleKey({
 }
 
 async function mapBrokerCandleToDatabaseCandle(
-    instrument: Instrument,
+    instrument: InstrumentClass,
     interval: CandleInterval,
     candle: IBrokerCandle,
 ): Promise<Candle> {
@@ -44,26 +46,27 @@ async function mapBrokerCandleToDatabaseCandle(
     };
 }
 
-async function syncCandles({
+async function downloadCandles({
     instrument,
     interval,
-    full = false,
+    from,
+    to,
 }: {
-    instrument: Instrument;
+    instrument: InstrumentClass;
     interval: CandleInterval;
-    full?: boolean;
-}): Promise<void> {
-    console.log(instrument);
+    from: Date;
+    to: Date;
+}): Promise<Candle[]> {
     const { instrumentToken } = instrument;
-    const to = new Date();
-    const from = subDays(to, 7);
-    // const candles = await BrokerService.getHistorical({ instrumentToken, interval, from, to });
-    // console.log(candles);
-    const candles = await Promise.all(
+    return Promise.all(
         (await BrokerService.getHistorical({ instrumentToken, interval, from, to })).map((candle) => {
             return mapBrokerCandleToDatabaseCandle(instrument, interval, candle);
         }),
     );
+}
+
+async function storeCandles(candleList: Candle[]): Promise<void> {
+    await CandleRepository.storeCandles(candleList);
 }
 
 async function sync(): Promise<void> {
@@ -72,8 +75,10 @@ async function sync(): Promise<void> {
     if (futures.length > 0) {
         const { globalSymbol } = futures[0];
         Log.info(globalSymbol);
-        await syncCandles({ instrument: futures[0], interval: CandleInterval.MIN_01 });
-        console.log(futures[0]);
+        const to = new Date();
+        const from = subDays(new Date(), 7);
+        const candles = await downloadCandles({ instrument: futures[0], interval: CandleInterval.MIN_01, from, to });
+        await storeCandles(candles);
     }
 }
 

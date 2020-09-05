@@ -4,3 +4,4 @@ export * from './broker';
 export * from './instrument';
 export * from './tick';
 export * from './candle';
+export * from './database';

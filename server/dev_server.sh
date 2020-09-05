@@ -6,6 +6,6 @@ fi
 if [ "$NODE_ENV" == "dev" ]; then
     echo "In dev mode"
 fi
+DATABASE_URL="postgresql://postgres:example@localhost:5432/postgres" NODE_ENV=dev npx tsc-watch --pretty --noClear -p . --onSuccess "npm -s run dist:run -- $@"
 
-NODE_ENV=dev npx tsc-watch --pretty --noClear -p . --onSuccess "npm -s run dist:run -- $@"
 

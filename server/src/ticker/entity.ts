@@ -9,6 +9,10 @@ export class Tick {
     @Index()
     timestamp!: number;
 
+    @Column()
+    @Index()
+    time!: Date;
+
     @Column('varchar', { length: 128 })
     @Index()
     globalSymbol!: string;

@@ -7,7 +7,6 @@ import { buildSchema } from 'type-graphql';
 
 import { BrokerController } from '../broker';
 import { get, Log } from '../infra';
-import { InstrumentResolver } from '../instrument';
 import { TaskController } from '../task';
 import { HTTP_API_SERVER_PORT, IController } from '../types';
 import { handleError } from './middleware';
@@ -35,30 +34,28 @@ async function mountRoutes(ctrl: IController, prefix: string): Promise<void> {
 async function setupRoutes(): Promise<void> {
     mountRoutes(BrokerController, '/broker');
     mountRoutes(TaskController, '/task');
-    app.get('/health', (_request, response) => {
-        response.send('ok');
-    });
+    app.get('/health', (_request, response) => response.send('ok'));
     app.use('/api/open/', publicRouter);
     app.use('/api', privateRouter);
 }
 
-async function setupGraphQL(): Promise<void> {
-    const schema = await buildSchema({
-        resolvers: [InstrumentResolver],
-    });
-    app.use(
-        GRAPHQL_ENDPOINT,
-        graphqlHTTP(() => {
-            return {
-                schema,
-            };
-        }),
-    );
-    app.use('/api/graphqlui', expressPlayground({ endpoint: '/api/graphql' }));
-}
+// async function setupGraphQL(): Promise<void> {
+//     const schema = await buildSchema({
+//         resolvers: [InstrumentResolver],
+//     });
+//     app.use(
+//         GRAPHQL_ENDPOINT,
+//         graphqlHTTP(() => {
+//             return {
+//                 schema,
+//             };
+//         }),
+//     );
+//     app.use('/api/graphqlui', expressPlayground({ endpoint: '/api/graphql' }));
+// }
 
 async function start(): Promise<unknown> {
-    await setupGraphQL();
+    // await setupGraphQL();
     await setupRoutes();
     app.use(handleError);
     const port = get(HTTP_API_SERVER_PORT);

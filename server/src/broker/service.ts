@@ -1,4 +1,6 @@
-import { Candle } from '../candle/entity';
+import { format } from 'date-fns-tz';
+import enGB from 'date-fns/locale/en-GB';
+
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -25,6 +27,7 @@ async function kiteInstance(): Promise<KiteConnectType> {
         const apiKey = await get(KITE_API_KEY);
         _kite = new KiteConnect({ api_key: apiKey });
         const accessToken = await PrefService.get(KITE_ACCESS_TOKEN, '');
+        console.log('Access token:', accessToken);
         if (!accessToken || accessToken.length === 0) {
             Log.error(`Access token not available: ${accessToken}`);
         }
@@ -157,7 +160,9 @@ const kiteIntervalMap: Record<CandleInterval, string> = {
     [CandleInterval.MIN_60]: '60minute',
     [CandleInterval.DAY_01]: 'day',
 };
-
+async function kiteDateFormat(date: Date): Promise<string> {
+    return format(date, 'yyyy-MM-dd HH:mm:ss', { timeZone: 'Asia/Calcutta', locale: enGB });
+}
 async function getHistorical({
     instrumentToken,
     interval,
@@ -171,7 +176,7 @@ async function getHistorical({
 }): Promise<IBrokerCandle[]> {
     const kite = await kiteInstance();
     const kiteInterval = kiteIntervalMap[interval];
-    return kite.getHistoricalData(instrumentToken, kiteInterval, from, to);
+    return kite.getHistoricalData(instrumentToken, kiteInterval, await kiteDateFormat(from), await kiteDateFormat(to));
 }
 
 export const BrokerService = {

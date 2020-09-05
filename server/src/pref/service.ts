@@ -1,4 +1,4 @@
-import { PrefRepository } from './repository/pref';
+import { PrefRepository } from './repository';
 
 async function get(key: string, defaultValue?: string): Promise<string> {
     return PrefRepository.get(key, defaultValue);

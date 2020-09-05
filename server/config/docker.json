@@ -14,5 +14,6 @@
         "host": "i_redis",
         "port": 6379
     },
-    "RABBIT_URL": "amqp://i_rabbit:5672"
+    "RABBIT_URL": "amqp://i_rabbit:5672",
+    "MONGODB_URL": "mongodb://root:example@i_mongo:27017/trd?authSource=admin"
 }

@@ -1,142 +1,122 @@
-import { getRepository, UpdateResult } from 'typeorm';
+import { DocumentType } from '@typegoose/typegoose';
+import { diff as diffObject } from 'deep-diff';
 
-import { Instrument } from '../entity';
-
-async function findInstrumentsBy({
-    search,
-    searchParams,
-    order,
-    limit,
-    offset,
-}: {
-    search?: Partial<Instrument> | string;
-    searchParams?: any;
-    order?: { by?: keyof Instrument; sort?: 'ASC' | 'DESC' };
-    limit?: number;
-    offset?: number;
-}): Promise<Instrument[]> {
-    const query = getRepository(Instrument).createQueryBuilder();
-    if (searchParams != undefined && search != undefined) {
-        query.where(search, searchParams);
-    } else if (search != undefined) {
-        query.where({ live: true, ...(search as Partial<Instrument>) });
-    }
-    if (order != undefined && order.by != undefined) query.orderBy(order.by, order.sort || 'ASC');
-    if (offset != undefined) query.limit(offset);
-    if (limit != undefined) query.limit(limit);
-    return query.getMany();
-}
+import { IInstrument, UpsertResults } from '../../types';
+import { diffListOfObjects, mapFromObjectList } from '../../util';
+import { InstrumentClass, InstrumentModel } from '../model';
 
 async function fetchFnoInstruments({
     name,
     exchange = 'NFO',
     segment = 'NFO-FUT',
     expiry = new Date(),
-    limit,
+    take,
 }: {
     name: string;
     exchange?: string;
     segment?: string;
     expiry?: Date;
-    limit?: number;
-}): Promise<Instrument[]> {
-    const instrumentRepo = getRepository(Instrument);
-    const query = instrumentRepo
-        .createQueryBuilder()
-        .where('name = :name AND exchange = :exchange AND segment = :segment AND expiry > :expiry', {
-            name,
-            exchange,
-            segment,
-            expiry,
-        })
-        .orderBy('expiry', 'ASC');
-    if (limit != undefined) {
-        query.limit(limit);
-    }
-    return query.getMany();
+    take?: number;
+}): Promise<InstrumentClass[]> {
+    let query = InstrumentModel.find({ name, exchange, segment, expiry: { $gte: expiry } }).sort({ expiry: 1 });
+    if (take != undefined) query = query.limit(take);
+    return query;
 }
 
-async function fetchOptions(name: string): Promise<Instrument[]> {
-    return findInstrumentsBy({
-        search: {
-            name,
-            exchange: 'NFO',
-            segment: 'NFO-OPT',
-        },
-        order: {
-            by: 'expiry',
-        },
-    });
+async function fetchOptions(name: string): Promise<InstrumentClass[]> {
+    return InstrumentModel.find({ name, exchange: 'NFO', segment: 'NFO-OPT', live: true }).sort({ expiry: 1 });
 }
 
-async function findTopInstruments({ exchange, limit }: { exchange: string; limit: number }): Promise<Instrument[]> {
-    return getRepository(Instrument)
-        .createQueryBuilder()
-        .where({ exchange })
-        .orderBy('rank', 'ASC')
-        .limit(limit)
-        .getMany();
+async function findTopInstruments({ exchange, take }: { exchange: string; take: number }): Promise<InstrumentClass[]> {
+    return InstrumentModel.find({ exchange }).sort({ rank: 1 }).limit(take);
 }
 
-async function insertInstruments(instruments: Partial<Instrument>[]): Promise<any> {
-    // return getRepository(Instrument).insert(inserts);
-    await getRepository(Instrument)
-        .createQueryBuilder()
-        .insert()
-        .into('instrument')
-        .values(instruments)
-        .updateEntity(false)
-        .execute();
-    return true;
+async function updateInstrument({ globalSymbol, ...rest }: Partial<InstrumentClass>): Promise<void> {
+    if (globalSymbol == undefined) throw new Error(`globalSymbol can't be undefined.`);
+    return InstrumentModel.updateOne({ globalSymbol }, rest);
 }
 
-async function updateInstruments(instrumentList: Array<Partial<Instrument>>): Promise<UpdateResult[]> {
-    const instrumentRepo = getRepository(Instrument);
-    return Promise.all(
-        instrumentList.map((instrument: Partial<Instrument>) => {
-            const { globalSymbol } = instrument;
-            return instrumentRepo.update({ globalSymbol }, instrument);
+async function updateInstruments(instrumentList: Array<Partial<InstrumentClass>>): Promise<void> {
+    await Promise.all(
+        instrumentList.map((instrument: Partial<InstrumentClass>) => {
+            return updateInstrument(instrument);
         }),
     );
 }
 
-async function trackInstruments(globalSymbolList: string[]): Promise<UpdateResult> {
-    const instrumentRepo = getRepository(Instrument);
-    return instrumentRepo
-        .createQueryBuilder()
-        .update()
-        .set({ track: true })
-        .where('globalSymbol IN (:...globalSymbolList)', { globalSymbolList })
-        .execute();
-}
-
-async function markInstrumentsRemoved(globalSymbols: string[]): Promise<UpdateResult> {
-    return getRepository(Instrument)
-        .createQueryBuilder()
-        .update()
-        .set({ live: false })
-        .where('globalSymbol IN (:globalSymbols)', { globalSymbols })
-        .execute();
+async function trackInstruments(globalSymbolList: string[]): Promise<void> {
+    return InstrumentModel.updateMany({ globalSymbol: { $in: globalSymbolList } }, { track: true }, { multi: true });
+    // return prisma.instrument.update({ where: { globalSymbol }, data: { track: true } });
 }
 
 async function exchangeList(): Promise<string[]> {
-    const instruments = await getRepository(Instrument)
-        .createQueryBuilder()
-        .select('exchange')
-        .distinct(true)
-        .where({ live: true })
-        .getRawMany();
-    return instruments.map((instrument: Instrument) => instrument.exchange);
+    return InstrumentModel.distinct('exchange').exec();
+}
+
+async function upsertInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<UpsertResults> {
+    const databaseInstruments: IInstrument[] = (await InstrumentModel.find({ exchange })).map(
+        (item: DocumentType<InstrumentClass>) => {
+            const {
+                _id,
+                _v,
+                __v,
+                id,
+                lastPrice,
+                lastPriceUpdatedOn,
+                live,
+                track,
+                rank,
+                createdAt,
+                updatedAt,
+                ...rest
+            } = item.toObject();
+            return { ...rest, lastPrice: 0 };
+        },
+    );
+    const diff = diffListOfObjects(databaseInstruments, inputInstruments, 'globalSymbol');
+    const removedSymbols = diff.removed.map((item) => item.globalSymbol);
+    if (removedSymbols.length > 0) {
+        await updateInstruments(
+            removedSymbols.map((globalSymbol) => {
+                return { globalSymbol, live: false };
+            }),
+        );
+    }
+    const inputInstrumentMap = await mapFromObjectList(inputInstruments, 'globalSymbol');
+    if (diff.updated.length > 0) {
+        const databaseInstrumentsMap = await mapFromObjectList(databaseInstruments, 'globalSymbol');
+        console.log(diffObject(diff.updated[0], databaseInstrumentsMap[diff.updated[0].globalSymbol]));
+        await updateInstruments(
+            diff.updated.map((instrument) => {
+                return { ...inputInstrumentMap[instrument.globalSymbol], live: true };
+            }),
+        );
+    }
+    if (diff.added.length > 0) {
+        await InstrumentModel.create(
+            diff.added.map((instrument: IInstrument) => ({
+                ...instrument,
+                rank: 0,
+                live: true,
+                track: false,
+                lastPriceUpdatedOn: new Date(0),
+            })),
+        );
+    }
+    return {
+        insert: diff.added.length,
+        update: diff.updated.length,
+        remove: diff.removed.length,
+    };
 }
 
 export const InstrumentRepository = {
-    findInstrumentsBy,
-    updateInstruments,
-    insertInstruments,
-    markInstrumentsRemoved,
+    exchangeList,
     fetchFnoInstruments,
     fetchOptions,
+    // findInstrumentsBy,
     findTopInstruments,
-    exchangeList,
+    upsertInstruments,
     trackInstruments,
+    updateInstruments,
 };

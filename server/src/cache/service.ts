@@ -1,16 +1,17 @@
 import LruCache from 'lru-cache';
 
 import { Log } from '../infra';
-import { Instrument, InstrumentService } from '../instrument';
+import { InstrumentService } from '../instrument';
+import { InstrumentClass } from '../instrument/model';
 
 const instrumentTokenCache = new LruCache(1000);
 const globalSymbolCache = new LruCache(1000);
 const stats = { hits: 0, miss: 0, size: 0 };
 
-async function getInstrumentByToken(instrumentToken: string): Promise<Instrument | undefined> {
+async function getInstrumentByToken(instrumentToken: string): Promise<InstrumentClass | undefined> {
     if (instrumentTokenCache.has(instrumentToken)) {
         stats.hits += 1;
-        return globalSymbolCache.get(instrumentTokenCache.get(instrumentToken)) as Instrument;
+        return globalSymbolCache.get(instrumentTokenCache.get(instrumentToken)) as InstrumentClass;
     }
     stats.miss += 1;
     Log.json('Instrument token cache stats:', stats);
