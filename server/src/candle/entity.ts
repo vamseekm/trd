@@ -3,7 +3,7 @@ import { getModelForClass, modelOptions, plugin, post, pre, prop } from '@typego
 const { logExecutionTime } = require('mongoose-execution-time');
 @plugin(logExecutionTime)
 @modelOptions({ schemaOptions: { timestamps: true } })
-export class CandleClass {
+export class Candle {
     @prop({ unique: true })
     k!: string;
 
@@ -34,4 +34,4 @@ export class CandleClass {
     @prop({ default: 0 })
     toi!: number;
 }
-export const CandleModel = getModelForClass(CandleClass);
+export const CandleModel = getModelForClass(Candle);

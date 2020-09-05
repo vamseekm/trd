@@ -3,7 +3,7 @@ import { getModelForClass, modelOptions, plugin, prop } from '@typegoose/typegoo
 const { logExecutionTime } = require('mongoose-execution-time');
 @plugin(logExecutionTime)
 @modelOptions({ schemaOptions: { toObject: { virtuals: true }, timestamps: true } })
-export class InstrumentClass {
+export class Instrument {
     @prop({ unique: true })
     globalSymbol!: string;
 
@@ -56,4 +56,4 @@ export class InstrumentClass {
     live!: boolean;
 }
 
-export const InstrumentModel = getModelForClass(InstrumentClass);
+export const InstrumentModel = getModelForClass(Instrument);

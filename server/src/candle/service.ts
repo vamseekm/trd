@@ -5,9 +5,9 @@ import enGB from 'date-fns/locale/en-GB';
 import { BrokerService } from '../broker';
 import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
-import { InstrumentClass } from '../instrument/model';
+import { Instrument } from '../instrument/model';
 import { CandleInterval, IBrokerCandle } from '../types';
-import { CandleClass, CandleModel } from './entity';
+import { Candle, CandleModel } from './entity';
 import { CandleRepository } from './repository';
 
 const tzOptions = { timeZone: 'Asia/Kolkata', locale: enGB };
@@ -18,7 +18,7 @@ async function candleKey({
     interval,
     date,
 }: {
-    instrument: InstrumentClass;
+    instrument: Instrument;
     interval: CandleInterval;
     date: Date;
 }): Promise<string> {
@@ -28,10 +28,10 @@ async function candleKey({
 }
 
 async function mapBrokerCandleToDatabaseCandle(
-    instrument: InstrumentClass,
+    instrument: Instrument,
     interval: CandleInterval,
     candle: IBrokerCandle,
-): Promise<CandleClass> {
+): Promise<Candle> {
     return {
         k: await candleKey({ instrument, interval, date: candle.date }),
         t: candle.date,
@@ -52,11 +52,11 @@ async function downloadCandles({
     from,
     to,
 }: {
-    instrument: InstrumentClass;
+    instrument: Instrument;
     interval: CandleInterval;
     from: Date;
     to: Date;
-}): Promise<CandleClass[]> {
+}): Promise<Candle[]> {
     const { instrumentToken } = instrument;
     return Promise.all(
         (await BrokerService.getHistorical({ instrumentToken, interval, from, to })).map((candle) => {
@@ -65,7 +65,7 @@ async function downloadCandles({
     );
 }
 
-async function storeCandles(candleList: CandleClass[]): Promise<void> {
+async function storeCandles(candleList: Candle[]): Promise<void> {
     await CandleRepository.storeCandles(candleList);
 }
 

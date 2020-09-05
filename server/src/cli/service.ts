@@ -5,7 +5,7 @@ import { InstrumentService } from '../instrument';
 import { PrefService } from '../pref';
 import { TaskService } from '../task';
 import { TickService } from '../ticker';
-import { waitForever } from '../util';
+import { forever } from '../util';
 
 async function databaseInit(): Promise<void> {
     await mongoConnect();
@@ -37,11 +37,11 @@ async function debug(): Promise<void> {
     Log.info(`Debug start... `);
     // await PrefService.set("hello", "world");
     // await InstrumentService.sync();
-    // await CandleService.sync();
-    await TaskService.sync();
+    await CandleService.sync();
+    // await TaskService.sync();
     // await InstrumentService.syncInstruments();
     // Log.info('Debug done');
-    await waitForever();
+    await forever();
 }
 
 export const CliService = {

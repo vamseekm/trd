@@ -1,7 +1,7 @@
 import { getModelForClass, modelOptions, prop } from '@typegoose/typegoose';
 
 @modelOptions({ schemaOptions: { timestamps: true } })
-class PrefClass {
+class Pref {
     @prop({ unique: true })
     public key!: string;
 
@@ -9,4 +9,4 @@ class PrefClass {
     public value!: string;
 }
 
-export const PrefModel = getModelForClass(PrefClass);
+export const PrefModel = getModelForClass(Pref);

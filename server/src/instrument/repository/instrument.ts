@@ -3,7 +3,7 @@ import { diff as diffObject } from 'deep-diff';
 
 import { IInstrument, UpsertResults } from '../../types';
 import { diffListOfObjects, mapFromObjectList } from '../../util';
-import { InstrumentClass, InstrumentModel } from '../model';
+import { Instrument, InstrumentModel } from '../model';
 
 async function fetchFnoInstruments({
     name,
@@ -17,34 +17,34 @@ async function fetchFnoInstruments({
     segment?: string;
     expiry?: Date;
     take?: number;
-}): Promise<InstrumentClass[]> {
+}): Promise<Instrument[]> {
     let query = InstrumentModel.find({ name, exchange, segment, expiry: { $gte: expiry } }).sort({ expiry: 1 });
     if (take != undefined) query = query.limit(take);
     return query;
 }
 
-async function fetchOptions(name: string): Promise<InstrumentClass[]> {
+async function fetchOptions(name: string): Promise<Instrument[]> {
     return InstrumentModel.find({ name, exchange: 'NFO', segment: 'NFO-OPT', live: true }).sort({ expiry: 1 });
 }
 
-async function findTopInstruments({ exchange, take }: { exchange: string; take: number }): Promise<InstrumentClass[]> {
+async function findTopInstruments({ exchange, take }: { exchange: string; take: number }): Promise<Instrument[]> {
     return InstrumentModel.find({ exchange }).sort({ rank: 1 }).limit(take);
 }
 
-async function updateInstrument({ globalSymbol, ...rest }: Partial<InstrumentClass>): Promise<void> {
+async function updateInstrument({ globalSymbol, ...rest }: Partial<Instrument>): Promise<void> {
     if (globalSymbol == undefined) throw new Error(`globalSymbol can't be undefined.`);
     return InstrumentModel.updateOne({ globalSymbol }, rest);
 }
 
-async function updateInstruments(instrumentList: Array<Partial<InstrumentClass>>): Promise<void> {
+async function updateInstruments(instrumentList: Array<Partial<Instrument>>): Promise<void> {
     await Promise.all(
-        instrumentList.map((instrument: Partial<InstrumentClass>) => {
+        instrumentList.map((instrument: Partial<Instrument>) => {
             return updateInstrument(instrument);
         }),
     );
 }
 
-async function bulkUpdateInstruments(globalSymbolList: string[], data: Partial<InstrumentClass>) {
+async function bulkUpdateInstruments(globalSymbolList: string[], data: Partial<Instrument>) {
     return InstrumentModel.updateMany({ globalSymbol: { $in: globalSymbolList } }, data, { multi: true });
 }
 async function trackInstruments(globalSymbolList: string[]): Promise<void> {
@@ -57,7 +57,7 @@ async function exchangeList(): Promise<string[]> {
 
 async function upsertInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<UpsertResults> {
     const databaseInstruments: IInstrument[] = (await InstrumentModel.find({ exchange })).map(
-        (item: DocumentType<InstrumentClass>) => {
+        (item: DocumentType<Instrument>) => {
             const {
                 _id,
                 _v,

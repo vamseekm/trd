@@ -5,7 +5,7 @@ import { BrokerService } from '../../broker';
 import { Log } from '../../infra';
 import { BrokerQuoteLtp } from '../../types';
 import { progressbar } from '../../util';
-import { InstrumentClass, InstrumentModel } from '../model';
+import { Instrument, InstrumentModel } from '../model';
 import { InstrumentRepository } from '../repository/instrument';
 
 async function syncInstruments(): Promise<void> {
@@ -34,13 +34,13 @@ async function getOptionExpiryListToTrack(name: string): Promise<Date[]> {
     return [...new Set(expiryList)].map((expiry) => new Date(expiry));
 }
 
-async function getFnoInstrumentsToTrack(name: string): Promise<InstrumentClass[]> {
+async function getFnoInstrumentsToTrack(name: string): Promise<Instrument[]> {
     const futures = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', take: 2 });
     const expiryList = await getOptionExpiryListToTrack(name);
     const stirkeIntervalMap: Record<string, number> = {
         NIFTY: 100,
     };
-    const instruments: InstrumentClass[] = [...futures];
+    const instruments: Instrument[] = [...futures];
     const strikeInterval = stirkeIntervalMap[name] || 1;
     const strikeLimitPercent = 0.1;
     if (futures.length > 0) {
@@ -117,7 +117,7 @@ async function updateLTP(globalSymbols: string[]): Promise<void> {
     for (const chunk of chunks) {
         const ltpList: BrokerQuoteLtp[] = await BrokerService.getLTP(chunk);
         await InstrumentRepository.updateInstruments(
-            ltpList.map((ltp: Partial<InstrumentClass>) => {
+            ltpList.map((ltp: Partial<Instrument>) => {
                 return { ...ltp, lastPriceUpdatedOn: new Date() };
             }),
         );
@@ -134,15 +134,15 @@ async function updateLTPAll(): Promise<void> {
     await updateLTP(instruments.map((instrument) => instrument.globalSymbol));
 }
 
-async function getTrackedInstruments(): Promise<InstrumentClass[]> {
+async function getTrackedInstruments(): Promise<Instrument[]> {
     return InstrumentModel.find({ track: true });
 }
 
-async function fetchInstrumentByToken(instrumentToken: string): Promise<InstrumentClass | null> {
+async function fetchInstrumentByToken(instrumentToken: string): Promise<Instrument | null> {
     return InstrumentModel.findOne({ instrumentToken });
 }
 
-async function getTrackedFutures(name: string): Promise<InstrumentClass[]> {
+async function getTrackedFutures(name: string): Promise<Instrument[]> {
     return InstrumentModel.find({ name, segment: 'NFO-FUT', live: true, track: true }).sort({ expiry: 1 }).lean();
 }
 
