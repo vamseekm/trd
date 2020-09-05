@@ -1,4 +1,3 @@
-import { DocumentType } from '@typegoose/typegoose';
 import { diff as diffObject } from 'deep-diff';
 
 import { IInstrument, UpsertResults } from '../../types';
@@ -56,25 +55,11 @@ async function exchangeList(): Promise<string[]> {
 }
 
 async function upsertInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<UpsertResults> {
-    const databaseInstruments: IInstrument[] = (await InstrumentModel.find({ exchange })).map(
-        (item: DocumentType<Instrument>) => {
-            const {
-                _id,
-                _v,
-                __v,
-                id,
-                lastPrice,
-                lastPriceUpdatedOn,
-                live,
-                track,
-                rank,
-                createdAt,
-                updatedAt,
-                ...rest
-            } = item.toObject();
-            return { ...rest, lastPrice: 0 };
-        },
-    );
+    const databaseInstruments: IInstrument[] = (await InstrumentModel.find({ exchange })).map((item) => {
+        const { createdAt, updatedAt, lastPriceUpdatedOn, _id, track, live, rank, __v, id, ...rest } = item.toObject();
+        return rest;
+    });
+
     const diff = diffListOfObjects(databaseInstruments, inputInstruments, 'globalSymbol');
     const removedSymbols = diff.removed.map((item) => item.globalSymbol);
     if (removedSymbols.length > 0) {
@@ -83,10 +68,10 @@ async function upsertInstruments(exchange: string, inputInstruments: IInstrument
     const inputInstrumentMap = await mapFromObjectList(inputInstruments, 'globalSymbol');
     if (diff.updated.length > 0) {
         const databaseInstrumentsMap = await mapFromObjectList(databaseInstruments, 'globalSymbol');
-        console.log(diffObject(diff.updated[0], databaseInstrumentsMap[diff.updated[0].globalSymbol]));
+        console.log(diffObject(diff.updated[0], databaseInstrumentsMap.get(diff.updated[0].globalSymbol)));
         await updateInstruments(
             diff.updated.map((instrument) => {
-                return { ...inputInstrumentMap[instrument.globalSymbol], live: true };
+                return { ...inputInstrumentMap.get(instrument.globalSymbol), live: true };
             }),
         );
     }

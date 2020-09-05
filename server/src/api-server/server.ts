@@ -1,9 +1,6 @@
 import express from 'express';
-import { graphqlHTTP } from 'express-graphql';
 import displayRoutes from 'express-routemap';
-import expressPlayground from 'graphql-playground-middleware-express';
 import morgan from 'morgan';
-import { buildSchema } from 'type-graphql';
 
 import { BrokerController } from '../broker';
 import { get, Log } from '../infra';

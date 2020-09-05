@@ -7,7 +7,7 @@ async function get(key: string, defaultValue?: any): Promise<string> {
 }
 
 async function set(key: string, value: string): Promise<void> {
-    await PrefModel.findOneAndUpdate({ key }, { key, value });
+    await PrefModel.findOneAndUpdate({ key }, { key, value }, { new: true, upsert: true });
 }
 
 export const PrefRepository = {

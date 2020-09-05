@@ -1,8 +1,6 @@
 import { APIServer } from '../api-server';
-import { CandleService } from '../candle/service';
 import { Log, mongoConnect } from '../infra';
 import { InstrumentService } from '../instrument';
-import { PrefService } from '../pref';
 import { TaskService } from '../task';
 import { TickService } from '../ticker';
 import { forever } from '../util';
@@ -35,11 +33,11 @@ async function sync(): Promise<void> {
 
 async function debug(): Promise<void> {
     Log.info(`Debug start... `);
-    // await PrefService.set("hello", "world");
+    // await PrefService.set('hello', 'world');
     // await InstrumentService.sync();
-    await CandleService.sync();
     // await TaskService.sync();
-    // await InstrumentService.syncInstruments();
+    // await CandleService.sync();
+    await InstrumentService.syncInstruments();
     // Log.info('Debug done');
     await forever();
 }

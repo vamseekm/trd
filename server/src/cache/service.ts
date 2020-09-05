@@ -16,14 +16,11 @@ async function getInstrumentByToken(instrumentToken: string): Promise<Instrument
     stats.miss += 1;
     Log.json('Instrument token cache stats:', stats);
     const instrument = await InstrumentService.fetchInstrumentByToken(instrumentToken);
-    if (instrument) {
-        globalSymbolCache.set(instrument.globalSymbol, instrument);
-        instrumentTokenCache.set(instrumentToken, instrument.globalSymbol);
-        stats.size = instrumentTokenCache.length;
-        return instrument;
-    } else {
-        console.log('Fetch fail: ${instrumentToken}');
-    }
+    if (instrument == undefined) return;
+    globalSymbolCache.set(instrument.globalSymbol, instrument);
+    instrumentTokenCache.set(instrumentToken, instrument.globalSymbol);
+    stats.size = instrumentTokenCache.length;
+    return instrument;
 }
 
 export const CacheService = {

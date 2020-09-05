@@ -8,6 +8,6 @@ export async function mongoConnect(): Promise<void> {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         useCreateIndex: true,
-        useFindAndModify: true,
+        useFindAndModify: false,
     });
 }

@@ -23,16 +23,13 @@ type KiteConnectType = typeof KiteConnect;
 let _kite: KiteConnectType | undefined;
 
 async function kiteInstance(): Promise<KiteConnectType> {
-    if (!_kite) {
-        const apiKey = await get(KITE_API_KEY);
-        _kite = new KiteConnect({ api_key: apiKey });
-        const accessToken = await PrefService.get(KITE_ACCESS_TOKEN, '');
-        console.log('Access token:', accessToken);
-        if (!accessToken || accessToken.length === 0) {
-            Log.error(`Access token not available: ${accessToken}`);
-        }
-        _kite.setAccessToken(accessToken);
-    }
+    if (_kite != undefined) return _kite;
+    const apiKey = await get(KITE_API_KEY);
+    _kite = new KiteConnect({ api_key: apiKey });
+    const accessToken = await PrefService.get(KITE_ACCESS_TOKEN, '');
+    console.log('Access token:', accessToken);
+    if (!accessToken || accessToken.length === 0) Log.error(`Access token not available: ${accessToken}`);
+    _kite.setAccessToken(accessToken);
     return _kite;
 }
 

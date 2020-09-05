@@ -4,20 +4,17 @@ import CliProgress from 'cli-progress';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const diff = require('diff-arrays-of-objects');
 
-export function mapFromObjectList<T, K extends keyof T>(items: T[], property: K): Record<string, T> {
-    const results: Record<string, T> = {};
-    for (const item of items) {
-        const propertyValue: unknown = item[property];
-        results[propertyValue as string] = item;
-    }
-    return results;
+export function mapFromObjectList<T, K extends keyof T>(items: T[], property: K): Map<T[K], T> {
+    const map = new Map<T[K], T>();
+    for (const item of items) map.set(item[property], item);
+    return map;
 }
 
 export function propertyMapFromObjectList<T, K extends keyof T>(items: T[], property: K): Record<string, number> {
     const results: Record<string, number> = {};
     for (const [index, item] of items.entries()) {
-        const propertyValue: unknown = item[property];
-        results[propertyValue as string] = index;
+        const propertyValue = item[property];
+        results[propertyValue as any] = index;
     }
     return results;
 }
@@ -65,14 +62,6 @@ export async function runTask(cmd: string): Promise<any> {
     });
 }
 
-export function currentUnixTimeInMs(): number {
-    return new Date().getTime();
-}
-
-export function currentUnixTimeInSec(): number {
-    return currentUnixTimeInMs() / 1000;
-}
-
 export function forever(): Promise<any> {
     console.log('Waiting forever...');
     return new Promise(() => {});
@@ -80,4 +69,14 @@ export function forever(): Promise<any> {
 
 export async function progressbar(): Promise<CliProgress.SingleBar> {
     return new CliProgress.SingleBar({ noTTYOutput: true, notTTYSchedule: 5000 }, CliProgress.Presets.shades_classic);
+}
+
+export function toSetAndMap<T, K extends keyof T>(items: T[], key: K): { set: Set<T[K]>; map: Map<T[K], T> } {
+    const set = new Set<T[K]>();
+    const map = new Map<T[K], T>();
+    for (const item of items) {
+        set.add(item[key]);
+        map.set(item[key], item);
+    }
+    return { set, map };
 }
