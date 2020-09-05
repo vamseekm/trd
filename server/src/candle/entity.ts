@@ -1,34 +1,37 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
-
-@Entity()
-export class Candle {
-    @PrimaryColumn({ type: 'varchar', length: 128 })
+/* eslint-disable @typescript-eslint/no-var-requires */
+import { getModelForClass, modelOptions, plugin, post, pre, prop } from '@typegoose/typegoose';
+const { logExecutionTime } = require('mongoose-execution-time');
+@plugin(logExecutionTime)
+@modelOptions({ schemaOptions: { timestamps: true } })
+export class CandleClass {
+    @prop({ unique: true })
     k!: string;
 
-    @Column()
+    @prop()
     t!: Date;
 
-    @Column('double')
+    @prop()
     o!: number;
 
-    @Column('double')
+    @prop()
     h!: number;
 
-    @Column('double')
+    @prop()
     l!: number;
 
-    @Column('double')
+    @prop()
     c!: number;
 
-    @Column('bigint')
+    @prop()
     v!: number;
 
-    @Column({ type: 'bigint', default: 0 })
+    @prop({ default: 0 })
     oi!: number;
 
-    @Column({ type: 'bigint', default: 0 })
+    @prop({ default: 0 })
     tv!: number;
 
-    @Column({ type: 'bigint', default: 0 })
+    @prop({ default: 0 })
     toi!: number;
 }
+export const CandleModel = getModelForClass(CandleClass);

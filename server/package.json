@@ -47,6 +47,7 @@
         "lodash": "^4.17.20",
         "lru-cache": "^6.0.0",
         "mongoose": "^5.10.3",
+        "mongoose-execution-time": "^1.0.2",
         "morgan": "^1.10.0",
         "mysql": "^2.18.1",
         "node-config": "0.0.2",
@@ -60,7 +61,6 @@
         "source-map-support": "^0.5.19",
         "tsc-watch": "^4.2.9",
         "type-graphql": "^1.0.0",
-        "typeorm": "^0.2.25",
         "typescript": "^4.0.2",
         "wait-on": "^5.2.0",
         "winston": "^3.3.3"

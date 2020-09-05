@@ -1,10 +1,10 @@
-import CliProgress from 'cli-progress';
 import { subDays } from 'date-fns';
 import lodash from 'lodash';
 
 import { BrokerService } from '../../broker';
 import { Log } from '../../infra';
 import { BrokerQuoteLtp } from '../../types';
+import { progressbar } from '../../util';
 import { InstrumentClass, InstrumentModel } from '../model';
 import { InstrumentRepository } from '../repository/instrument';
 
@@ -98,9 +98,10 @@ async function trackInstruments(): Promise<void> {
         'NSE:GOLDBEES',
     ];
 
-    const topInstruments = (await InstrumentRepository.findTopInstruments({ exchange: 'NSE', take: 50 })).map(
-        (instrument) => instrument.globalSymbol,
-    );
+    const topInstruments = (
+        await InstrumentModel.find({ exchange: 'NSE' }, 'globalSymbol').sort({ rank: 1 }).limit(50)
+    ).map((instrument) => instrument.globalSymbol);
+    console.log(topInstruments);
     const fnoInstruments = await getTrackableFnoInstruments();
     const allInstruments = [...indices, ...topInstruments, ...fnoInstruments];
 
@@ -111,10 +112,7 @@ async function trackInstruments(): Promise<void> {
 async function updateLTP(globalSymbols: string[]): Promise<void> {
     const totalInstruments = globalSymbols.length;
     const chunks = lodash.chunk(globalSymbols, 100);
-    const bar = new CliProgress.SingleBar(
-        { noTTYOutput: true, notTTYSchedule: 5000 },
-        CliProgress.Presets.shades_classic,
-    );
+    const bar = await progressbar();
     bar.start(totalInstruments, 0);
     for (const chunk of chunks) {
         const ltpList: BrokerQuoteLtp[] = await BrokerService.getLTP(chunk);
@@ -145,7 +143,7 @@ async function fetchInstrumentByToken(instrumentToken: string): Promise<Instrume
 }
 
 async function getTrackedFutures(name: string): Promise<InstrumentClass[]> {
-    return InstrumentModel.find({ name, segment: 'NFO-FUT', live: true, track: true }).sort({ expiry: 1 });
+    return InstrumentModel.find({ name, segment: 'NFO-FUT', live: true, track: true }).sort({ expiry: 1 }).lean();
 }
 
 export const InstrumentService = {

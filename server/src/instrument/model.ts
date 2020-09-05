@@ -1,5 +1,7 @@
-import { getModelForClass, modelOptions, prop } from '@typegoose/typegoose';
-
+/* eslint-disable @typescript-eslint/no-var-requires */
+import { getModelForClass, modelOptions, plugin, prop } from '@typegoose/typegoose';
+const { logExecutionTime } = require('mongoose-execution-time');
+@plugin(logExecutionTime)
 @modelOptions({ schemaOptions: { toObject: { virtuals: true }, timestamps: true } })
 export class InstrumentClass {
     @prop({ unique: true })

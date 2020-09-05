@@ -51,9 +51,9 @@ async function startTickStoreConsumer(): Promise<void> {
             })
             .map((tick: ITick) => {
                 const { timestamp, globalSymbol } = tick;
-                return TickRepository.create({ timestamp, tickString: JSON.stringify(tick), globalSymbol });
+                // return TickRepository.create({ timestamp, tickString: JSON.stringify(tick), globalSymbol });
             });
-        await TickRepository.bulkInsert(tickRows);
+        // await TickRepository.bulkInsert(tickRows);
         await channel.ack(message);
         statsUpdateCallback({ totalCount: tickRows.length });
     });

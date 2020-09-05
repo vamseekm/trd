@@ -7,7 +7,7 @@ import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
 import { InstrumentClass } from '../instrument/model';
 import { CandleInterval, IBrokerCandle } from '../types';
-import { Candle } from './entity';
+import { CandleClass, CandleModel } from './entity';
 import { CandleRepository } from './repository';
 
 const tzOptions = { timeZone: 'Asia/Kolkata', locale: enGB };
@@ -31,7 +31,7 @@ async function mapBrokerCandleToDatabaseCandle(
     instrument: InstrumentClass,
     interval: CandleInterval,
     candle: IBrokerCandle,
-): Promise<Candle> {
+): Promise<CandleClass> {
     return {
         k: await candleKey({ instrument, interval, date: candle.date }),
         t: candle.date,
@@ -56,7 +56,7 @@ async function downloadCandles({
     interval: CandleInterval;
     from: Date;
     to: Date;
-}): Promise<Candle[]> {
+}): Promise<CandleClass[]> {
     const { instrumentToken } = instrument;
     return Promise.all(
         (await BrokerService.getHistorical({ instrumentToken, interval, from, to })).map((candle) => {
@@ -65,20 +65,20 @@ async function downloadCandles({
     );
 }
 
-async function storeCandles(candleList: Candle[]): Promise<void> {
+async function storeCandles(candleList: CandleClass[]): Promise<void> {
     await CandleRepository.storeCandles(candleList);
 }
 
 async function sync(): Promise<void> {
     Log.info('Syncing candles...');
-    const futures = await InstrumentService.getTrackedFutures('NIFTY');
-    if (futures.length > 0) {
-        const { globalSymbol } = futures[0];
-        Log.info(globalSymbol);
+    const instruments = await InstrumentService.getTrackedInstruments();
+    for (const instrument of instruments) {
+        const { globalSymbol } = instrument;
+        Log.info(`Candle sync: ${globalSymbol}`);
         const to = new Date();
         const from = subDays(new Date(), 7);
-        const candles = await downloadCandles({ instrument: futures[0], interval: CandleInterval.MIN_01, from, to });
-        await storeCandles(candles);
+        const candles = await downloadCandles({ instrument: instrument, interval: CandleInterval.MIN_01, from, to });
+        if (candles.length > 0) await storeCandles(candles);
     }
 }
 

@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import CliProgress from 'cli-progress';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const diff = require('diff-arrays-of-objects');
@@ -75,4 +76,8 @@ export function currentUnixTimeInSec(): number {
 export function waitForever(): Promise<any> {
     console.log('Waiting forever...');
     return new Promise(() => {});
+}
+
+export async function progressbar(): Promise<CliProgress.SingleBar> {
+    return new CliProgress.SingleBar({ noTTYOutput: true, notTTYSchedule: 5000 }, CliProgress.Presets.shades_classic);
 }

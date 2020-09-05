@@ -1,16 +1,12 @@
-import { getRepository, InsertResult } from 'typeorm';
+// function bulkInsert(items: Tick[]): Promise<InsertResult> {
+//     return getRepository(Tick).insert(items);
+// }
 
-import { Tick } from './entity';
-
-function bulkInsert(items: Tick[]): Promise<InsertResult> {
-    return getRepository(Tick).insert(items);
-}
-
-function create(tick: Partial<Tick>): Tick {
-    return getRepository(Tick).create(tick);
-}
+// function create(tick: Partial<Tick>): Tick {
+//     return getRepository(Tick).create(tick);
+// }
 
 export const TickRepository = {
-    bulkInsert,
-    create,
+    // bulkInsert,
+    // create,
 };

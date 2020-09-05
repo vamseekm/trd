@@ -44,9 +44,11 @@ async function updateInstruments(instrumentList: Array<Partial<InstrumentClass>>
     );
 }
 
+async function bulkUpdateInstruments(globalSymbolList: string[], data: Partial<InstrumentClass>) {
+    return InstrumentModel.updateMany({ globalSymbol: { $in: globalSymbolList } }, data, { multi: true });
+}
 async function trackInstruments(globalSymbolList: string[]): Promise<void> {
-    return InstrumentModel.updateMany({ globalSymbol: { $in: globalSymbolList } }, { track: true }, { multi: true });
-    // return prisma.instrument.update({ where: { globalSymbol }, data: { track: true } });
+    return bulkUpdateInstruments(globalSymbolList, { track: true });
 }
 
 async function exchangeList(): Promise<string[]> {
@@ -76,11 +78,7 @@ async function upsertInstruments(exchange: string, inputInstruments: IInstrument
     const diff = diffListOfObjects(databaseInstruments, inputInstruments, 'globalSymbol');
     const removedSymbols = diff.removed.map((item) => item.globalSymbol);
     if (removedSymbols.length > 0) {
-        await updateInstruments(
-            removedSymbols.map((globalSymbol) => {
-                return { globalSymbol, live: false };
-            }),
-        );
+        await bulkUpdateInstruments(removedSymbols, { live: false });
     }
     const inputInstrumentMap = await mapFromObjectList(inputInstruments, 'globalSymbol');
     if (diff.updated.length > 0) {
@@ -114,7 +112,6 @@ export const InstrumentRepository = {
     exchangeList,
     fetchFnoInstruments,
     fetchOptions,
-    // findInstrumentsBy,
     findTopInstruments,
     upsertInstruments,
     trackInstruments,
