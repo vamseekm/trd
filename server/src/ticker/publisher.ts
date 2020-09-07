@@ -1,4 +1,4 @@
-import { BIND_ORDER, BIND_RAW_TICKS, EX_TICKER } from '../bridge';
+import { EXCHANGE_TICKER, MessageType } from '../bridge';
 import { BrokerService } from '../broker';
 import { Log, Rabbit } from '../infra';
 import { InstrumentService } from '../instrument';
@@ -12,7 +12,7 @@ async function start(): Promise<any> {
         tokens,
         async (ticks: any) => {
             const payload = JSON.stringify({ ticks, received_on: new Date().getTime() });
-            channel.publish(EX_TICKER, BIND_RAW_TICKS, Buffer.from(payload), { persistent: true });
+            channel.publish(EXCHANGE_TICKER, MessageType.rawTick, Buffer.from(payload), { persistent: true });
             if (ticks) {
                 stats.totalTicks += ticks.length;
                 stats.totalSize += JSON.stringify(ticks).length;
@@ -20,7 +20,9 @@ async function start(): Promise<any> {
             }
         },
         (order_update: any) => {
-            channel.publish(EX_TICKER, BIND_ORDER, Buffer.from(JSON.stringify({ order_update })), { persistent: true });
+            channel.publish(EXCHANGE_TICKER, MessageType.orderUpdate, Buffer.from(JSON.stringify({ order_update })), {
+                persistent: true,
+            });
         },
     );
     setInterval(() => {

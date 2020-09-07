@@ -5,7 +5,6 @@ import { exec } from 'child_process';
 import { program } from 'commander';
 import { exit } from 'process';
 
-import { setupEventSource } from '../bridge';
 import { Log } from '../infra';
 import { CliService } from './service';
 
@@ -37,12 +36,12 @@ async function run() {
     program.option('-a --api-server', 'Start API server.');
     program.option('-s --sync', 'Cron sync.');
     program.option('-d --debug', 'Start debug main.');
-    program.option('-t --tick-listener', 'Listen for raw ticks');
-    program.option('--raw-tick-consumer', 'Consume raw ticks');
-    program.option('--tick-store-consumer', 'Start tick store.');
+    program.option('--tick-listener', 'Listen for raw ticks');
+    program.option('--raw-tick-consumer', 'Convert raw ticks to processed ticks.');
+    program.option('--tick-store-consumer', 'Store processed ticks.');
+    program.option('--tick-consumer', 'Consume processed ticks');
     program.parse(process.argv);
 
-    await setupEventSource();
     const actions: Promise<any>[] = [];
     await CliService.databaseInit();
     if (program.apiServer) {
@@ -63,6 +62,9 @@ async function run() {
     }
     if (program.tickStoreConsumer) {
         actions.push(CliService.startTickStoreConsumer());
+    }
+    if (program.tickConsumer) {
+        actions.push(CliService.startTickConsumer());
     }
     await Promise.all(actions);
     if (program.forceExit) {

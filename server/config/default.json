@@ -1,6 +1,16 @@
 {
     "KITE_API_KEY": "",
     "KITE_API_SECRET": "",
+    "EXCHANGE_CONFIG": {
+        "NSE": {
+            "startTime": 915,
+            "endTime": 1530
+        },
+        "NFO": {
+            "startTime": 915,
+            "endTime": 1530
+        }
+    },
     "NSE": {
         "INDEX_FILES": [
             {

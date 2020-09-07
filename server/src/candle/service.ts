@@ -1,17 +1,16 @@
 import { subDays } from 'date-fns';
 import { format } from 'date-fns-tz';
-import enGB from 'date-fns/locale/en-GB';
 
 import { BrokerService } from '../broker';
 import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
 import { Instrument } from '../instrument/model';
-import { CandleInterval, IBrokerCandle, UpsertResults } from '../types';
+import { CandleInterval, IBrokerCandle } from '../types';
+import { defaultTimeZone } from '../util';
 import { Candle } from './model';
 import { CandleRepository } from './repository';
 
-const tzOptions = { timeZone: 'Asia/Kolkata', locale: enGB };
-const candleTimeFmt = 'yyMMdd/HHmm';
+const _candleTimeFmt = 'yyMMdd/HHmm';
 
 async function candleKey({
     instrument,
@@ -23,7 +22,7 @@ async function candleKey({
     date: Date;
 }): Promise<string> {
     const { globalSymbol } = instrument;
-    const localDateString = format(date, candleTimeFmt, tzOptions);
+    const localDateString = format(date, _candleTimeFmt, await defaultTimeZone());
     return `${globalSymbol}-${interval}-${localDateString}`;
 }
 
@@ -65,14 +64,10 @@ async function downloadCandles({
     );
 }
 
-async function storeCandles(candleList: Candle[]): Promise<UpsertResults> {
-    return CandleRepository.storeCandles(candleList);
-}
-
 async function sync(): Promise<void> {
     Log.info('Syncing candles...');
-    // const instruments = await InstrumentService.getTrackedInstruments();
-    const instruments = await InstrumentService.getTrackedFutures('NIFTY');
+    const instruments = await InstrumentService.getTrackedInstruments();
+    // const instruments = await InstrumentService.getTrackedFutures('NIFTY');
     for (const instrument of instruments) {
         const { globalSymbol } = instrument;
         Log.info(`Candle sync: ${globalSymbol}`);
@@ -80,7 +75,6 @@ async function sync(): Promise<void> {
         const from = subDays(new Date(), 7);
         const candles = await downloadCandles({ instrument: instrument, interval: CandleInterval.MIN_01, from, to });
         if (candles.length > 0) console.log(await CandleRepository.storeCandles(candles));
-        break;
     }
 }
 

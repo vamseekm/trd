@@ -2,65 +2,60 @@ import { Channel, ConsumeMessage } from 'amqplib';
 
 import { Log, Rabbit } from '../infra';
 
-type ConsumerArgs = { queueName: string; prefetch?: number };
+type ConsumerArgs = { name: string; prefetch?: number; messageType: MessageType };
 interface StatsUpdateCallback {
     ({ totalCount }: { totalCount?: number }): void;
 }
 interface ConsumerCallback {
-    ({
-        channel,
-        message,
-        statsUpdateCallback: statsCallback,
-    }: {
-        channel: Channel;
-        message: ConsumeMessage;
-        statsUpdateCallback: StatsUpdateCallback;
-    }): Promise<void>;
+    ({ channel, message }: { channel: Channel; message: ConsumeMessage }): Promise<number | boolean | undefined>;
 }
-
-export async function consumeFromQueue(
-    { queueName, prefetch = 1 }: ConsumerArgs,
+export async function consumeQueue(
+    { name, messageType, prefetch = 1 }: ConsumerArgs,
     callback: ConsumerCallback,
 ): Promise<void> {
-    const stats = { totalCount: 0, totalMessages: 0, totalSize: 0 };
-    function statsUpdateCallback({ totalCount = 0 }: { totalCount?: number }) {
-        stats.totalCount += totalCount;
-    }
+    const stats = { totalCount: 0, totalMessages: 0, totalSize: 0, ack: 0, error: 0 };
     const channel = await Rabbit.createChannel();
+    await channel.assertExchange(EXCHANGE_TICKER, 'topic', { durable: true });
+    await channel.assertQueue(name, { durable: true });
+    await channel.bindQueue(name, EXCHANGE_TICKER, messageType);
+    for (const messageType in MessageType) {
+        await channel.assertQueue(`${messageType}Consumer`, { durable: true });
+        await channel.bindQueue(`${messageType}Consumer`, EXCHANGE_TICKER, messageType);
+    }
     channel.prefetch(prefetch);
-    channel.consume(queueName, (message: ConsumeMessage | null) => {
+    channel.consume(name, async (message: ConsumeMessage | null) => {
         if (message == undefined) return;
-        callback({
-            channel,
-            message,
-            statsUpdateCallback,
-        });
-        stats.totalSize += message.content.length;
-        stats.totalMessages += 1;
+        try {
+            const processedCount = await callback({
+                message,
+                channel,
+            });
+            if (processedCount === false) return;
+            if (typeof processedCount === 'number') stats.totalCount += processedCount || 0;
+            channel.ack(message);
+            stats.ack += 1;
+            stats.totalSize += message.content.length;
+            stats.totalMessages += 1;
+        } catch (error) {
+            console.error(error);
+            stats.error += 1;
+        }
     });
     setInterval(() => {
-        Log.json(`Queue stats: ${queueName}`, stats);
+        Log.json(`${name}`, stats);
         stats.totalCount = 0;
         stats.totalMessages = 0;
         stats.totalSize = 0;
+        stats.error = 0;
+        stats.ack = 0;
     }, 10000);
 }
 
-export const EX_TICKER = 'exchange_ticker';
-export const EX_REPLAY = 'exchange_replay';
-export const QUEUE_RAW_TICKS = 'queue_raw_ticks';
-export const QUEUE_STORE_TICKS = 'queue_store_ticks';
-export const QUEUE_ORDER = 'queue_order';
-export const QUEUE_TICKS = 'queue_ticks';
-export const BIND_RAW_TICKS = 'raw_ticks';
-export const BIND_TICKS = 'ticks';
-export const BIND_ORDER = 'order';
-
-export async function setupEventSource(): Promise<void> {
-    await Rabbit.setupQueue({ exchange: EX_TICKER, queue: QUEUE_RAW_TICKS, binding_key: BIND_RAW_TICKS });
-    await Rabbit.setupQueue({ exchange: EX_TICKER, queue: QUEUE_STORE_TICKS, binding_key: BIND_TICKS });
-    //await Rabbit.setupQueue({ exchange: EX_TICKER, queue: QUEUE_TICKS, binding_key: BIND_TICKS });
-    //await Rabbit.setupQueue({ exchange: EX_REPLAY, queue: QUEUE_TICKS, binding_key: BIND_TICKS });
-    await Rabbit.setupQueue({ exchange: EX_TICKER, queue: QUEUE_ORDER, binding_key: BIND_ORDER });
-    await Rabbit.setupQueue({ exchange: EX_REPLAY, queue: QUEUE_ORDER, binding_key: BIND_ORDER });
+export enum MessageType {
+    rawTick = 'rawTick',
+    tick = 'tick',
+    candle = 'candle',
+    orderUpdate = 'orderUpdate',
 }
+
+export const EXCHANGE_TICKER = 'ex.ticker';

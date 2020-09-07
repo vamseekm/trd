@@ -1,15 +1,17 @@
-import { subDays } from 'date-fns';
+import { addMonths, subDays } from 'date-fns';
 import lodash from 'lodash';
 
 import { BrokerService } from '../../broker';
 import { Log } from '../../infra';
 import { BrokerQuoteLtp } from '../../types';
-import { progressbar } from '../../util';
+import { sleep } from '../../util';
 import { Instrument, InstrumentModel } from '../model';
 import { InstrumentRepository } from '../repository/instrument';
 
 async function syncInstruments(): Promise<void> {
-    const exchanges = (await BrokerService.getExchanges()).filter((ex) => ex !== 'MF');
+    const exchanges = (await BrokerService.getExchanges()).filter(
+        (exchange) => exchange === 'NSE' || exchange === 'NFO',
+    );
     Log.json('Exchange list:', { exchanges });
     for (const exchange of exchanges) {
         try {
@@ -101,37 +103,69 @@ async function trackInstruments(): Promise<void> {
     const topInstruments = (
         await InstrumentModel.find({ exchange: 'NSE' }, 'globalSymbol').sort({ rank: 1 }).limit(50)
     ).map((instrument) => instrument.globalSymbol);
-    console.log(topInstruments);
+    // console.log(topInstruments);
     const fnoInstruments = await getTrackableFnoInstruments();
+    // console.log(fnoInstruments);
     const allInstruments = [...indices, ...topInstruments, ...fnoInstruments];
 
     await InstrumentRepository.trackInstruments(allInstruments);
     console.log(`Tracking ${allInstruments.length} instruments`);
 }
 
-async function updateLTP(globalSymbols: string[]): Promise<void> {
-    const totalInstruments = globalSymbols.length;
-    const chunks = lodash.chunk(globalSymbols, 100);
-    const bar = await progressbar();
-    bar.start(totalInstruments, 0);
-    for (const chunk of chunks) {
-        const ltpList: BrokerQuoteLtp[] = await BrokerService.getLTP(chunk);
+async function updateLTP(insrumentList: Instrument[]): Promise<void> {
+    const chunks = lodash.chunk(
+        insrumentList.map((instrument) => `${instrument.exchange}:${instrument.tradingSymbol}`),
+        100,
+    );
+    for (const [i, chunk] of chunks.entries()) {
+        Log.info(`Fetching LTP of chunk: ${i + 1}/${chunks.length}`);
+        const ltpList: BrokerQuoteLtp[] = (await BrokerService.getLTP(chunk)).map((item) => {
+            return { ...item, globalSymbol: item.globalSymbol.replace(':', '-') };
+        });
+        // console.log(chunk);
+        // console.log(ltpList.filter((item) => item.globalSymbol.match(/nifty/gi)));
         await InstrumentRepository.updateInstruments(
             ltpList.map((ltp: Partial<Instrument>) => {
                 return { ...ltp, lastPriceUpdatedOn: new Date() };
             }),
         );
-        bar.increment(chunk.length);
+        await sleep(300);
     }
-    bar.stop();
 }
 
 async function updateLTPAll(): Promise<void> {
+    const maxDate = addMonths(new Date(), 3);
     const instruments = await InstrumentModel.find(
-        { live: true, lastPriceUpdatedOn: { $lt: subDays(new Date(), 1) } },
+        {
+            live: true,
+            $and: [
+                { expiry: { $lt: maxDate } },
+                {
+                    $or: [{ lastPriceUpdatedOn: { $lt: subDays(new Date(), 1) } }, { lastPrice: 0 }],
+                },
+            ],
+        },
         'globalSymbol',
     );
-    await updateLTP(instruments.map((instrument) => instrument.globalSymbol));
+    console.log('Updating ltp of :', instruments.length);
+    await updateLTP(instruments);
+}
+
+async function updateLTPInitialInstruments(): Promise<void> {
+    Log.info('Updating LTP of initial instruments...');
+    const instruments = await InstrumentModel.find({
+        segment: { $in: ['INDICES', 'NFO-FUT', 'NSE'] },
+        expiry: { $lt: addMonths(new Date(), 2) },
+    });
+    await updateLTP(instruments);
+    Log.info('\tDone.');
+}
+
+async function updateLTPTrackedInstruments(): Promise<void> {
+    const trackedInstruments = await InstrumentModel.find({ track: true });
+    Log.info(`Updating LTP of ${trackedInstruments.length} tracked instruments...`);
+    await updateLTP(trackedInstruments);
+    Log.info('\tDone.');
 }
 
 async function getTrackedInstruments(): Promise<Instrument[]> {
@@ -146,6 +180,25 @@ async function getTrackedFutures(name: string): Promise<Instrument[]> {
     return InstrumentModel.find({ name, segment: 'NFO-FUT', live: true, track: true }).sort({ expiry: 1 }).lean();
 }
 
+async function getInstrumentsWithNoLastPrice(): Promise<void> {
+    const startTime = new Date();
+    const upLimit = addMonths(new Date(), 2);
+    const resutls = await InstrumentModel.aggregate([
+        { $match: { expiry: { $lt: upLimit }, live: true } },
+        { $group: { _id: '$exchange', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+    ]).limit(10);
+    console.log('Elapsed:', new Date().getTime() - startTime.getTime());
+    console.log(resutls);
+}
+
+async function debug(): Promise<void> {
+    const instruments = await InstrumentModel.find({ name: 'BANKNIFTY', segment: 'NFO-FUT' });
+    console.log(instruments);
+    await updateLTP(instruments);
+    console.log(await InstrumentModel.find({ globalSymbol: { $in: instruments.map((i) => i.globalSymbol) } }));
+}
+
 export const InstrumentService = {
     fetchInstrumentByToken,
     syncInstruments,
@@ -153,4 +206,8 @@ export const InstrumentService = {
     trackInstruments,
     getTrackedInstruments,
     getTrackedFutures,
+    getInstrumentsWithNoLastPrice,
+    updateLTPInitialInstruments,
+    updateLTPTrackedInstruments,
+    debug,
 };

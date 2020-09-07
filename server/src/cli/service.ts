@@ -1,4 +1,6 @@
 import { APIServer } from '../api-server';
+import { CandleService } from '../candle/service';
+import { ExchangeService } from '../exchange';
 import { Log, mongoConnect } from '../infra';
 import { InstrumentService } from '../instrument';
 import { TaskService } from '../task';
@@ -14,18 +16,6 @@ async function startAPIServer(): Promise<void> {
     await APIServer.start();
 }
 
-async function startTickListener(): Promise<void> {
-    await TickService.startTickListener();
-}
-
-async function startRawTickConsumer(): Promise<void> {
-    await TickService.startRawTickConsumer();
-}
-
-async function startTickStoreConsumer(): Promise<void> {
-    await TickService.startTickStoreConsumer();
-}
-
 async function sync(): Promise<void> {
     Log.info(`Syncing instruments...`);
     return TaskService.sync();
@@ -34,13 +24,22 @@ async function sync(): Promise<void> {
 async function debug(): Promise<void> {
     Log.info(`Debug start... `);
     // await PrefService.set('hello', 'world');
-    // await InstrumentService.sync();
+    // await InstrumentService.syncInstruments();
+    // await InstrumentService.updateLTPInitialInstruments();
+    // await InstrumentService.trackInstruments();
     // await TaskService.sync();
+    // await InstrumentService.debug();
+    // await InstrumentService.updateLTPTrackedInstruments();
     // await CandleService.sync();
-    await InstrumentService.syncInstruments();
+    // await InstrumentService.updateLTPAll();
+    // await InstrumentService.getInstrumentsWithNoLastPrice();
     // Log.info('Debug done');
+    // await TickService.startTickConsumer();
+    await ExchangeService.getExchangeTimes();
     await forever();
 }
+
+const { startTickListener, startRawTickConsumer, startTickStoreConsumer, startTickConsumer } = TickService;
 
 export const CliService = {
     databaseInit,
@@ -50,4 +49,5 @@ export const CliService = {
     startTickListener,
     startRawTickConsumer,
     startTickStoreConsumer,
+    startTickConsumer,
 };

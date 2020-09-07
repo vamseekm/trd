@@ -3,7 +3,7 @@ import displayRoutes from 'express-routemap';
 import morgan from 'morgan';
 
 import { BrokerController } from '../broker';
-import { get, Log } from '../infra';
+import { Config, Log } from '../infra';
 import { TaskController } from '../task';
 import { HTTP_API_SERVER_PORT, IController } from '../types';
 import { handleError } from './middleware';
@@ -55,7 +55,7 @@ async function start(): Promise<unknown> {
     // await setupGraphQL();
     await setupRoutes();
     app.use(handleError);
-    const port = get(HTTP_API_SERVER_PORT);
+    const port = Config.get(HTTP_API_SERVER_PORT);
     return new Promise((resolve, reject) => {
         app.listen(port, () => {
             Log.info(`API server available at 0.0.0.0:${port}`);

@@ -32,7 +32,8 @@ async function findTopInstruments({ exchange, take }: { exchange: string; take: 
 
 async function updateInstrument({ globalSymbol, ...rest }: Partial<Instrument>): Promise<void> {
     if (globalSymbol == undefined) throw new Error(`globalSymbol can't be undefined.`);
-    return InstrumentModel.updateOne({ globalSymbol }, rest);
+    //console.log('Updating:', globalSymbol, rest);
+    await InstrumentModel.updateOne({ globalSymbol }, rest);
 }
 
 async function updateInstruments(instrumentList: Array<Partial<Instrument>>): Promise<void> {
@@ -57,7 +58,7 @@ async function exchangeList(): Promise<string[]> {
 async function upsertInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<UpsertResults> {
     const databaseInstruments: IInstrument[] = (await InstrumentModel.find({ exchange })).map((item) => {
         const { createdAt, updatedAt, lastPriceUpdatedOn, _id, track, live, rank, __v, id, ...rest } = item.toObject();
-        return rest;
+        return { ...rest, lastPrice: 0 };
     });
 
     const diff = diffListOfObjects(databaseInstruments, inputInstruments, 'globalSymbol');

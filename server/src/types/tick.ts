@@ -5,12 +5,16 @@ export interface OrderItem {
 }
 export interface ITick {
     globalSymbol: string;
+    exchange: string;
+    tradingSymbol: string;
     lastTradedPrice: number;
     totalVolume: number;
     totalBuyQuantity: number;
     totalSellQuantity: number;
-    timestamp: number;
-    lastTradeTimestamp: number;
+    timestamp: Date;
+    time: number;
+    day: number;
+    lastTradeTimestamp: Date;
     openInterest: number;
     depth: {
         buy: OrderItem[];

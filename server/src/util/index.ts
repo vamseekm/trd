@@ -1,5 +1,6 @@
-import { spawn } from 'child_process';
 import CliProgress from 'cli-progress';
+import { format } from 'date-fns-tz';
+import enGB from 'date-fns/locale/en-GB';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const diff = require('diff-arrays-of-objects');
@@ -40,27 +41,27 @@ export function diffListOfObjects<T, K extends keyof T>(
     return Object.assign(results, { stats });
 }
 
-export async function runTask(cmd: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-        // const fullCmd = `bash ./server.sh --${cmd}`;
-        const child = spawn('npm', ['run', 'server', '--', `--${cmd}`, '-x']);
-        child.on('exit', (code, signal) => {
-            resolve({ code, signal });
-        });
-        child.on('error', (error) => {
-            reject(error);
-        });
-        child.on('close', () => {
-            resolve();
-        });
-        child.stdout.on('data', (data) => {
-            process.stdout.write(data.toString());
-        });
-        child.stderr.on('data', (data) => {
-            process.stdout.write(data.toString());
-        });
-    });
-}
+// export async function runTask(cmd: string): Promise<void> {
+//     return new Promise((resolve, reject) => {
+//         // const fullCmd = `bash ./server.sh --${cmd}`;
+//         const child = spawn('npm', ['run', 'server', '--', `--${cmd}`, '-x']);
+//         child.on('exit', (code, signal) => {
+//             resolve({ code, signal });
+//         });
+//         child.on('error', (error) => {
+//             reject(error);
+//         });
+//         child.on('close', () => {
+//             resolve();
+//         });
+//         child.stdout.on('data', (data) => {
+//             process.stdout.write(data.toString());
+//         });
+//         child.stderr.on('data', (data) => {
+//             process.stdout.write(data.toString());
+//         });
+//     });
+// }
 
 export function forever(): Promise<any> {
     console.log('Waiting forever...');
@@ -79,4 +80,25 @@ export function toSetAndMap<T, K extends keyof T>(items: T[], key: K): { set: Se
         map.set(item[key], item);
     }
     return { set, map };
+}
+
+export async function sleep(time: number): Promise<any> {
+    return new Promise((resolve) => {
+        setTimeout(resolve, time);
+    });
+}
+
+const _defaultTzOptions = { timeZone: 'Asia/Kolkata', locale: enGB };
+type TimeZoneType = typeof _defaultTzOptions;
+export async function defaultTimeZone(): Promise<TimeZoneType> {
+    return _defaultTzOptions;
+}
+
+export async function toDayAndTime(date: Date): Promise<{ day: number; time: number }> {
+    const offset = (5 * 60 + 30) * 60 * 1000;
+    const newDate = new Date(date.getTime() + offset);
+    return {
+        day: Number.parseInt(format(newDate, 'yyMMdd'), 10),
+        time: Number.parseInt(format(newDate, 'HHmm'), 10),
+    };
 }
