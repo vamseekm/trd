@@ -22,7 +22,17 @@ async function candleKey({
     date: Date;
 }): Promise<string> {
     const { day, time } = await toDayAndTime(date);
-    return `${globalSymbol}-${interval}-${day}-${time}`;
+    return `${globalSymbol}-${interval}-${day}${time}`;
+}
+
+async function splitCandleKey(key: string) {
+    const [exchange, tradingSymbol, period, time] = key.split('-');
+    return {
+        exchange,
+        tradingSymbol,
+        period,
+        time,
+    };
 }
 
 async function mapBrokerCandleToDatabaseCandle(
@@ -61,22 +71,11 @@ async function downloadCandles({
     const processedCandles = await pMap(rawCandles, (candle) =>
         mapBrokerCandleToDatabaseCandle(instrument, interval, candle),
     );
-    return await pFilter(processedCandles, (candle) => {
-        const exchange = candle.k.split('-')[0];
+    return await pFilter(processedCandles, async (candle) => {
+        const { exchange } = await splitCandleKey(candle.k);
         const date = candle.t;
         return ExchangeService.isValidTick({ exchange, date });
     });
-    // const candles = await Promise.all(
-    //     (await BrokerService.getHistorical({ instrumentToken, interval, from, to })).map((candle) => {
-    //         return mapBrokerCandleToDatabaseCandle(instrument, interval, candle);
-    //     }),
-    // );
-    // return candles.filter(async (candle) => {
-    //     const exchange = candle.k.split('-')[0];
-    //     const date = candle.t;
-    //     console.log(exchange, date, ExchangeService.isValidTick({ exchange, date }));
-    //     return await ExchangeService.isValidTick({ exchange, date });
-    // });
 }
 
 async function sync(): Promise<void> {
@@ -90,7 +89,6 @@ async function sync(): Promise<void> {
         const from = subDays(new Date(), 1);
         const candles = await downloadCandles({ instrument: instrument, interval: CandleInterval.MIN_01, from, to });
 
-        console.log(candles.map((c) => c.k).join('\n'));
         if (candles.length > 0) console.log(await CandleRepository.storeCandles(candles));
         break;
     }
