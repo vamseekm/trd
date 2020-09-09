@@ -1,6 +1,5 @@
 import CliProgress from 'cli-progress';
-import { format } from 'date-fns-tz';
-import enGB from 'date-fns/locale/en-GB';
+import { DateTime } from 'luxon';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const diff = require('diff-arrays-of-objects');
@@ -88,17 +87,12 @@ export async function sleep(time: number): Promise<any> {
     });
 }
 
-const _defaultTzOptions = { timeZone: 'Asia/Kolkata', locale: enGB };
-type TimeZoneType = typeof _defaultTzOptions;
-export async function defaultTimeZone(): Promise<TimeZoneType> {
-    return _defaultTzOptions;
-}
-
-export async function toDayAndTime(date: Date): Promise<{ day: number; time: number }> {
-    const offset = (5 * 60 + 30) * 60 * 1000;
-    const newDate = new Date(date.getTime() + offset);
+export async function toDayAndTime(date: Date): Promise<{ day: string; time: string }> {
+    const ldate = DateTime.fromJSDate(date).setZone('UTC+05:30');
+    const day = ldate.toFormat('yyMMdd');
+    const time = ldate.toFormat('HHmm');
     return {
-        day: Number.parseInt(format(newDate, 'yyMMdd'), 10),
-        time: Number.parseInt(format(newDate, 'HHmm'), 10),
+        day,
+        time,
     };
 }

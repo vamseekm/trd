@@ -1,5 +1,3 @@
-import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
-
 import { Config } from '../infra';
 import { IExchangeConfig } from '../types';
 import { toDayAndTime } from '../util';
@@ -23,7 +21,7 @@ async function isValidTick({ date, exchange }: { date: Date; exchange: string })
     const exchangeConfig = (await getExchangeTimes()).get(exchange);
     if (exchangeConfig == undefined) return true;
     const { time } = await toDayAndTime(date);
-    return time > exchangeConfig.startTime && time < exchangeConfig.endTime;
+    return Number.parseInt(time, 10) > exchangeConfig.startTime && Number.parseInt(time, 10) < exchangeConfig.endTime;
 }
 
 export const ExchangeService = {

@@ -30,12 +30,12 @@ async function debug(): Promise<void> {
     // await TaskService.sync();
     // await InstrumentService.debug();
     // await InstrumentService.updateLTPTrackedInstruments();
-    // await CandleService.sync();
+    await CandleService.sync();
     // await InstrumentService.updateLTPAll();
     // await InstrumentService.getInstrumentsWithNoLastPrice();
     // Log.info('Debug done');
     // await TickService.startTickConsumer();
-    await ExchangeService.getExchangeTimes();
+    // await ExchangeService.getExchangeTimes();
     await forever();
 }
 

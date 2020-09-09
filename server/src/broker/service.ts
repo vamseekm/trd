@@ -1,9 +1,8 @@
-import { format } from 'date-fns-tz';
-import enGB from 'date-fns/locale/en-GB';
-
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
+import { DateTime } from 'luxon';
+
 import { Config, Log, Redis } from '../infra';
 import { PrefService } from '../pref';
 import {
@@ -158,7 +157,7 @@ const kiteIntervalMap: Record<CandleInterval, string> = {
     [CandleInterval.DAY_01]: 'day',
 };
 async function kiteDateFormat(date: Date): Promise<string> {
-    return format(date, 'yyyy-MM-dd HH:mm:ss', { timeZone: 'Asia/Calcutta', locale: enGB });
+    return DateTime.fromJSDate(date).setZone('UTC+05:30').toFormat('yyyy-MM-dd HH:mm:ss');
 }
 async function getHistorical({
     instrumentToken,
@@ -173,7 +172,9 @@ async function getHistorical({
 }): Promise<IBrokerCandle[]> {
     const kite = await kiteInstance();
     const kiteInterval = kiteIntervalMap[interval];
-    return kite.getHistoricalData(instrumentToken, kiteInterval, await kiteDateFormat(from), await kiteDateFormat(to));
+    const fromString = await kiteDateFormat(from);
+    const toString = await kiteDateFormat(to);
+    return kite.getHistoricalData(instrumentToken, kiteInterval, fromString, toString);
 }
 
 export const BrokerService = {

@@ -1,4 +1,5 @@
 /* eslint-disable unicorn/no-null */
+import { subDays, subHours } from 'date-fns';
 import plimit from 'p-limit';
 
 import { EXCHANGE_TICKER, MessageType } from '../bridge';
@@ -6,8 +7,9 @@ import { consumeQueue } from '../bridge';
 import { CacheService } from '../cache';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
+import { PrefModel } from '../pref/model';
 import { ITick } from '../types';
-import { forever, toDayAndTime } from '../util';
+import { forever, propertyMapFromObjectList, toDayAndTime } from '../util';
 
 async function startRawTickConsumer(): Promise<void> {
     await consumeQueue({ name: 'rawTickConsumer', messageType: MessageType.rawTick }, async ({ message, channel }) => {
@@ -70,8 +72,8 @@ async function formatTick(tick: any): Promise<ITick | undefined> {
             globalSymbol,
             exchange,
             tradingSymbol,
-            day,
-            time,
+            day: Number.parseInt(day, 10),
+            time: Number.parseInt(time, 10),
             lastTradedPrice: last_price,
             totalVolume: volume,
             totalBuyQuantity: buy_quantity,
@@ -86,10 +88,15 @@ async function formatTick(tick: any): Promise<ITick | undefined> {
 
 async function startTickConsumer(): Promise<void> {
     await consumeQueue({ name: 'tickConsumer', messageType: MessageType.tick }, async ({ message, channel }) => {
-        const { ticks, received_on }: { ticks: ITick[]; received_on: Date } = JSON.parse(message.content.toString());
-        if (!ticks) return;
+        const { ticks, received_on }: { ticks: ITick[]; received_on: number } = JSON.parse(message.content.toString());
+        if (!ticks) return 0;
+        const validDate = subHours(new Date(), 24).getTime();
+        if (received_on <= validDate) return ticks.length;
         console.log(ticks.length);
         console.log(ticks);
+        console.log(await PrefModel.find());
+        console.log(typeof received_on);
+        console.log(new Date(received_on).toLocaleString());
         return false;
     });
     await forever();
