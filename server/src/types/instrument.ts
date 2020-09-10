@@ -1,5 +1,5 @@
 export interface IInstrument {
-    globalSymbol: string;
+    id: string;
     instrumentToken: string;
     exchangeToken: string;
     tradingSymbol: string;

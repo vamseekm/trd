@@ -1,6 +1,8 @@
 /* eslint-disable unicorn/no-null */
-import { subDays, subHours } from 'date-fns';
+import lodash from 'lodash';
+import { DateTime } from 'luxon';
 import plimit from 'p-limit';
+import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
 
 import { EXCHANGE_TICKER, MessageType } from '../bridge';
 import { consumeQueue } from '../bridge';
@@ -10,6 +12,8 @@ import { Log } from '../infra';
 import { PrefModel } from '../pref/model';
 import { ITick } from '../types';
 import { forever, propertyMapFromObjectList, toDayAndTime } from '../util';
+import { Tick, TickModel } from './model';
+import { TickRepository } from './repository';
 
 async function startRawTickConsumer(): Promise<void> {
     await consumeQueue({ name: 'rawTickConsumer', messageType: MessageType.rawTick }, async ({ message, channel }) => {
@@ -33,15 +37,12 @@ async function startRawTickConsumer(): Promise<void> {
 
 async function startTickStoreConsumer(): Promise<void> {
     await consumeQueue({ name: 'tickStoreConsumer', messageType: MessageType.tick }, async ({ message }) => {
-        const content = JSON.parse(message.content.toString());
-        const tickRows = content.ticks
-            .filter((tick: ITick) => {
-                return tick.timestamp != undefined;
-            })
-            .map((tick: ITick) => {
-                // return TickRepository.create({ timestamp, tickString: JSON.stringify(tick), globalSymbol });
-            });
-        return tickRows.length;
+        const { ticks, received_on }: { ticks: ITick[]; received_on: number } = JSON.parse(message.content.toString());
+        if (!ticks) return 0;
+        const validDate = DateTime.fromJSDate(new Date()).minus({ day: 1 }).toJSDate();
+        if (received_on <= validDate.getTime()) return ticks.length;
+        await storeTicks(ticks);
+        return ticks.length;
     });
     return new Promise(() => {
         Log.info('Starting tick store consumer...');
@@ -65,11 +66,11 @@ async function formatTick(tick: any): Promise<ITick | undefined> {
         const timestampDate = new Date(timestamp);
         const instrument = await CacheService.getInstrumentByToken(instrument_token);
         if (instrument == null) throw new Error(`No instrument found with instrumentToken: ${instrument_token}`);
-        const { globalSymbol, exchange, tradingSymbol } = instrument;
+        const { id, exchange, tradingSymbol } = instrument;
         if (!(await ExchangeService.isValidTick({ exchange, date: timestampDate }))) return;
         const { day, time } = await toDayAndTime(timestampDate);
         return {
-            globalSymbol,
+            instrumentId: id,
             exchange,
             tradingSymbol,
             day: Number.parseInt(day, 10),
@@ -86,17 +87,16 @@ async function formatTick(tick: any): Promise<ITick | undefined> {
     });
 }
 
+async function storeTicks(ticks: ITick[]) {
+    for (const chunk of lodash.chunk(ticks, 10)) {
+        await TickModel.insertMany(chunk);
+    }
+}
+
 async function startTickConsumer(): Promise<void> {
     await consumeQueue({ name: 'tickConsumer', messageType: MessageType.tick }, async ({ message, channel }) => {
         const { ticks, received_on }: { ticks: ITick[]; received_on: number } = JSON.parse(message.content.toString());
         if (!ticks) return 0;
-        const validDate = subHours(new Date(), 24).getTime();
-        if (received_on <= validDate) return ticks.length;
-        console.log(ticks.length);
-        console.log(ticks);
-        console.log(await PrefModel.find());
-        console.log(typeof received_on);
-        console.log(new Date(received_on).toLocaleString());
         return false;
     });
     await forever();

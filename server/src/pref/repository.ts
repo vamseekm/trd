@@ -1,13 +1,13 @@
-import { PrefModel } from './model';
+import { PrefModel } from '../database';
 
 async function get(key: string, defaultValue?: any): Promise<string> {
-    const prefItem = await PrefModel.findOne({ key });
-    if (prefItem?.value != undefined) return prefItem.value;
+    const item = await PrefModel.findOne({ where: { key } });
+    if (item?.value != undefined) return item.value;
     return defaultValue;
 }
 
 async function set(key: string, value: string): Promise<void> {
-    await PrefModel.findOneAndUpdate({ key }, { key, value }, { new: true, upsert: true });
+    await PrefModel.upsert({ key, value });
 }
 
 export const PrefRepository = {

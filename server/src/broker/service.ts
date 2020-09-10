@@ -66,16 +66,16 @@ async function getExchanges(): Promise<string[]> {
     return profile.exchanges.filter((exchange) => exchange !== 'BSE');
 }
 
-async function getLTP(globalSymbols: string[]): Promise<BrokerQuoteLtp[]> {
+async function getLTP(instrumentIdList: string[]): Promise<BrokerQuoteLtp[]> {
     const kite = await kiteInstance();
-    const ltpObject = await kite.getLTP(globalSymbols);
+    const ltpObject = await kite.getLTP(instrumentIdList);
     const keys = Object.keys(ltpObject);
     const response: BrokerQuoteLtp[] = [];
-    keys.forEach((globalSymbol) => {
+    keys.forEach((id) => {
         response.push({
-            globalSymbol,
-            instrumentToken: ltpObject[globalSymbol].instrument_token,
-            lastPrice: ltpObject[globalSymbol].last_price,
+            id,
+            instrumentToken: ltpObject[id].instrument_token,
+            lastPrice: ltpObject[id].last_price,
         });
     });
     return response;
@@ -96,7 +96,7 @@ async function getInstrumentsByExchange(exchange: string): Promise<IInstrument[]
             (ins: any): IInstrument => {
                 const tradingSymbol = ins.tradingsymbol;
                 return {
-                    globalSymbol: `${ins.exchange}-${tradingSymbol}`,
+                    id: `${ins.exchange}-${tradingSymbol}`,
                     instrumentToken: ins.instrument_token,
                     exchangeToken: ins.exchange_token,
                     tradingSymbol,

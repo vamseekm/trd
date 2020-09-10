@@ -3,26 +3,26 @@ import pFilter from 'p-filter';
 import pMap from 'p-map';
 
 import { BrokerService } from '../broker';
+import { InstrumentModel } from '../database';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
-import { Instrument } from '../instrument/model';
 import { CandleInterval, IBrokerCandle } from '../types';
 import { toDayAndTime } from '../util';
 import { Candle } from './model';
 import { CandleRepository } from './repository';
 
 async function candleKey({
-    globalSymbol,
+    instrumentId,
     interval,
     date,
 }: {
-    globalSymbol: string;
+    instrumentId: string;
     interval: CandleInterval;
     date: Date;
 }): Promise<string> {
     const { day, time } = await toDayAndTime(date);
-    return `${globalSymbol}-${interval}-${day}${time}`;
+    return `${instrumentId}-${interval}-${day}${time}`;
 }
 
 async function splitCandleKey(key: string) {
@@ -36,13 +36,13 @@ async function splitCandleKey(key: string) {
 }
 
 async function mapBrokerCandleToDatabaseCandle(
-    instrument: Instrument,
+    instrument: InstrumentModel,
     interval: CandleInterval,
     candle: IBrokerCandle,
 ): Promise<Candle> {
-    const { globalSymbol } = instrument;
+    const { id } = instrument;
     return {
-        k: await candleKey({ globalSymbol, interval, date: candle.date }),
+        k: await candleKey({ instrumentId: id, interval, date: candle.date }),
         t: candle.date,
         o: candle.open,
         h: candle.high,
@@ -61,7 +61,7 @@ async function downloadCandles({
     from,
     to,
 }: {
-    instrument: Instrument;
+    instrument: InstrumentModel;
     interval: CandleInterval;
     from: Date;
     to: Date;
@@ -80,17 +80,16 @@ async function downloadCandles({
 
 async function sync(): Promise<void> {
     Log.info('Syncing candles...');
-    // const instruments = await InstrumentService.getTrackedInstruments();
-    const instruments = await InstrumentService.getTrackedFutures('NIFTY');
+    const instruments = await InstrumentService.getTrackedInstruments();
+    // const instruments = await InstrumentService.getTrackedFutures('NIFTY');
     for (const instrument of instruments) {
-        const { globalSymbol } = instrument;
-        Log.info(`Candle sync: ${globalSymbol}`);
+        const { id } = instrument;
+        Log.info(`Candle sync: ${id}`);
         const to = new Date();
-        const from = subDays(new Date(), 1);
+        const from = subDays(new Date(), 7);
         const candles = await downloadCandles({ instrument: instrument, interval: CandleInterval.MIN_01, from, to });
 
         if (candles.length > 0) console.log(await CandleRepository.storeCandles(candles));
-        break;
     }
 }
 

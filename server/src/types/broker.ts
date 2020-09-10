@@ -15,4 +15,4 @@ export interface IBrokerService {
     getInstrumentsByExchange(exchange: string): Promise<IInstrument[]>;
 }
 
-export type BrokerQuoteLtp = Pick<IInstrument, 'globalSymbol' | 'lastPrice' | 'instrumentToken'>;
+export type BrokerQuoteLtp = Pick<IInstrument, 'id' | 'lastPrice' | 'instrumentToken'>;

@@ -10,6 +10,12 @@
         "logging": false,
         "entities": ["dist/**/entity.js"]
     },
+    "postgres": {
+        "database": "postgres",
+        "dialect": "postgres",
+        "username": "postgres",
+        "password": "postgres"
+    },
     "redis": {
         "host": "127.0.0.1",
         "port": 6379

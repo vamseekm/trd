@@ -4,7 +4,7 @@ export interface OrderItem {
     orders: number;
 }
 export interface ITick {
-    globalSymbol: string;
+    instrumentId: string;
     exchange: string;
     tradingSymbol: string;
     lastTradedPrice: number;

@@ -11,6 +11,23 @@ services:
       - rabbit-data-2:/var/lib/rabbitmq:delegated
     hostname: rabbit
 
+  i_db:
+    image: postgres
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - pg-data3:/var/lib/postgresql/data/
+    ports:
+      - 127.0.0.1:5432:5432
+
+  i_adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 127.0.0.1:8080:8080
+
   i_redis:
     image: redis
     volumes:
@@ -123,7 +140,7 @@ services:
   c_tick_processor:
     image: c_server_img
     # command: "tail -f /dev/null"
-    command: "bash ./server.sh --tick-store-consumer --raw-tick-consumer"
+    command: "bash ./server.sh --raw-tick-consumer"
     environment:
       NODE_ENV: docker
     restart: always
@@ -137,4 +154,4 @@ volumes:
   stan-data:
   redis-insight-db:
   mongo-data:
-  pg-data:
+  pg-data3:
