@@ -19,7 +19,7 @@ async function fetchFnoInstruments({
     expiry?: Date;
     take?: number;
 }): Promise<InstrumentModel[]> {
-    let options: FindOptions = { where: { name, exchange, segment, expiry: { $gte: expiry } } };
+    let options: FindOptions = { where: { name, exchange, segment, expiry: { $gte: expiry } }, raw: true };
     if (take != undefined) options = { ...options, limit: take };
     return InstrumentModel.findAll(options);
 }

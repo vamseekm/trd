@@ -6,7 +6,7 @@ import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
 import { BrokerService } from '../../broker';
 import { InstrumentModel } from '../../database';
 import { Log } from '../../infra';
-import { BrokerQuoteLtp } from '../../types';
+import { BrokerQuoteLtp, INSTRUMENT_ID_SEPERATOR } from '../../types';
 import { sleep } from '../../util';
 import { InstrumentRepository } from '../repository/instrument';
 
@@ -43,6 +43,7 @@ async function getOptionExpiryListToTrack(name: string): Promise<Date[]> {
 async function getFnoInstrumentsToTrack(name: string): Promise<InstrumentModel[]> {
     const futures = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', take: 2 });
     const expiryList = await getOptionExpiryListToTrack(name);
+    //TODO: Config
     const stirkeIntervalMap: Record<string, number> = {
         NIFTY: 100,
         BANKNIFTY: 100,
@@ -126,13 +127,17 @@ async function trackInstruments(): Promise<void> {
             limit: 50,
         })
     ).map((instrument) => instrument.id);
-    console.log(topInstruments);
     const fnoInstruments = await getTrackableFnoInstruments();
-    console.log(fnoInstruments);
     const allInstruments = [...indices, ...topInstruments, ...fnoInstruments];
+    Log.json('Tracking:', {
+        indices: indices.length,
+        topInstruments: topInstruments.length,
+        fnoInstruments: fnoInstruments.length,
+    });
 
     await InstrumentRepository.trackInstruments(allInstruments);
-    console.log(`Tracking ${allInstruments.length} instruments`);
+    // console.log(allInstruments.join('\t'));
+    Log.info(`\tTracking ${allInstruments.length} instruments.`);
 }
 
 async function updateLTP(insrumentList: InstrumentModel[]): Promise<void> {
@@ -143,10 +148,8 @@ async function updateLTP(insrumentList: InstrumentModel[]): Promise<void> {
     for (const [i, chunk] of chunks.entries()) {
         Log.info(`Fetching LTP of chunk: ${i + 1}/${chunks.length}`);
         const ltpList: BrokerQuoteLtp[] = (await BrokerService.getLTP(chunk)).map((item) => {
-            return { ...item, id: item.id.replace(':', '-') };
+            return { ...item, id: item.id.replace(':', INSTRUMENT_ID_SEPERATOR) };
         });
-        // console.log(chunk);
-        // console.log(ltpList.filter((item) => item.globalSymbol.match(/nifty/gi)));
         await InstrumentRepository.updateInstruments(
             ltpList.map((ltp: Partial<InstrumentModel>) => {
                 return { ...ltp, lastPriceUpdatedOn: new Date() };
@@ -198,7 +201,7 @@ async function getTrackedInstruments(): Promise<InstrumentModel[]> {
 }
 
 async function fetchInstrumentByToken(instrumentToken: string): Promise<InstrumentModel | null> {
-    return InstrumentModel.findOne({ where: { instrumentToken } });
+    return InstrumentModel.findOne({ where: { instrumentToken }, raw: true });
 }
 
 async function getTrackedFutures(name: string): Promise<InstrumentModel[]> {

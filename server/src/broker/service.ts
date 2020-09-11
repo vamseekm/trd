@@ -11,6 +11,7 @@ import {
     IBrokerCandle,
     IBrokerProfile,
     IInstrument,
+    INSTRUMENT_ID_SEPERATOR,
     KITE_ACCESS_TOKEN,
     KITE_API_KEY,
     KITE_API_SECRET,
@@ -96,7 +97,7 @@ async function getInstrumentsByExchange(exchange: string): Promise<IInstrument[]
             (ins: any): IInstrument => {
                 const tradingSymbol = ins.tradingsymbol;
                 return {
-                    id: `${ins.exchange}-${tradingSymbol}`,
+                    id: `${ins.exchange}${INSTRUMENT_ID_SEPERATOR}${tradingSymbol}`,
                     instrumentToken: ins.instrument_token,
                     exchangeToken: ins.exchange_token,
                     tradingSymbol,
@@ -114,7 +115,11 @@ async function getInstrumentsByExchange(exchange: string): Promise<IInstrument[]
         );
 }
 
-async function ticker(ids: string[], tick_handler: any, order_update_handler?: any): Promise<any> {
+async function ticker(
+    instrumentTokenList: (number | string)[],
+    tick_handler: any,
+    order_update_handler?: any,
+): Promise<any> {
     const api_key = Config.get(KITE_API_KEY);
     const access_token = await PrefService.get(KITE_ACCESS_TOKEN);
 
@@ -137,10 +142,14 @@ async function ticker(ids: string[], tick_handler: any, order_update_handler?: a
         });
         ticker.on('connect', () => {
             Log.info('Kite: Connected...');
-            Log.info(`Kite: Subscribing to ${ids.length} instruments with full quote mode...`);
-            const numberIds = ids.map((id) => Number.parseInt(id));
-            ticker.subscribe(numberIds);
-            ticker.setMode(ticker.modeFull, numberIds);
+            Log.info(`Kite: Subscribing to ${instrumentTokenList.length} instruments with full quote mode...`);
+            const numberInstrumentTokenList = instrumentTokenList.map((instrumentToken) => {
+                if (typeof instrumentToken === 'number') return instrumentToken;
+                return Number.parseInt(instrumentToken, 10);
+            });
+            console.log(numberInstrumentTokenList);
+            ticker.subscribe(numberInstrumentTokenList);
+            ticker.setMode(ticker.modeFull, numberInstrumentTokenList);
             return resolve(ticker);
         });
         ticker.connect();
@@ -165,7 +174,7 @@ async function getHistorical({
     from,
     to,
 }: {
-    instrumentToken: string;
+    instrumentToken: number;
     interval: CandleInterval;
     from: Date;
     to: Date;

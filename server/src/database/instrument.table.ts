@@ -6,8 +6,8 @@ export class InstrumentModel extends Model<InstrumentModel> {
     id!: string;
 
     @Index
-    @Column({ allowNull: false })
-    instrumentToken!: string;
+    @Column({ allowNull: false, type: DataType.BIGINT })
+    instrumentToken!: number;
 
     @Column({ allowNull: false })
     exchangeToken!: string;

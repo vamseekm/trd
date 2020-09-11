@@ -1,6 +1,6 @@
 export interface IInstrument {
     id: string;
-    instrumentToken: string;
+    instrumentToken: number;
     exchangeToken: string;
     tradingSymbol: string;
     name: string;
@@ -13,3 +13,5 @@ export interface IInstrument {
     segment: string;
     exchange: string;
 }
+
+export const INSTRUMENT_ID_SEPERATOR = '_';

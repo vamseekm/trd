@@ -2,26 +2,26 @@
 import lodash from 'lodash';
 import { DateTime } from 'luxon';
 import plimit from 'p-limit';
-import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
 
 import { EXCHANGE_TICKER, MessageType } from '../bridge';
 import { consumeQueue } from '../bridge';
 import { CacheService } from '../cache';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
-import { PrefModel } from '../pref/model';
 import { ITick } from '../types';
-import { forever, propertyMapFromObjectList, toDayAndTime } from '../util';
-import { Tick, TickModel } from './model';
-import { TickRepository } from './repository';
+import { forever, toDayAndTime } from '../util';
+import { TickModel } from './model';
 
 async function startRawTickConsumer(): Promise<void> {
     await consumeQueue({ name: 'rawTickConsumer', messageType: MessageType.rawTick }, async ({ message, channel }) => {
         const { ticks, received_on } = JSON.parse(message.content.toString());
         if (!ticks) return;
+        // console.log(ticks[0]);
+        // console.log(await formatTick(ticks[0]));
+        // return false;
         const processedTicks = await Promise.all(ticks.map((tick: any) => formatTick(tick)));
         const validTicks = processedTicks.filter((tick) => !!tick);
-        if (validTicks.length === 0) return;
+        if (validTicks.length === 0) return 0;
         await channel.publish(
             EXCHANGE_TICKER,
             MessageType.tick,
@@ -94,8 +94,8 @@ async function storeTicks(ticks: ITick[]) {
 }
 
 async function startTickConsumer(): Promise<void> {
-    await consumeQueue({ name: 'tickConsumer', messageType: MessageType.tick }, async ({ message, channel }) => {
-        const { ticks, received_on }: { ticks: ITick[]; received_on: number } = JSON.parse(message.content.toString());
+    await consumeQueue({ name: 'tickConsumer', messageType: MessageType.tick }, async ({ message }) => {
+        const { ticks }: { ticks: ITick[]; received_on: number } = JSON.parse(message.content.toString());
         if (!ticks) return 0;
         return false;
     });

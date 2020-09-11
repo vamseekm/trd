@@ -6,6 +6,7 @@ import { program } from 'commander';
 import { exit } from 'process';
 
 import { Log } from '../infra';
+import { forever } from '../util';
 import { CliService } from './service';
 
 async function clearPort(port: number) {
@@ -40,7 +41,14 @@ async function run() {
     program.option('--raw-tick-consumer', 'Convert raw ticks to processed ticks.');
     program.option('--tick-store-consumer', 'Store processed ticks.');
     program.option('--tick-consumer', 'Consume processed ticks');
+    program.option('--pause', "Just don't do anything");
     program.parse(process.argv);
+
+    if (program.pause) {
+        console.log('Pausing service.');
+        await forever();
+        return;
+    }
 
     const actions: Promise<any>[] = [];
     await CliService.databaseInit();

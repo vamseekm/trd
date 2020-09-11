@@ -8,7 +8,7 @@ async function connect(): Promise<void> {
     const databaseConfig = Config.get('postgres');
     const seq = new Sequelize({
         ...databaseConfig,
-        logging: true,
+        logging: false,
         models: [PrefModel, InstrumentModel],
         operatorsAliases: {
             $in: Op.in,
