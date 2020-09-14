@@ -4,12 +4,13 @@ import { Sequelize } from 'sequelize-typescript';
 import { Config } from '../infra/config';
 import { InstrumentModel } from './instrument.table';
 import { PrefModel } from './pref.table';
+import { TickModel } from './tick.table';
 async function connect(): Promise<void> {
     const databaseConfig = Config.get('postgres');
     const seq = new Sequelize({
         ...databaseConfig,
         logging: false,
-        models: [PrefModel, InstrumentModel],
+        models: [PrefModel, InstrumentModel, TickModel],
         operatorsAliases: {
             $in: Op.in,
             $lt: Op.lt,

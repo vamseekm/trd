@@ -26,13 +26,13 @@ async function sync(): Promise<void> {
 
 async function debug(): Promise<void> {
     Log.info(`Debug start... `);
-    await PrefService.set('hello', 'word111');
+    // await PrefService.set('hello', 'word111');
     // console.time('hi');
     // console.log(await PrefService.get('hello'));
     // console.timeEnd('hi');
     // await InstrumentService.syncInstruments();
     // await InstrumentService.updateLTPInitialInstruments();
-    await InstrumentService.trackInstruments();
+    // await InstrumentService.trackInstruments();
 
     // await PrefService.set('hello', 'world');
     // await InstrumentService.syncInstruments();

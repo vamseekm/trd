@@ -6,11 +6,11 @@ import plimit from 'p-limit';
 import { EXCHANGE_TICKER, MessageType } from '../bridge';
 import { consumeQueue } from '../bridge';
 import { CacheService } from '../cache';
+import { TickModel } from '../database/tick.table';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
 import { ITick } from '../types';
 import { forever, toDayAndTime } from '../util';
-import { TickModel } from './model';
 
 async function startRawTickConsumer(): Promise<void> {
     await consumeQueue({ name: 'rawTickConsumer', messageType: MessageType.rawTick }, async ({ message, channel }) => {
@@ -40,7 +40,7 @@ async function startTickStoreConsumer(): Promise<void> {
         const { ticks, received_on }: { ticks: ITick[]; received_on: number } = JSON.parse(message.content.toString());
         if (!ticks) return 0;
         const validDate = DateTime.fromJSDate(new Date()).minus({ day: 1 }).toJSDate();
-        if (received_on <= validDate.getTime()) return ticks.length;
+        // if (received_on <= validDate.getTime()) return ticks.length;
         await storeTicks(ticks);
         return ticks.length;
     });
@@ -88,9 +88,7 @@ async function formatTick(tick: any): Promise<ITick | undefined> {
 }
 
 async function storeTicks(ticks: ITick[]) {
-    for (const chunk of lodash.chunk(ticks, 10)) {
-        await TickModel.insertMany(chunk);
-    }
+    await TickModel.bulkCreate(ticks);
 }
 
 async function startTickConsumer(): Promise<void> {

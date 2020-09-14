@@ -53,28 +53,28 @@ services:
     volumes:
       - redis-insight-db:/db
 
-  i_mongo:
-    image: mongo:4.4-bionic
-    restart: always
-    ports:
-      - 127.0.0.1:27017:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-    volumes:
-      - mongo-data:/data/db
+  # i_mongo:
+  #   image: mongo:4.4-bionic
+  #   restart: always
+  #   ports:
+  #     - 127.0.0.1:27017:27017
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: root
+  #     MONGO_INITDB_ROOT_PASSWORD: example
+  #   volumes:
+  #     - mongo-data:/data/db
 
-  i_adminmongo:
-    image: mrvautin/adminmongo
-    ports:
-      - 127.0.0.1:1234:1234
-    environment:
-      - HOST=0.0.0.0
-      - CONN_NAME=whatever
-      - DB_HOST=i_mongo
-      - DB_PORT=27017
-      - DB_USERNAME=root
-      - DB_PASSWORD=example
+  # i_adminmongo:
+  #   image: mrvautin/adminmongo
+  #   ports:
+  #     - 127.0.0.1:1234:1234
+  #   environment:
+  #     - HOST=0.0.0.0
+  #     - CONN_NAME=whatever
+  #     - DB_HOST=i_mongo
+  #     - DB_PORT=27017
+  #     - DB_USERNAME=root
+  #     - DB_PASSWORD=example
 
   c_client_server:
     build:
@@ -140,7 +140,7 @@ services:
   c_tick_processor:
     image: c_server_img
     # command: "tail -f /dev/null"
-    command: "bash ./server.sh --raw-tick-consumer"
+    command: "bash ./server.sh --raw-tick-consumer --tick-store-consumer"
     environment:
       NODE_ENV: docker
     restart: always
@@ -148,10 +148,10 @@ services:
       - c_server_img
 
 volumes:
-  db-data:
+  # db-data:
   redis-data:
   rabbit-data-2:
   stan-data:
   redis-insight-db:
-  mongo-data:
+  # mongo-data:
   pg-data3:
