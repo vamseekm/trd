@@ -1,6 +1,4 @@
 /* eslint-disable unicorn/no-null */
-import lodash from 'lodash';
-import { DateTime } from 'luxon';
 import plimit from 'p-limit';
 
 import { EXCHANGE_TICKER, MessageType } from '../bridge';
@@ -37,9 +35,8 @@ async function startRawTickConsumer(): Promise<void> {
 
 async function startTickStoreConsumer(): Promise<void> {
     await consumeQueue({ name: 'tickStoreConsumer', messageType: MessageType.tick }, async ({ message }) => {
-        const { ticks, received_on }: { ticks: ITick[]; received_on: number } = JSON.parse(message.content.toString());
+        const { ticks }: { ticks: ITick[]; received_on: number } = JSON.parse(message.content.toString());
         if (!ticks) return 0;
-        const validDate = DateTime.fromJSDate(new Date()).minus({ day: 1 }).toJSDate();
         // if (received_on <= validDate.getTime()) return ticks.length;
         await storeTicks(ticks);
         return ticks.length;
