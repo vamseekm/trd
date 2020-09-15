@@ -64,8 +64,8 @@ async function getFnoInstrumentsToTrack(name: string): Promise<InstrumentModel[]
                         { segment: 'NFO-OPT' },
                         {
                             strike: {
-                                $gte: strikeLimitLow,
-                                $lte: strikeLimitHigh,
+                                [Op.gte]: strikeLimitLow,
+                                [Op.lte]: strikeLimitHigh,
                             },
                         },
                         Sequelize.where(
@@ -165,10 +165,10 @@ async function updateLTPAll(): Promise<void> {
         attributes: ['id'],
         where: {
             live: true,
-            $and: [
-                { expiry: { $lt: maxDate } },
+            [Op.and]: [
+                { expiry: { [Op.lt]: maxDate } },
                 {
-                    $or: [{ lastPriceUpdatedOn: { $lt: subDays(new Date(), 1) } }, { lastPrice: 0 }],
+                    [Op.or]: [{ lastPriceUpdatedOn: { [Op.lt]: subDays(new Date(), 1) } }, { lastPrice: 0 }],
                 },
             ],
         },
@@ -181,8 +181,8 @@ async function updateLTPInitialInstruments(): Promise<void> {
     Log.info('Updating LTP of initial instruments...');
     const instruments = await InstrumentModel.findAll({
         where: {
-            segment: { $in: ['INDICES', 'NFO-FUT', 'NSE'] },
-            expiry: { $lt: addMonths(new Date(), 2) },
+            segment: { [Op.in]: ['INDICES', 'NFO-FUT', 'NSE'] },
+            expiry: { [Op.lt]: addMonths(new Date(), 2) },
         },
     });
     await updateLTP(instruments);
@@ -215,7 +215,7 @@ async function debug(): Promise<void> {
     const instruments = await InstrumentModel.findAll({ where: { name: 'BANKNIFTY', segment: 'NFO-FUT' } });
     console.log(instruments);
     await updateLTP(instruments);
-    console.log(await InstrumentModel.findAll({ where: { id: { $in: instruments.map((i) => i.id) } } }));
+    console.log(await InstrumentModel.findAll({ where: { id: { [Op.in]: instruments.map((i) => i.id) } } }));
 }
 
 export const InstrumentService = {

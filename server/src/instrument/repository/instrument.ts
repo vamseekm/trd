@@ -1,5 +1,5 @@
-import { logger } from '@typegoose/typegoose/lib/logSettings';
 import { diff as diffObject } from 'deep-diff';
+import { Op } from 'sequelize';
 import { FindOptions } from 'sequelize/types';
 
 import { InstrumentModel } from '../../database';
@@ -19,7 +19,7 @@ async function fetchFnoInstruments({
     expiry?: Date;
     take?: number;
 }): Promise<InstrumentModel[]> {
-    let options: FindOptions = { where: { name, exchange, segment, expiry: { $gte: expiry } }, raw: true };
+    let options: FindOptions = { where: { name, exchange, segment, expiry: { [Op.gte]: expiry } }, raw: true };
     if (take != undefined) options = { ...options, limit: take };
     return InstrumentModel.findAll(options);
 }
@@ -49,7 +49,7 @@ async function updateInstruments(instrumentList: Array<Partial<InstrumentModel>>
 }
 
 async function bulkUpdateInstruments(idList: string[], data: Partial<InstrumentModel>) {
-    return InstrumentModel.update(data, { where: { id: { $in: idList } } });
+    return InstrumentModel.update(data, { where: { id: { [Op.in]: idList } } });
 }
 
 async function trackInstruments(idList: string[]): Promise<any> {

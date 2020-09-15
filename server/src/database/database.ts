@@ -11,15 +11,6 @@ async function connect(): Promise<void> {
         ...databaseConfig,
         logging: false,
         models: [PrefModel, InstrumentModel, TickModel],
-        operatorsAliases: {
-            $in: Op.in,
-            $lt: Op.lt,
-            $lte: Op.lte,
-            $gt: Op.gt,
-            $gte: Op.gte,
-            $and: Op.and,
-            $or: Op.or,
-        },
     });
     await seq.sync({ alter: true });
 }
