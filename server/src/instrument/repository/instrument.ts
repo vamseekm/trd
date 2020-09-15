@@ -1,6 +1,5 @@
 import { diff as diffObject } from 'deep-diff';
-import { Op } from 'sequelize';
-import { FindOptions } from 'sequelize/types';
+import { FindOptions, Op, WhereOptions } from 'sequelize';
 
 import { InstrumentModel } from '../../database';
 import { Log } from '../../infra';
@@ -104,6 +103,10 @@ async function upsertInstruments(exchange: string, inputInstruments: IInstrument
     };
 }
 
+async function findOneBy(where: WhereOptions): Promise<InstrumentModel | null> {
+    return InstrumentModel.findOne({ where, raw: true });
+}
+
 export const InstrumentRepository = {
     exchangeList,
     fetchFnoInstruments,
@@ -112,4 +115,5 @@ export const InstrumentRepository = {
     upsertInstruments,
     trackInstruments,
     updateInstruments,
+    findOneBy,
 };

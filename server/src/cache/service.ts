@@ -2,29 +2,34 @@ import LruCache from 'lru-cache';
 
 import { InstrumentModel } from '../database';
 import { Log } from '../infra';
-import { InstrumentService } from '../instrument';
+import { InstrumentRepository } from '../instrument/repository/instrument';
 
-const instrumentTokenCache = new LruCache(1000);
-const instrumentIdCache = new LruCache(1000);
-const stats = { hits: 0, miss: 0, tokenSize: 0, idSize: 0 };
+const TOTAL_INSTRUMENTS = 1000;
+const instrumentTokenCache = new LruCache<string, string>(TOTAL_INSTRUMENTS);
+const instrumentIdCache = new LruCache<string, InstrumentModel>(TOTAL_INSTRUMENTS);
 
 async function getInstrumentByToken(instrumentToken: string): Promise<InstrumentModel | undefined> {
-    if (instrumentTokenCache.has(instrumentToken)) {
-        stats.hits += 1;
-        return instrumentIdCache.get(instrumentTokenCache.get(instrumentToken)) as InstrumentModel;
-    }
-    stats.miss += 1;
-    const instrument = await InstrumentService.fetchInstrumentByToken(instrumentToken);
-    if (instrument == undefined) return;
-    Log.json('Instrument token cache stats:', stats);
-    Log.json('Instrument miss:', {
-        token: instrumentToken,
-        id: instrument.id,
+    const instrumentId = instrumentTokenCache.get(instrumentToken);
+    if (instrumentId != undefined) return getInstrumentById(instrumentId);
+    const instrument = await InstrumentRepository.findOneBy({ instrumentToken });
+    return cacheInstrument(instrument);
+}
+
+async function getInstrumentById(id: string): Promise<InstrumentModel | undefined> {
+    const cachedInstrument = instrumentIdCache.get(id);
+    if (cachedInstrument != undefined) return cachedInstrument;
+    const instrument = await InstrumentRepository.findOneBy({ id });
+    Log.json(`Cache miss: ${instrument?.id}`, {
+        tokenCache: instrumentTokenCache.length,
+        idCache: instrumentIdCache.length,
     });
+    return cacheInstrument(instrument);
+}
+
+async function cacheInstrument(instrument: InstrumentModel | null): Promise<InstrumentModel | undefined> {
+    if (instrument == undefined) return;
     instrumentIdCache.set(instrument.id, instrument);
-    instrumentTokenCache.set(instrumentToken, instrument.id);
-    stats.tokenSize = instrumentTokenCache.length;
-    stats.idSize = instrumentIdCache.length;
+    instrumentTokenCache.set(`${instrument.instrumentToken}`, instrument.id);
     return instrument;
 }
 
