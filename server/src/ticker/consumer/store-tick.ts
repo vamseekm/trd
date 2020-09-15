@@ -1,0 +1,17 @@
+import { consumeQueue, MessageType } from '../../bridge';
+import { Log } from '../../infra';
+import { ITick } from '../../types';
+import { TickRepository } from '../repository';
+
+export async function startTickStoreConsumer(): Promise<void> {
+    await consumeQueue({ name: 'tickStoreConsumer', messageType: MessageType.tick }, async ({ message }) => {
+        const { ticks }: { ticks: ITick[]; received_on: number } = JSON.parse(message.content.toString());
+        if (!ticks) return 0;
+        // if (received_on <= validDate.getTime()) return ticks.length;
+        await TickRepository.storeTicks(ticks);
+        return ticks.length;
+    });
+    return new Promise(() => {
+        Log.info('Starting tick store consumer...');
+    });
+}

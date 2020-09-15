@@ -6,7 +6,7 @@ import { Log, mongoConnect } from '../infra';
 import { InstrumentService } from '../instrument';
 import { PrefService } from '../pref';
 import { TaskService } from '../task';
-import { TickService } from '../ticker';
+import { startRawTickConsumer, startTickListener, startTickProcessConsumer, startTickStoreConsumer } from '../ticker';
 import { forever } from '../util';
 
 async function databaseInit(): Promise<void> {
@@ -49,8 +49,6 @@ async function debug(): Promise<void> {
     // await forever();
 }
 
-const { startTickListener, startRawTickConsumer, startTickStoreConsumer, startTickConsumer } = TickService;
-
 export const CliService = {
     databaseInit,
     startAPIServer,
@@ -59,5 +57,5 @@ export const CliService = {
     startTickListener,
     startRawTickConsumer,
     startTickStoreConsumer,
-    startTickConsumer,
+    startTickProcessConsumer,
 };

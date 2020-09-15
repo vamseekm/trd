@@ -3,7 +3,7 @@ import { BrokerService } from '../broker';
 import { Log, Rabbit } from '../infra';
 import { InstrumentService } from '../instrument';
 
-async function start(): Promise<any> {
+export async function startTickListener(): Promise<any> {
     const instruments = await InstrumentService.getTrackedInstruments();
     const tokens = instruments.map((instrument) => instrument.instrumentToken);
     const channel = await Rabbit.createChannel();
@@ -33,7 +33,3 @@ async function start(): Promise<any> {
         Log.info('Ticker started...');
     });
 }
-
-export const TickListenerService = {
-    start,
-};

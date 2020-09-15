@@ -40,7 +40,7 @@ async function run() {
     program.option('--tick-listener', 'Listen for raw ticks');
     program.option('--raw-tick-consumer', 'Convert raw ticks to processed ticks.');
     program.option('--tick-store-consumer', 'Store processed ticks.');
-    program.option('--tick-consumer', 'Consume processed ticks');
+    program.option('--tick-process-consumer', 'Consume processed ticks');
     program.option('--pause', "Just don't do anything");
     program.parse(process.argv);
 
@@ -71,8 +71,8 @@ async function run() {
     if (program.tickStoreConsumer) {
         actions.push(CliService.startTickStoreConsumer());
     }
-    if (program.tickConsumer) {
-        actions.push(CliService.startTickConsumer());
+    if (program.tickProcessConsumer) {
+        actions.push(CliService.startTickProcessConsumer());
     }
     await Promise.all(actions);
     if (program.forceExit) {
