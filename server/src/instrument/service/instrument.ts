@@ -1,12 +1,12 @@
 import { addMonths, subDays } from 'date-fns';
 import lodash from 'lodash';
 import { Op, Sequelize } from 'sequelize';
-import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
 
 import { BrokerService } from '../../broker';
 import { InstrumentModel } from '../../database';
 import { Log } from '../../infra';
 import { BrokerQuoteLtp, INSTRUMENT_ID_SEPERATOR } from '../../types';
+import { IInstrument } from '../../types/instrument';
 import { sleep } from '../../util';
 import { InstrumentRepository } from '../repository/instrument';
 
@@ -40,7 +40,7 @@ async function getOptionExpiryListToTrack(name: string): Promise<Date[]> {
     return [...new Set(expiryList)].map((expiry) => new Date(expiry));
 }
 
-async function getFnoInstrumentsToTrack(name: string): Promise<InstrumentModel[]> {
+async function getFnoInstrumentsToTrack(name: string): Promise<IInstrument[]> {
     const futures = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', take: 2 });
     const expiryList = await getOptionExpiryListToTrack(name);
     //TODO: Config
@@ -48,7 +48,7 @@ async function getFnoInstrumentsToTrack(name: string): Promise<InstrumentModel[]
         NIFTY: 100,
         BANKNIFTY: 100,
     };
-    const instruments: InstrumentModel[] = [...futures];
+    const instruments: IInstrument[] = [...futures];
     const strikeInterval = stirkeIntervalMap[name] || 1;
     const strikeLimitPercent = 0.1;
     if (futures.length > 0) {
@@ -140,7 +140,7 @@ async function trackInstruments(): Promise<void> {
     Log.info(`\tTracking ${allInstruments.length} instruments.`);
 }
 
-async function updateLTP(insrumentList: InstrumentModel[]): Promise<void> {
+async function updateLTP(insrumentList: IInstrument[]): Promise<void> {
     const chunks = lodash.chunk(
         insrumentList.map((instrument) => `${instrument.exchange}:${instrument.tradingSymbol}`),
         100,
@@ -151,7 +151,7 @@ async function updateLTP(insrumentList: InstrumentModel[]): Promise<void> {
             return { ...item, id: item.id.replace(':', INSTRUMENT_ID_SEPERATOR) };
         });
         await InstrumentRepository.updateInstruments(
-            ltpList.map((ltp: Partial<InstrumentModel>) => {
+            ltpList.map((ltp: Partial<IInstrument>) => {
                 return { ...ltp, lastPriceUpdatedOn: new Date() };
             }),
         );
@@ -196,15 +196,15 @@ async function updateLTPTrackedInstruments(): Promise<void> {
     Log.info('\tDone.');
 }
 
-async function getTrackedInstruments(): Promise<InstrumentModel[]> {
+async function getTrackedInstruments(): Promise<IInstrument[]> {
     return InstrumentModel.findAll({ where: { track: true } });
 }
 
-async function fetchInstrumentByToken(instrumentToken: string): Promise<InstrumentModel | null> {
+async function fetchInstrumentByToken(instrumentToken: string): Promise<IInstrument | null> {
     return InstrumentModel.findOne({ where: { instrumentToken }, raw: true });
 }
 
-async function getTrackedFutures(name: string): Promise<InstrumentModel[]> {
+async function getTrackedFutures(name: string): Promise<IInstrument[]> {
     return InstrumentModel.findAll({
         where: { name, segment: 'NFO-FUT', live: true, track: true },
         order: [['expiry', 'ASC']],

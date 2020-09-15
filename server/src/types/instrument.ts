@@ -12,6 +12,8 @@ export interface IInstrument {
     instrumentType: string;
     segment: string;
     exchange: string;
+    live?: boolean;
+    track?: boolean;
 }
 
 export const INSTRUMENT_ID_SEPERATOR = '_';

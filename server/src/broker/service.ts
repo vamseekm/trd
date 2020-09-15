@@ -110,6 +110,7 @@ async function getInstrumentsByExchange(exchange: string): Promise<IInstrument[]
                     instrumentType: ins.instrument_type,
                     segment: ins.segment,
                     exchange: ins.exchange,
+                    live: true,
                 };
             },
         );

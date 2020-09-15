@@ -8,6 +8,7 @@ import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
 import { CandleInterval, IBrokerCandle } from '../types';
+import { IInstrument } from '../types/instrument';
 import { toDayAndTime } from '../util';
 import { Candle } from './model';
 import { CandleRepository } from './repository';
@@ -36,7 +37,7 @@ async function splitCandleKey(key: string) {
 }
 
 async function mapBrokerCandleToDatabaseCandle(
-    instrument: InstrumentModel,
+    instrument: IInstrument,
     interval: CandleInterval,
     candle: IBrokerCandle,
 ): Promise<Candle> {
@@ -61,7 +62,7 @@ async function downloadCandles({
     from,
     to,
 }: {
-    instrument: InstrumentModel;
+    instrument: IInstrument;
     interval: CandleInterval;
     from: Date;
     to: Date;

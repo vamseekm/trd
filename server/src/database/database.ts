@@ -1,4 +1,3 @@
-import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 
 import { Config } from '../infra/config';
