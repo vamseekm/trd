@@ -1,5 +1,5 @@
-import { addMonths, subDays } from 'date-fns';
 import lodash from 'lodash';
+import { DateTime } from 'luxon';
 import { Op, Sequelize } from 'sequelize';
 
 import { BrokerService } from '../../broker';
@@ -135,8 +135,10 @@ async function trackInstruments(): Promise<void> {
         fnoInstruments: fnoInstruments.length,
     });
 
-    await InstrumentRepository.trackInstruments(allInstruments);
-    // console.log(allInstruments.join('\t'));
+    const alreadyTrackedIds = await InstrumentRepository.getAutoTrackedInstrumentIds();
+    Log.info(`\tUntracking previously tracked ${alreadyTrackedIds.length} instruments.`);
+    await InstrumentRepository.trackInstruments(alreadyTrackedIds, false);
+    await InstrumentRepository.trackInstruments(allInstruments, true);
     Log.info(`\tTracking ${allInstruments.length} instruments.`);
 }
 
@@ -160,7 +162,8 @@ async function updateLTP(insrumentList: IInstrument[]): Promise<void> {
 }
 
 async function updateLTPAll(): Promise<void> {
-    const maxDate = addMonths(new Date(), 3);
+    const maxDate = DateTime.local().plus({ month: 3 }).toJSDate();
+    const updatedBefore = DateTime.local().minus({ day: 1 }).toJSDate();
     const instruments = await InstrumentModel.findAll({
         attributes: ['id'],
         where: {
@@ -168,7 +171,7 @@ async function updateLTPAll(): Promise<void> {
             [Op.and]: [
                 { expiry: { [Op.lt]: maxDate } },
                 {
-                    [Op.or]: [{ lastPriceUpdatedOn: { [Op.lt]: subDays(new Date(), 1) } }, { lastPrice: 0 }],
+                    [Op.or]: [{ lastPriceUpdatedOn: { [Op.lt]: updatedBefore } }, { lastPrice: 0 }],
                 },
             ],
         },
@@ -179,10 +182,11 @@ async function updateLTPAll(): Promise<void> {
 
 async function updateLTPInitialInstruments(): Promise<void> {
     Log.info('Updating LTP of initial instruments...');
+    const expireBefore = DateTime.local().plus({ month: 2 }).toJSDate();
     const instruments = await InstrumentModel.findAll({
         where: {
             segment: { [Op.in]: ['INDICES', 'NFO-FUT', 'NSE'] },
-            expiry: { [Op.lt]: addMonths(new Date(), 2) },
+            expiry: { [Op.lt]: expireBefore },
         },
     });
     await updateLTP(instruments);

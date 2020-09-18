@@ -29,6 +29,7 @@ export class TickModel extends Model<TickModel> {
     @Column
     totalSellQuantity!: number;
 
+    @Index
     @Column
     timestamp!: Date;
 

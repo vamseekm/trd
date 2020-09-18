@@ -1,11 +1,11 @@
 import { consumeQueue, MessageType } from '../../bridge';
 import { Log } from '../../infra';
-import { ITick } from '../../types';
+import { Tick } from '../../types';
 import { TickRepository } from '../repository';
 
 export async function startTickStoreConsumer(): Promise<void> {
     await consumeQueue({ name: 'tickStoreConsumer', messageType: MessageType.tick }, async ({ message }) => {
-        const { ticks }: { ticks: ITick[]; received_on: number } = JSON.parse(message.content.toString());
+        const { ticks }: { ticks: Tick[]; received_on: number } = JSON.parse(message.content.toString());
         if (!ticks) return 0;
         await TickRepository.bulkInsert(ticks);
         return ticks.length;

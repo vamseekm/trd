@@ -7,6 +7,7 @@ import { InstrumentService } from '../instrument';
 import { PrefService } from '../pref';
 import { TaskService } from '../task';
 import { startRawTickConsumer, startTickListener, startTickProcessConsumer, startTickStoreConsumer } from '../ticker';
+import { TickerService } from '../ticker/service';
 import { forever } from '../util';
 
 async function databaseInit(): Promise<void> {
@@ -24,6 +25,11 @@ async function sync(): Promise<void> {
     return TaskService.sync();
 }
 
+async function clean(): Promise<void> {
+    Log.info('Cleaning...');
+    await TickerService.clean();
+}
+
 async function debug(): Promise<void> {
     Log.info(`Debug start... `);
     // await PrefService.set('hello', 'word111');
@@ -32,7 +38,7 @@ async function debug(): Promise<void> {
     // console.timeEnd('hi');
     // await InstrumentService.syncInstruments();
     // await InstrumentService.updateLTPInitialInstruments();
-    // await InstrumentService.trackInstruments();
+    await InstrumentService.trackInstruments();
 
     // await PrefService.set('hello', 'world');
     // await InstrumentService.syncInstruments();
@@ -58,4 +64,5 @@ export const CliService = {
     startRawTickConsumer,
     startTickStoreConsumer,
     startTickProcessConsumer,
+    clean,
 };

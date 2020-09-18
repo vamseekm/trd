@@ -1,28 +1,29 @@
-import { subDays } from 'date-fns';
+import { DateTime } from 'luxon';
 import pFilter from 'p-filter';
 import pMap from 'p-map';
 
 import { BrokerService } from '../broker';
 import { InstrumentModel } from '../database';
+import { CandleModel } from '../database';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
-import { CandleInterval, IBrokerCandle } from '../types';
+import { Candle, CandleInterval, IBrokerCandle, Tick } from '../types';
 import { IInstrument } from '../types/instrument';
 import { toDayAndTime } from '../util';
-import { Candle } from './model';
 import { CandleRepository } from './repository';
 
-async function candleKey({
+async function mapCandleKey({
     instrumentId,
     interval,
-    date,
+    timestamp,
 }: {
     instrumentId: string;
     interval: CandleInterval;
-    date: Date;
+    timestamp: Date;
 }): Promise<string> {
-    const { day, time } = await toDayAndTime(date);
+    console.log(timestamp);
+    const { day, time } = await toDayAndTime(timestamp);
     return `${instrumentId}-${interval}-${day}${time}`;
 }
 
@@ -43,16 +44,16 @@ async function mapBrokerCandleToDatabaseCandle(
 ): Promise<Candle> {
     const { id } = instrument;
     return {
-        k: await candleKey({ instrumentId: id, interval, date: candle.date }),
-        t: candle.date,
-        o: candle.open,
-        h: candle.high,
-        l: candle.low,
-        c: candle.close,
-        v: candle.volume,
-        tv: 0,
-        oi: 0,
-        toi: 0,
+        key: await mapCandleKey({ instrumentId: id, interval, timestamp: candle.date }),
+        timestamp: candle.date,
+        open: candle.open,
+        high: candle.high,
+        low: candle.low,
+        close: candle.close,
+        volume: candle.volume,
+        totalVolume: 0,
+        openInterest: 0,
+        totalOpenInterest: 0,
     };
 }
 
@@ -73,8 +74,8 @@ async function downloadCandles({
         mapBrokerCandleToDatabaseCandle(instrument, interval, candle),
     );
     return await pFilter(processedCandles, async (candle) => {
-        const { exchange } = await splitCandleKey(candle.k);
-        const date = candle.t;
+        const { exchange } = await splitCandleKey(candle.key);
+        const date = candle.timestamp;
         return ExchangeService.isValidTick({ exchange, date });
     });
 }
@@ -87,13 +88,27 @@ async function sync(): Promise<void> {
         const { id } = instrument;
         Log.info(`Candle sync: ${id}`);
         const to = new Date();
-        const from = subDays(new Date(), 7);
+        const from = DateTime.local().minus({ day: 7 }).toJSDate();
         const candles = await downloadCandles({ instrument: instrument, interval: CandleInterval.MIN_01, from, to });
 
         if (candles.length > 0) console.log(await CandleRepository.storeCandles(candles));
     }
 }
 
+async function mapTickToCandle(tick: Tick) {
+    console.log(tick);
+    const candleKey = await mapCandleKey({ ...tick, interval: CandleInterval.MIN_01 });
+    console.log(candleKey);
+}
+
+async function storeTickAsCandle(ticks: Tick[]): Promise<void> {
+    for (const tick of ticks) {
+        mapTickToCandle(tick);
+        break;
+    }
+}
+
 export const CandleService = {
     sync,
+    storeTickAsCandle,
 };

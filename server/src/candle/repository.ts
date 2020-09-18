@@ -1,33 +1,36 @@
 import { diff as diffObject } from 'deep-diff';
 import lodash from 'lodash';
 
-import { UpsertResults } from '../types';
+import { CandleModel } from '../database';
+import { Candle, UpsertResults } from '../types';
 import { toSetAndMap } from '../util';
-import { Candle, CandleModel } from './model';
 
 async function upsertCandles(inputCandleList: Candle[]): Promise<UpsertResults> {
     const upsertResults: UpsertResults = { insert: 0, update: 0, remove: 0 };
 
-    const input = toSetAndMap(inputCandleList, 'k');
-    const database = toSetAndMap(await CandleModel.find({ k: { $in: [...input.set] } }).lean(), 'k');
+    const input = toSetAndMap(inputCandleList, 'key');
+    const database = toSetAndMap(
+        await CandleModel.findAll({ where: { key: { $in: [...input.set] } }, attributes: ['key'] }),
+        'key',
+    );
 
     const updateCandleKeySet: Set<string> = new Set(database.set);
     const updateResults = await Promise.all(
-        [...updateCandleKeySet].map((k) => {
+        [...updateCandleKeySet].map((key) => {
             const diff = diffObject(
-                input.map.get(k),
-                lodash.omit(database.map.get(k), ['createdAt', 'updatedAt', '_id', '__v']),
+                input.map.get(key),
+                lodash.omit(database.map.get(key), ['createdAt', 'updatedAt', '_id', '__v']),
             );
             if (diff) {
-                return CandleModel.updateOne({ k }, input.map.get(k) as Candle);
+                return CandleModel.update(input.map.get(key) as Candle, { where: { key } });
             }
         }),
     );
     upsertResults.update = updateResults.filter((i) => !!i).length;
 
-    const insertCandleKeySet: Set<string> = new Set([...input.set].filter((k) => !updateCandleKeySet.has(k)));
+    const insertCandleKeySet: Set<string> = new Set([...input.set].filter((key) => !updateCandleKeySet.has(key)));
     if (insertCandleKeySet.size === 0) return upsertResults;
-    await CandleModel.insertMany([...insertCandleKeySet].map((k) => input.map.get(k) as Candle));
+    await CandleModel.bulkCreate([...insertCandleKeySet].map((key) => input.map.get(key) as Candle));
     upsertResults.insert = insertCandleKeySet.size;
     return upsertResults;
 }

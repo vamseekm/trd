@@ -42,6 +42,7 @@ async function run() {
     program.option('--tick-store-consumer', 'Store processed ticks.');
     program.option('--tick-process-consumer', 'Consume processed ticks');
     program.option('--pause', "Just don't do anything");
+    program.option('--clean', 'Clean data');
     program.parse(process.argv);
 
     if (program.pause) {
@@ -73,6 +74,9 @@ async function run() {
     }
     if (program.tickProcessConsumer) {
         actions.push(CliService.startTickProcessConsumer());
+    }
+    if (program.clean) {
+        actions.push(CliService.clean());
     }
     await Promise.all(actions);
     if (program.forceExit) {

@@ -51,8 +51,8 @@ async function bulkUpdateInstruments(idList: string[], data: Partial<IInstrument
     return InstrumentModel.update(data, { where: { id: { [Op.in]: idList } } });
 }
 
-async function trackInstruments(idList: string[]): Promise<any> {
-    return bulkUpdateInstruments(idList, { track: true });
+async function trackInstruments(idList: string[], track: boolean): Promise<any> {
+    return bulkUpdateInstruments(idList, { track });
 }
 
 async function exchangeList(): Promise<string[]> {
@@ -107,6 +107,12 @@ async function findOneBy(where: WhereOptions): Promise<IInstrument | null> {
     return InstrumentModel.findOne({ where, raw: true });
 }
 
+async function getAutoTrackedInstrumentIds(): Promise<string[]> {
+    return (await InstrumentModel.findAll({ where: { track: true }, attributes: ['id'] })).map(
+        (instrument) => instrument.id,
+    );
+}
+
 export const InstrumentRepository = {
     exchangeList,
     fetchFnoInstruments,
@@ -114,6 +120,7 @@ export const InstrumentRepository = {
     findTopInstruments,
     upsertInstruments,
     trackInstruments,
+    getAutoTrackedInstrumentIds,
     updateInstruments,
     findOneBy,
 };

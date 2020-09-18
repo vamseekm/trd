@@ -2,10 +2,10 @@ import plimit from 'p-limit';
 
 import { CacheService } from '../cache';
 import { ExchangeService } from '../exchange';
-import { ITick } from '../types';
+import { Tick } from '../types';
 import { toDayAndTime } from '../util';
 const _limit = plimit(2);
-export async function formatTick(tick: any): Promise<ITick | undefined> {
+export async function formatTick(tick: any): Promise<Tick | undefined> {
     return _limit(async () => {
         const {
             instrument_token,

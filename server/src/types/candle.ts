@@ -1,3 +1,5 @@
+import { IsDate, IsInt, IsNumber, IsString } from 'class-validator';
+
 export enum CandleInterval {
     MIN_01 = 'M1',
     MIN_05 = 'M5',
@@ -15,4 +17,27 @@ export interface IBrokerCandle {
     low: number;
     close: number;
     volume: number;
+}
+
+export class Candle {
+    @IsString()
+    key!: string;
+    @IsDate()
+    timestamp!: Date;
+    @IsNumber()
+    open!: number;
+    @IsNumber()
+    high!: number;
+    @IsNumber()
+    low!: number;
+    @IsNumber()
+    close!: number;
+    @IsInt()
+    volume!: number;
+    @IsInt()
+    openInterest!: number;
+    @IsInt()
+    totalVolume!: number;
+    @IsInt()
+    totalOpenInterest!: number;
 }
