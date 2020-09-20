@@ -103,9 +103,8 @@ services:
     image: c_server_img
     ports:
       - ${HTTP_API_SERVER_PORT}:${HTTP_API_SERVER_PORT}
-    command: "bash ./server.sh --api-server"
+    command: "bash ./server.sh --API::startServer"
     environment:
-      DATABASE_URL: postgresql://postgres:example@i_pg:5432/postgres
       HTTP_API_SERVER_PORT: ${HTTP_API_SERVER_PORT}
       NODE_ENV: docker
       # WATCH: "yes"
@@ -130,7 +129,7 @@ services:
 
   c_tick_listener:
     image: c_server_img
-    command: "bash ./server.sh --tick-listener"
+    command: "bash ./server.sh --Tick::startTickListener"
     environment:
       NODE_ENV: docker
     restart: always
@@ -140,7 +139,9 @@ services:
   c_tick_processor:
     image: c_server_img
     # command: "tail -f /dev/null"
-    command: "bash ./server.sh --raw-tick-consumer --tick-store-consumer"
+    # command: "bash ./server.sh --raw-tick-consumer --tick-store-consumer"
+    command: "bash ./server.sh --Tick::startRawTickConsumer --Tick::startTickStoreConsumer"
+    # command: "bash ./server.sh --pause"
     environment:
       NODE_ENV: docker
     restart: always

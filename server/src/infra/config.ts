@@ -8,7 +8,8 @@ function get(key: string, defaultValue?: any): any {
     if (configLib.has(key)) {
         return configLib.get(key);
     }
-    return defaultValue || '';
+    if (defaultValue != undefined) return defaultValue;
+    throw new Error(`Can't find config ${key}`);
 }
 let _exchangeTimes: Map<string, IExchangeConfig>;
 function getExchangeTime() {

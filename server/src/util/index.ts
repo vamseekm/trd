@@ -62,7 +62,7 @@ export function diffListOfObjects<T, K extends keyof T>(
 //     });
 // }
 
-export function forever(): Promise<any> {
+export function waitForever(): Promise<any> {
     console.log('Waiting forever...');
     return new Promise(() => {});
 }

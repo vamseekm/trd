@@ -4,7 +4,7 @@ import { validateOrReject } from 'class-validator';
 import { consumeQueue, MessageType } from '../../bridge';
 import { CandleService } from '../../candle/service';
 import { Tick } from '../../types';
-import { forever } from '../../util';
+import { waitForever } from '../../util';
 
 export async function startTickProcessConsumer(): Promise<void> {
     await consumeQueue({ name: 'tickConsumer', messageType: MessageType.tick }, async ({ message }) => {
@@ -23,5 +23,5 @@ export async function startTickProcessConsumer(): Promise<void> {
         await CandleService.storeTickAsCandle(tickTransformed);
         return false;
     });
-    await forever();
+    await waitForever();
 }

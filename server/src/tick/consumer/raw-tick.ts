@@ -1,5 +1,5 @@
 import { consumeQueue, EXCHANGE_TICKER, MessageType } from '../../bridge';
-import { forever } from '../../util';
+import { waitForever } from '../../util';
 import { formatTick } from '../util';
 
 export async function startRawTickConsumer(): Promise<void> {
@@ -8,7 +8,6 @@ export async function startRawTickConsumer(): Promise<void> {
         if (!ticks) return;
         const processedTicks = await Promise.all(ticks.map((tick: any) => formatTick(tick)));
         const validTicks = processedTicks.filter((tick) => !!tick);
-        if (validTicks.length === 0) return 0;
         await channel.publish(
             EXCHANGE_TICKER,
             MessageType.tick,
@@ -19,5 +18,5 @@ export async function startRawTickConsumer(): Promise<void> {
         );
         return validTicks.length;
     });
-    await forever();
+    await waitForever();
 }

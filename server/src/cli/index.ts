@@ -2,12 +2,18 @@
 import 'reflect-metadata';
 
 import { exec } from 'child_process';
-import { program } from 'commander';
+import minimist from 'minimist';
 import { exit } from 'process';
+import { addScopeOptions } from 'sequelize-typescript';
 
+import { APIService } from '../api-server/service';
+import { CandleService } from '../candle';
+import { DatabaseService } from '../database/service';
 import { Log } from '../infra';
-import { forever } from '../util';
-import { CliService } from './service';
+import { InstrumentService } from '../instrument/service/instrument';
+import { TaskService } from '../task';
+import { TickService } from '../tick';
+import { waitForever } from '../util';
 
 async function clearPort(port: number) {
     return new Promise((resolve, reject) => {
@@ -31,55 +37,43 @@ async function clearPort(port: number) {
     });
 }
 
-async function run() {
+async function run(): Promise<void> {
     console.log(process.cwd());
-    program.option('-x --force-exit', 'Force exit');
-    program.option('-a --api-server', 'Start API server.');
-    program.option('-s --sync', 'Cron sync.');
-    program.option('-d --debug', 'Start debug main.');
-    program.option('--tick-listener', 'Listen for raw ticks');
-    program.option('--raw-tick-consumer', 'Convert raw ticks to processed ticks.');
-    program.option('--tick-store-consumer', 'Store processed ticks.');
-    program.option('--tick-process-consumer', 'Consume processed ticks');
-    program.option('--pause', "Just don't do anything");
-    program.option('--clean', 'Clean data');
-    program.parse(process.argv);
-
-    if (program.pause) {
-        console.log('Pausing service.');
-        await forever();
+    const argv = minimist(process.argv.slice(2));
+    Log.json('Args', argv);
+    const entryModules: Record<string, any> = {
+        APIService,
+        CandleService,
+        InstrumentService,
+        TaskService,
+        TickService,
+    };
+    const actionMap: Record<string, any> = {};
+    for (const moduleName of Object.keys(entryModules)) {
+        const entryModule = entryModules[moduleName];
+        for (const actionName of Object.keys(entryModule)) {
+            // if (!actionName.startsWith('start')) continue;
+            if (entryModule[actionName].length > 0) continue;
+            const entryPointName = `${moduleName}::${actionName}`.replace('Service::', '::');
+            actionMap[entryPointName] = entryModule[actionName].bind(entryModule);
+        }
+    }
+    Log.info('Available entry points:');
+    Object.keys(actionMap).map((key: string) => Log.info(`\t => ${key}`));
+    if (argv.help === true) {
+        await waitForever();
         return;
     }
-
-    const actions: Promise<any>[] = [];
-    await CliService.databaseInit();
-    if (program.apiServer) {
-        await clearPort(3000);
-        actions.push(CliService.startAPIServer());
+    const actions: any[] = [];
+    for (const option of Object.keys(argv)) {
+        if (option == '_') continue;
+        if (actionMap[option] == undefined) throw new Error(`Action "${option}" not found.`);
+        actions.push(actionMap[option]);
     }
-    if (program.sync) {
-        actions.push(CliService.sync());
-    }
-    if (program.debug) {
-        actions.push(CliService.debug());
-    }
-    if (program.tickListener) {
-        actions.push(CliService.startTickListener());
-    }
-    if (program.rawTickConsumer) {
-        actions.push(CliService.startRawTickConsumer());
-    }
-    if (program.tickStoreConsumer) {
-        actions.push(CliService.startTickStoreConsumer());
-    }
-    if (program.tickProcessConsumer) {
-        actions.push(CliService.startTickProcessConsumer());
-    }
-    if (program.clean) {
-        actions.push(CliService.clean());
-    }
-    await Promise.all(actions);
-    if (program.forceExit) {
+    await DatabaseService.databaseConnect();
+    Log.info(`Executing ${actions.length} actions.`);
+    if (actions.length > 0) await Promise.all(actions.map((a) => a()));
+    if (argv['force-exit']) {
         Log.info('force exiting ...');
         // eslint-disable-next-line unicorn/no-process-exit
         process.exit(0);
@@ -90,9 +84,9 @@ async function run() {
     const startTime = new Date().getTime();
     try {
         await run();
-        console.log('Action completed.');
+        Log.info('Action completed.');
     } catch (error) {
-        Log.error('error', error);
+        Log.error('Error:', error);
     } finally {
         const endTime = new Date().getTime();
         Log.info(`Action elapsed time: ${((endTime - startTime) / 1000).toFixed(3)} sec.`);

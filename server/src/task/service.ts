@@ -1,6 +1,6 @@
 import { InstrumentService } from '../instrument';
 
-async function sync(): Promise<void> {
+async function startCron(): Promise<void> {
     await InstrumentService.syncInstruments();
     await InstrumentService.updateLTPInitialInstruments();
     await InstrumentService.trackInstruments();
@@ -8,5 +8,5 @@ async function sync(): Promise<void> {
 }
 
 export const TaskService = {
-    sync,
+    startCron,
 };

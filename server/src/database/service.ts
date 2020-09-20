@@ -5,7 +5,7 @@ import { CandleModel } from './candle.table';
 import { InstrumentModel } from './instrument.table';
 import { PrefModel } from './pref.table';
 import { TickModel } from './tick.table';
-async function connect(): Promise<void> {
+async function databaseConnect(): Promise<void> {
     const databaseConfig = Config.get('postgres');
     const seq = new Sequelize({
         ...databaseConfig,
@@ -15,6 +15,6 @@ async function connect(): Promise<void> {
     await seq.sync({ alter: true });
 }
 
-export const Database = {
-    connect,
+export const DatabaseService = {
+    databaseConnect,
 };

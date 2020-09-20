@@ -14,7 +14,7 @@ const logger = winston.createLogger({
             const prefix = `${process.pid.toString().padStart(4)}|${mem}M|${timestamp}|${level.replace(
                 /(nfo|rror|arn)/gi,
                 '',
-            )}| ${message}`;
+            )}| ${stack ? '' : message}`;
             return stack ? `${prefix} ${stack}` : prefix;
         }),
     ),

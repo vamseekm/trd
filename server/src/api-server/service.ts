@@ -51,14 +51,14 @@ async function setupRoutes(): Promise<void> {
 //     app.use('/api/graphqlui', expressPlayground({ endpoint: '/api/graphql' }));
 // }
 
-async function start(): Promise<unknown> {
+async function startServer(): Promise<unknown> {
     // await setupGraphQL();
     await setupRoutes();
     app.use(handleError);
-    const port = Config.get(HTTP_API_SERVER_PORT);
+    const port = Config.get(HTTP_API_SERVER_PORT, 5000);
     return new Promise((resolve, reject) => {
+        Log.info(`Starting server at 0.0.0.0:${port}`);
         app.listen(port, () => {
-            Log.info(`API server available at 0.0.0.0:${port}`);
             displayRoutes(app);
             // resolve();
         }).on('error', (error) => {
@@ -68,6 +68,6 @@ async function start(): Promise<unknown> {
     });
 }
 
-export const APIServer = {
-    start,
+export const APIService = {
+    startServer,
 };

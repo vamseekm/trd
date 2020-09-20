@@ -4,7 +4,7 @@ import { expressWrap } from '../api-server';
 import { TaskService } from './service';
 
 async function sync(request: express.Request, response: express.Response): Promise<void> {
-    await TaskService.sync();
+    await TaskService.startCron();
     response.send('ok');
 }
 
