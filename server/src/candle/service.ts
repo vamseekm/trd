@@ -3,17 +3,16 @@ import pFilter from 'p-filter';
 import pMap from 'p-map';
 
 import { BrokerService } from '../broker';
-import { InstrumentModel } from '../database';
-import { CandleModel } from '../database';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
 import { Candle, CandleInterval, IBrokerCandle, Tick } from '../types';
+import { CandleDuration } from '../types/candle';
 import { IInstrument } from '../types/instrument';
 import { toDayAndTime } from '../util';
 import { CandleRepository } from './repository';
 
-async function mapCandleKey({
+async function candleKey({
     instrumentId,
     interval,
     timestamp,
@@ -22,9 +21,26 @@ async function mapCandleKey({
     interval: CandleInterval;
     timestamp: Date;
 }): Promise<string> {
-    console.log(timestamp);
     const { day, time } = await toDayAndTime(timestamp);
     return `${instrumentId}-${interval}-${day}${time}`;
+}
+
+async function getAlignedTime({
+    exchange,
+    timestamp,
+    interval,
+    offset = 0,
+}: {
+    exchange: string;
+    timestamp: Date;
+    interval: CandleInterval;
+    offset?: number;
+}): Promise<Date> {
+    const exchangeConfig = await ExchangeService.getExchangeTime(exchange);
+    const unixTime = timestamp.getTime() - exchangeConfig.dayStartOffset;
+    const intervalInMs = CandleDuration[interval] * 1000;
+    const alignedTime = unixTime - (unixTime % intervalInMs) + intervalInMs * offset + exchangeConfig.dayStartOffset;
+    return new Date(alignedTime);
 }
 
 async function splitCandleKey(key: string) {
@@ -44,7 +60,7 @@ async function mapBrokerCandleToDatabaseCandle(
 ): Promise<Candle> {
     const { id } = instrument;
     return {
-        key: await mapCandleKey({ instrumentId: id, interval, timestamp: candle.date }),
+        key: await candleKey({ instrumentId: id, interval, timestamp: candle.date }),
         timestamp: candle.date,
         open: candle.open,
         high: candle.high,
@@ -76,11 +92,11 @@ async function downloadCandles({
     return await pFilter(processedCandles, async (candle) => {
         const { exchange } = await splitCandleKey(candle.key);
         const date = candle.timestamp;
-        return ExchangeService.isValidTick({ exchange, date });
+        return ExchangeService.isValidTime({ exchange, date });
     });
 }
 
-async function sync(): Promise<void> {
+async function downloadHistorical(): Promise<void> {
     Log.info('Syncing candles...');
     const instruments = await InstrumentService.getTrackedInstruments();
     // const instruments = await InstrumentService.getTrackedFutures('NIFTY');
@@ -96,19 +112,23 @@ async function sync(): Promise<void> {
 }
 
 async function mapTickToCandle(tick: Tick) {
-    console.log(tick);
-    const candleKey = await mapCandleKey({ ...tick, interval: CandleInterval.MIN_01 });
-    console.log(candleKey);
+    // Log.pretty(tick);
+    const key = await candleKey({ ...tick, interval: CandleInterval.MIN_05 });
+    const candleConfig = { ...tick, interval: CandleInterval.MIN_30 };
+    console.log('CCurrent:', tick.timestamp.toLocaleString());
+    console.log('TCurrent:', (await getAlignedTime({ ...candleConfig, offset: 0 })).toLocaleString());
+    console.log('PCurrent:', (await getAlignedTime({ ...candleConfig, offset: -1 })).toLocaleString());
+    console.log('NCurrent:', (await getAlignedTime({ ...candleConfig, offset: 1 })).toLocaleString());
 }
 
 async function storeTickAsCandle(ticks: Tick[]): Promise<void> {
     for (const tick of ticks) {
-        mapTickToCandle(tick);
+        await mapTickToCandle(tick);
         break;
     }
 }
 
 export const CandleService = {
-    sync,
+    downloadHistorical,
     storeTickAsCandle,
 };

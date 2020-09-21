@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import CliProgress from 'cli-progress';
 import { DateTime } from 'luxon';
 
@@ -63,8 +64,9 @@ export function diffListOfObjects<T, K extends keyof T>(
 // }
 
 export function waitForever(): Promise<any> {
-    console.log('Waiting forever...');
-    return new Promise(() => {});
+    return new Promise(() => {
+        console.log('Waiting forever...');
+    });
 }
 
 export async function progressbar(): Promise<CliProgress.SingleBar> {

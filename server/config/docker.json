@@ -1,15 +1,4 @@
 {
-    "db": {
-        "type": "mariadb",
-        "host": "i_db",
-        "port": 3306,
-        "username": "root",
-        "password": "example",
-        "database": "toredo",
-        "synchronize": true,
-        "logging": false,
-        "entities": ["dist/**/entity.js"]
-    },
     "postgres": {
         "host": "i_db",
         "database": "postgres",
@@ -21,6 +10,5 @@
         "host": "i_redis",
         "port": 6379
     },
-    "RABBIT_URL": "amqp://i_rabbit:5672",
-    "MONGODB_URL": "mongodb://root:example@i_mongo:27017/trd?authSource=admin"
+    "RABBIT_URL": "amqp://i_rabbit:5672"
 }

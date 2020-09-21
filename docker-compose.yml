@@ -117,16 +117,6 @@ services:
       timeout: "1s"
       retries: 3
 
-  # c_debug_command:
-  #   image: c_server_img
-  #   command: "bash ./server.sh --debug"
-  #   environment:
-  #     WATCH: "yes"
-  #     NODE_ENV: docker
-  #   restart: always
-  #   depends_on:
-  #     - c_server_img
-
   c_tick_listener:
     image: c_server_img
     command: "bash ./server.sh --Tick::startTickListener"
@@ -138,10 +128,7 @@ services:
 
   c_tick_processor:
     image: c_server_img
-    # command: "tail -f /dev/null"
-    # command: "bash ./server.sh --raw-tick-consumer --tick-store-consumer"
     command: "bash ./server.sh --Tick::startRawTickConsumer --Tick::startTickStoreConsumer"
-    # command: "bash ./server.sh --pause"
     environment:
       NODE_ENV: docker
     restart: always

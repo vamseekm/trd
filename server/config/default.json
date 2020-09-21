@@ -3,46 +3,28 @@
     "KITE_API_SECRET": "",
     "EXCHANGE_CONFIG": {
         "NSE": {
-            "startTime": 915,
-            "endTime": 1530
+            "start": {
+                "hour": 9,
+                "minute": 15,
+                "zone": "UTC+05:30"
+            },
+            "end": {
+                "hour": 15,
+                "minute": 30,
+                "zone": "UTC+05:30"
+            }
         },
         "NFO": {
-            "startTime": 915,
-            "endTime": 1530
-        }
-    },
-    "NSE": {
-        "INDEX_FILES": [
-            {
-                "name": "Nifty 50",
-                "url": "https://www1.nseindia.com/content/indices/ind_nifty50list.csv",
-                "from": 1,
-                "to": 50
+            "start": {
+                "hour": 9,
+                "minute": 15,
+                "zone": "UTC+05:30"
             },
-            {
-                "name": "Nifty Next 50",
-                "url": "https://archives.nseindia.com/content/indices/ind_niftynext50list.csv",
-                "from": 51,
-                "to": 100
-            },
-            {
-                "name": "Nifty 100",
-                "url": "https://archives.nseindia.com/content/indices/ind_nifty100list.csv",
-                "from": 1,
-                "to": 100
-            },
-            {
-                "name": "Nifty 200",
-                "url": "https://archives.nseindia.com/content/indices/ind_nifty200list.csv",
-                "from": 1,
-                "to": 200
-            },
-            {
-                "name": "Nifty 500",
-                "url": "https://archives.nseindia.com/content/indices/ind_nifty500list.csv",
-                "from": 1,
-                "to": 500
+            "end": {
+                "hour": 15,
+                "minute": 30,
+                "zone": "UTC+05:30"
             }
-        ]
+        }
     }
 }

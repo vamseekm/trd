@@ -11,16 +11,16 @@ function get(key: string, defaultValue?: any): any {
     if (defaultValue != undefined) return defaultValue;
     throw new Error(`Can't find config ${key}`);
 }
-let _exchangeTimes: Map<string, IExchangeConfig>;
-function getExchangeTime() {
-    if (_exchangeTimes != undefined) return _exchangeTimes;
-    _exchangeTimes = new Map<string, IExchangeConfig>();
-    _exchangeTimes.set('NSE', { name: 'NSE', startTime: 915, endTime: 1530 });
-    _exchangeTimes.set('NFO', { name: 'NFO', startTime: 915, endTime: 1530 });
-    return _exchangeTimes;
-}
+// let _exchangeTimes: Map<string, IExchangeConfig>;
+// function getExchangeTimes() {
+//     if (_exchangeTimes != undefined) return _exchangeTimes;
+//     _exchangeTimes = new Map<string, IExchangeConfig>();
+//     _exchangeTimes.set('NSE', { name: 'NSE', startTime: 915, endTime: 1530 });
+//     _exchangeTimes.set('NFO', { name: 'NFO', startTime: 915, endTime: 1530 });
+//     return _exchangeTimes;
+// }
 
 export const Config = {
     get,
-    getExchangeTime,
+    // getExchangeTimes,
 };

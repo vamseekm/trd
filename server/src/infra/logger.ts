@@ -31,8 +31,12 @@ const json = (label: string, ...rest: any[]): void => {
     }
 };
 
+const pretty = (object: any): void => {
+    Log.info(JSON.stringify(object, undefined, 2));
+};
 export const Log = {
     error,
     info,
     json,
+    pretty,
 };

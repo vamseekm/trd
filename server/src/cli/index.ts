@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import 'reflect-metadata';
 
-import { exec } from 'child_process';
 import minimist from 'minimist';
 import { exit } from 'process';
-import { addScopeOptions } from 'sequelize-typescript';
 
 import { APIService } from '../api-server/service';
 import { CandleService } from '../candle';
@@ -14,28 +12,6 @@ import { InstrumentService } from '../instrument/service/instrument';
 import { TaskService } from '../task';
 import { TickService } from '../tick';
 import { waitForever } from '../util';
-
-async function clearPort(port: number) {
-    return new Promise((resolve, reject) => {
-        Log.info('Starting ...');
-        Log.info(`Killing any processes holding port :${port} ...`);
-        exec(`fuser -k ${port}/tcp; sleep 0.1 | exit 0`, (error, stdout, stderr) => {
-            if (error) {
-                if (error) Log.error(error);
-                return reject(error);
-            }
-            if (stdout && stdout.length > 0) {
-                Log.info('stdout: ');
-                console.log(stdout);
-            }
-            if (stderr && stderr.length > 0) {
-                Log.info('stderr: ');
-                console.log(stderr);
-            }
-            return resolve({ stdout, stderr });
-        });
-    });
-}
 
 async function run(): Promise<void> {
     console.log(process.cwd());

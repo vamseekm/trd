@@ -1,15 +1,4 @@
 {
-    "db": {
-        "type": "mariadb",
-        "host": "127.0.0.1",
-        "port": 3306,
-        "username": "root",
-        "password": "example",
-        "database": "toredo",
-        "synchronize": true,
-        "logging": false,
-        "entities": ["dist/**/entity.js"]
-    },
     "postgres": {
         "database": "postgres",
         "dialect": "postgres",
@@ -20,5 +9,5 @@
         "host": "127.0.0.1",
         "port": 6379
     },
-    "MONGODB_URL": "mongodb://root:example@localhost:27017/trd?authSource=admin"
+    "RABBIT_URL": "amqp://localhost:5672"
 }
