@@ -1,10 +1,10 @@
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 
-import { consumeQueue, MessageType } from '../../bridge';
-import { CandleService } from '../../candle';
-import { Tick } from '../../types';
-import { waitForever } from '../../util';
+import { consumeQueue, MessageType } from '../bridge';
+import { CandleService } from '../candle';
+import { Tick } from '../types';
+import { waitForever } from '../util';
 
 export async function startTickProcessConsumer(): Promise<void> {
     await consumeQueue({ name: 'tickConsumer', messageType: MessageType.tick }, async ({ message }) => {

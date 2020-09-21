@@ -1,6 +1,6 @@
-import { consumeQueue, EXCHANGE_TICKER, MessageType } from '../../bridge';
-import { waitForever } from '../../util';
-import { formatTick } from '../util';
+import { consumeQueue, EXCHANGE_TICKER, MessageType } from '../bridge';
+import { formatTick } from '../tick/util';
+import { waitForever } from '../util';
 
 export async function startRawTickConsumer(): Promise<void> {
     await consumeQueue({ name: 'rawTickConsumer', messageType: MessageType.rawTick }, async ({ message, channel }) => {

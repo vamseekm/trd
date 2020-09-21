@@ -7,6 +7,7 @@ import { exit } from 'process';
 import { APIService } from '../api-server';
 import { CandleService } from '../candle';
 import { DatabaseService } from '../database';
+import { EventService } from '../event';
 import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
 import { TaskService } from '../task';
@@ -23,6 +24,7 @@ async function run(): Promise<void> {
         InstrumentService,
         TaskService,
         TickService,
+        EventService,
     };
     const actionMap: Record<string, any> = {};
     for (const moduleName of Object.keys(entryModules)) {
