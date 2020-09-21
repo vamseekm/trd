@@ -3,8 +3,8 @@
 /* eslint-disable no-useless-constructor */
 import redis from 'redis';
 
-import { Log } from '.';
 import { Config } from './config';
+import { Log } from './logger';
 
 function redisCacheKey(key: string): string {
     return `cache:${key}`;

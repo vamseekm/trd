@@ -2,7 +2,7 @@ import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 
 import { consumeQueue, MessageType } from '../../bridge';
-import { CandleService } from '../../candle/service';
+import { CandleService } from '../../candle';
 import { Tick } from '../../types';
 import { waitForever } from '../../util';
 

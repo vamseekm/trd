@@ -1,9 +1,9 @@
 import { DateTime } from 'luxon';
 
+import { TickRepository } from '../database';
 import { Log } from '../infra';
 import { startRawTickConsumer, startTickProcessConsumer, startTickStoreConsumer } from './consumer';
 import { startTickListener } from './publisher';
-import { TickRepository } from './repository';
 async function removeOldTicks(): Promise<void> {
     console.log('Removing old ticks ...');
     const removeDataOlderThan = DateTime.local().minus({ day: 1 }).toJSDate();

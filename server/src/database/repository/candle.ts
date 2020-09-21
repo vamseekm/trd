@@ -1,9 +1,9 @@
 import { diff as diffObject } from 'deep-diff';
 import lodash from 'lodash';
 
-import { CandleModel } from '../database';
-import { Candle, UpsertResults } from '../types';
-import { toSetAndMap } from '../util';
+import { Candle, UpsertResults } from '../../types';
+import { toSetAndMap } from '../../util';
+import { CandleModel } from '../model';
 
 async function upsertCandles(inputCandleList: Candle[]): Promise<UpsertResults> {
     const upsertResults: UpsertResults = { insert: 0, update: 0, remove: 0 };

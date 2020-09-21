@@ -4,11 +4,11 @@ import 'reflect-metadata';
 import minimist from 'minimist';
 import { exit } from 'process';
 
-import { APIService } from '../api-server/service';
+import { APIService } from '../api-server';
 import { CandleService } from '../candle';
-import { DatabaseService } from '../database/service';
+import { DatabaseService } from '../database';
 import { Log } from '../infra';
-import { InstrumentService } from '../instrument/service/instrument';
+import { InstrumentService } from '../instrument';
 import { TaskService } from '../task';
 import { TickService } from '../tick';
 import { waitForever } from '../util';

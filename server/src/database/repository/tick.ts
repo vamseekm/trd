@@ -1,8 +1,7 @@
 import { Op } from 'sequelize';
 
-import { TickModel } from '../database';
-import { Log } from '../infra';
-import { Tick } from '../types';
+import { Tick } from '../../types';
+import { TickModel } from '../model';
 
 async function bulkInsert(ticks: Tick[]): Promise<void> {
     await TickModel.bulkCreate(ticks);

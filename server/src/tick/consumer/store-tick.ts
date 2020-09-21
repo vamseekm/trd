@@ -1,7 +1,7 @@
 import { consumeQueue, MessageType } from '../../bridge';
+import { TickRepository } from '../../database';
 import { Log } from '../../infra';
 import { Tick } from '../../types';
-import { TickRepository } from '../repository';
 
 export async function startTickStoreConsumer(): Promise<void> {
     await consumeQueue({ name: 'tickStoreConsumer', messageType: MessageType.tick }, async ({ message }) => {

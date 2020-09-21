@@ -3,14 +3,12 @@ import pFilter from 'p-filter';
 import pMap from 'p-map';
 
 import { BrokerService } from '../broker';
+import { CandleRepository } from '../database';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
-import { Candle, CandleInterval, IBrokerCandle, Tick } from '../types';
-import { CandleDuration } from '../types/candle';
-import { IInstrument } from '../types/instrument';
+import { Candle, CandleDuration, CandleInterval, IBrokerCandle, IInstrument, Tick } from '../types';
 import { toDayAndTime } from '../util';
-import { CandleRepository } from './repository';
 
 async function candleKey({
     instrumentId,

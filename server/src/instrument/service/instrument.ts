@@ -3,12 +3,10 @@ import { DateTime } from 'luxon';
 import { Op, Sequelize } from 'sequelize';
 
 import { BrokerService } from '../../broker';
-import { InstrumentModel } from '../../database';
+import { InstrumentModel, InstrumentRepository } from '../../database';
 import { Log } from '../../infra';
-import { BrokerQuoteLtp, INSTRUMENT_ID_SEPERATOR } from '../../types';
-import { IInstrument } from '../../types/instrument';
+import { BrokerQuoteLtp, IInstrument, INSTRUMENT_ID_SEPERATOR } from '../../types';
 import { sleep } from '../../util';
-import { InstrumentRepository } from '../repository/instrument';
 
 async function syncInstruments(): Promise<void> {
     const exchanges = (await BrokerService.getExchanges()).filter(

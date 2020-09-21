@@ -1,4 +1,4 @@
-import { PrefModel } from '../database';
+import { PrefModel } from '../model';
 
 async function get(key: string, defaultValue?: any): Promise<string> {
     const item = await PrefModel.findOne({ where: { key } });

@@ -2,8 +2,6 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import configLib from 'config';
 
-import { IExchangeConfig } from '../types';
-
 function get(key: string, defaultValue?: any): any {
     if (configLib.has(key)) {
         return configLib.get(key);

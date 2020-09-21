@@ -1,10 +1,10 @@
 import { diff as diffObject } from 'deep-diff';
 import { FindOptions, Op, WhereOptions } from 'sequelize';
 
-import { InstrumentModel } from '../../database';
 import { Log } from '../../infra';
 import { IInstrument, UpsertResults } from '../../types';
 import { diffListOfObjects, mapFromObjectList } from '../../util';
+import { InstrumentModel } from '../model';
 async function fetchFnoInstruments({
     name,
     exchange = 'NFO',

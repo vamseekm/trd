@@ -1,7 +1,7 @@
 import LruCache from 'lru-cache';
 
+import { InstrumentRepository } from '../database';
 import { Log } from '../infra';
-import { InstrumentRepository } from '../instrument/repository/instrument';
 import { IInstrument } from '../types';
 
 const TOTAL_INSTRUMENTS = 1000;
