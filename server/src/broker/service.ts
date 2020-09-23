@@ -3,7 +3,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { DateTime } from 'luxon';
 
-import { Config, Log, Redis } from '../infra';
+import { CacheGroup } from '../database/repository/cache-group';
+import { Config, Log, RedisService } from '../infra';
 import { PrefService } from '../pref';
 import {
     BrokerQuoteLtp,
@@ -49,8 +50,9 @@ async function generateAccessToken(requestToken: string): Promise<string> {
     }
 }
 
+const brokerCache = new CacheGroup('broker');
 async function getProfile(): Promise<IBrokerProfile> {
-    return Redis.cacheGet({ key: 'Broker.getProfile', expiry: 8 * 3600 * 1000 }, async () => {
+    return brokerCache.get({ key: 'Broker.getProfile', expiry: 8 * 3600 * 1000 }, async () => {
         const kite = await kiteInstance();
         const profile = await kite.getProfile();
         return {
@@ -135,7 +137,7 @@ async function ticker(
         }
         ticker.autoReconnect(true, -1, 5);
         ticker.on('disconnect', (error: any) => {
-            Log.error('Kite: ticker disconnnected with error.', error);
+            Log.error(error);
         });
         ticker.on('error', (error: any) => {
             Log.error(error);

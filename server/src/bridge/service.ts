@@ -42,7 +42,7 @@ export async function consumeQueue(
         }
     });
     setInterval(() => {
-        Log.json(`${name}`, stats);
+        Log.json(`${name}`.padEnd(25), stats);
         stats.totalCount = 0;
         stats.totalMessages = 0;
         stats.totalSize = 0;

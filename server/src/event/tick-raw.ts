@@ -2,7 +2,7 @@ import { consumeQueue, EXCHANGE_TICKER, MessageType } from '../bridge';
 import { formatTick } from '../tick/util';
 import { waitForever } from '../util';
 
-export async function startRawTickConsumer(): Promise<void> {
+export async function startTickRawConsumer(): Promise<void> {
     await consumeQueue({ name: 'rawTickConsumer', messageType: MessageType.rawTick }, async ({ message, channel }) => {
         const { ticks, received_on } = JSON.parse(message.content.toString());
         if (!ticks) return;

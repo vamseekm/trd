@@ -4,6 +4,7 @@ import { Op, Sequelize } from 'sequelize';
 
 import { BrokerService } from '../../broker';
 import { InstrumentModel, InstrumentRepository } from '../../database';
+import { CacheRepository } from '../../database';
 import { Log } from '../../infra';
 import { BrokerQuoteLtp, IInstrument, INSTRUMENT_ID_SEPERATOR } from '../../types';
 import { sleep } from '../../util';
@@ -214,10 +215,8 @@ async function getTrackedFutures(name: string): Promise<IInstrument[]> {
 }
 
 async function debug(): Promise<void> {
-    const instruments = await InstrumentModel.findAll({ where: { name: 'BANKNIFTY', segment: 'NFO-FUT' } });
-    console.log(instruments);
-    await updateLTP(instruments);
-    console.log(await InstrumentModel.findAll({ where: { id: { [Op.in]: instruments.map((i) => i.id) } } }));
+    const ins = await CacheRepository.getInstrumentById('NSE_SBIN');
+    console.log(ins);
 }
 
 export const InstrumentService = {

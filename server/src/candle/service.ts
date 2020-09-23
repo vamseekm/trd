@@ -1,13 +1,16 @@
 import { DateTime } from 'luxon';
 import pFilter from 'p-filter';
 import pMap from 'p-map';
+import { off } from 'process';
 
 import { BrokerService } from '../broker';
 import { CandleRepository } from '../database';
+import { CacheRepository } from '../database';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
 import { Candle, CandleDuration, CandleInterval, IBrokerCandle, IInstrument, Tick } from '../types';
+import { INSTRUMENT_ID_SEPERATOR } from '../types';
 import { toDayAndTime } from '../util';
 
 async function candleKey({
@@ -20,7 +23,8 @@ async function candleKey({
     timestamp: Date;
 }): Promise<string> {
     const { day, time } = await toDayAndTime(timestamp);
-    return `${instrumentId}-${interval}-${day}${time}`;
+    const separator = INSTRUMENT_ID_SEPERATOR;
+    return `${instrumentId}${separator}${interval}${separator}${day}${time}`;
 }
 
 async function getAlignedTime({
@@ -105,28 +109,61 @@ async function downloadHistorical(): Promise<void> {
         const from = DateTime.local().minus({ day: 7 }).toJSDate();
         const candles = await downloadCandles({ instrument: instrument, interval: CandleInterval.MIN_01, from, to });
 
-        if (candles.length > 0) console.log(await CandleRepository.storeCandles(candles));
+        if (candles.length > 0) await CandleRepository.upsertCandles(candles);
     }
 }
 
-async function mapTickToCandle(tick: Tick) {
+async function convertTickToCandle(tick: Tick, interval: CandleInterval) {
     // Log.pretty(tick);
-    const key = await candleKey({ ...tick, interval: CandleInterval.MIN_05 });
-    const candleConfig = { ...tick, interval: CandleInterval.MIN_30 };
-    console.log('CCurrent:', tick.timestamp.toLocaleString());
-    console.log('TCurrent:', (await getAlignedTime({ ...candleConfig, offset: 0 })).toLocaleString());
-    console.log('PCurrent:', (await getAlignedTime({ ...candleConfig, offset: -1 })).toLocaleString());
-    console.log('NCurrent:', (await getAlignedTime({ ...candleConfig, offset: 1 })).toLocaleString());
+    const candleConfig = { ...tick, interval };
+    const currentCandleTime = await getAlignedTime(candleConfig);
+    const currentCandleKey = await candleKey({ ...candleConfig, timestamp: currentCandleTime });
+    let currentCandle = await CacheRepository.getCandle(currentCandleKey);
+    if (currentCandle == undefined) {
+        currentCandle = {
+            key: currentCandleKey,
+            timestamp: currentCandleTime,
+            open: tick.lastTradedPrice,
+            high: tick.lastTradedPrice,
+            low: tick.lastTradedPrice,
+            close: tick.lastTradedPrice,
+            volume: tick.totalVolume,
+            totalVolume: tick.totalVolume,
+            totalOpenInterest: tick.openInterest,
+            openInterest: tick.openInterest,
+        };
+    } else {
+        currentCandle.high = Math.max(currentCandle.high, tick.lastTradedPrice);
+        currentCandle.low = Math.min(currentCandle.low, tick.lastTradedPrice);
+        currentCandle.close = tick.lastTradedPrice;
+        currentCandle.volume = currentCandle.totalVolume = tick.totalVolume;
+        currentCandle.openInterest = currentCandle.totalOpenInterest = tick.openInterest;
+    }
+    const previousCandleTime = await getAlignedTime({ ...candleConfig, offset: -1 });
+    const previousCandleKey = await candleKey({
+        ...candleConfig,
+        timestamp: previousCandleTime,
+    });
+    const previousCandle = await CacheRepository.getCandle(previousCandleKey);
+    if (previousCandle != undefined) {
+        currentCandle.volume = currentCandle.totalVolume - previousCandle.totalVolume;
+        currentCandle.openInterest = currentCandle.totalOpenInterest - previousCandle.totalOpenInterest;
+    }
+    return currentCandle;
 }
 
-async function storeTickAsCandle(ticks: Tick[]): Promise<void> {
-    for (const tick of ticks) {
-        await mapTickToCandle(tick);
-        break;
-    }
+async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
+    const candles = await Promise.all(ticks.map((tick) => convertTickToCandle(tick, CandleInterval.MIN_01)));
+    return CacheRepository.writeCandles(candles);
+}
+
+async function debug(): Promise<void> {
+    const candles = await CandleRepository.findBy({ id: 'NSE_SBIN', interval: CandleInterval.MIN_01 });
+    console.log(candles);
 }
 
 export const CandleService = {
     downloadHistorical,
-    storeTickAsCandle,
+    bulkConvertTicksToCandles,
+    debug,
 };

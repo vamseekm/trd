@@ -119,7 +119,7 @@ services:
 
   c_tick_listener:
     image: c_server_img
-    command: "bash ./server.sh --Tick::startTickListener"
+    command: "bash ./server.sh --Event::startTickListener"
     environment:
       NODE_ENV: docker
     restart: always
@@ -128,7 +128,7 @@ services:
 
   c_tick_processor:
     image: c_server_img
-    command: "bash ./server.sh --Tick::startRawTickConsumer --Tick::startTickStoreConsumer"
+    command: "bash ./server.sh --Event::startTickRawConsumer --Event::startTickProcessConsumer --Event::startTickStoreConsumer"
     environment:
       NODE_ENV: docker
     restart: always

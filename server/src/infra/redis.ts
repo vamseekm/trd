@@ -6,10 +6,6 @@ import redis from 'redis';
 import { Config } from './config';
 import { Log } from './logger';
 
-function redisCacheKey(key: string): string {
-    return `cache:${key}`;
-}
-
 const client = redis.createClient(Config.get('redis'));
 client.on('error', (error) => Log.error(error));
 
@@ -38,27 +34,8 @@ function del(...arguments_: any[]): Promise<void> {
     return proxyCommand('del', arguments_);
 }
 
-async function cacheGet({ key, expiry }: { key: string; expiry?: number }, callback: () => Promise<any>): Promise<any> {
-    const arguments_: any[] = [redisCacheKey(key)];
-    const item = await get(...arguments_);
-    if (item) {
-        return JSON.parse(item).value;
-    }
-    const value = await callback();
-    arguments_.push(JSON.stringify({ value }));
-    if (expiry) {
-        arguments_.push('PX', expiry);
-    }
-    await set(...arguments_);
-    return value;
-}
-
-// export async function cacheDel(key: string): Promise<void> {
-//     return redisDel(redisCacheKey(key));
-// }
-export const Redis = {
+export const RedisService = {
     get,
     set,
     del,
-    cacheGet,
 };

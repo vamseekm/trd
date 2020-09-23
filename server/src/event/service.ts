@@ -1,11 +1,13 @@
-import { startTickProcessConsumer } from './process-tick';
-import { startTickListener } from './publisher';
-import { startRawTickConsumer } from './raw-tick';
-import { startTickStoreConsumer } from './store-tick';
+import { startCandleProcessConsumer } from './candle-process';
+import { startTickProcessConsumer } from './tick-process';
+import { startTickListener } from './tick-publish';
+import { startTickRawConsumer } from './tick-raw';
+import { startTickStoreConsumer } from './tick-store';
 
 export const EventService = {
     startTickProcessConsumer,
-    startRawTickConsumer,
+    startTickRawConsumer,
     startTickStoreConsumer,
     startTickListener,
+    startCandleProcessConsumer,
 };

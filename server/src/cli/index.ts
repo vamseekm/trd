@@ -64,7 +64,7 @@ async function run(): Promise<void> {
         await run();
         Log.info('Action completed.');
     } catch (error) {
-        Log.error('Error:', error);
+        Log.error(error);
     } finally {
         const endTime = new Date().getTime();
         Log.info(`Action elapsed time: ${((endTime - startTime) / 1000).toFixed(3)} sec.`);
