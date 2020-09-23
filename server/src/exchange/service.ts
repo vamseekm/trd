@@ -1,4 +1,4 @@
-import { delay } from 'bluebird';
+import { Mutex } from 'async-mutex';
 import { DateTime } from 'luxon';
 
 import { Config } from '../infra';
@@ -6,12 +6,12 @@ import { IExchangeConfig } from '../types';
 import { toDayAndTime } from '../util';
 
 let _cachedExchangeTimes: Map<string, IExchangeConfig>;
-let cacheLock = false;
+const cacheLock = new Mutex();
 async function getAllExchangeTimes(): Promise<Map<string, IExchangeConfig>> {
-    while (cacheLock === true) await delay(0);
     if (_cachedExchangeTimes != undefined) return _cachedExchangeTimes;
-    cacheLock = true;
+    const releaseLock = await cacheLock.acquire();
     try {
+        if (_cachedExchangeTimes != undefined) return _cachedExchangeTimes;
         const exchangeTimes = new Map<string, IExchangeConfig>();
         const exchangeConfig = Config.get('EXCHANGE_CONFIG') as Record<
             string,
@@ -44,7 +44,7 @@ async function getAllExchangeTimes(): Promise<Map<string, IExchangeConfig>> {
         _cachedExchangeTimes = exchangeTimes;
         return _cachedExchangeTimes;
     } finally {
-        cacheLock = false;
+        releaseLock();
     }
 }
 
