@@ -3,7 +3,7 @@ module.exports = {
 
     parserOptions: {
         ecmaVersion: 2020, // Allows for the parsing of modern ECMAScript features
-
+        project: './tsconfig.json',
         sourceType: 'module', // Allows for the use of imports
     },
 
@@ -20,5 +20,26 @@ module.exports = {
         // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
         // e.g. "@typescript-eslint/explicit-function-return-type": "off",
         'simple-import-sort/sort': 'error',
+        '@typescript-eslint/no-floating-promises': 'error',
+        '@typescript-eslint/adjacent-overload-signatures': 'error',
+        '@typescript-eslint/ban-types': 'error',
+        '@typescript-eslint/explicit-module-boundary-types': 'error',
+        '@typescript-eslint/no-extra-non-null-assertion': 'error',
+        '@typescript-eslint/no-inferrable-types': 'error',
+        '@typescript-eslint/no-misused-new': 'error',
+        '@typescript-eslint/no-misused-promises': 'error',
+        '@typescript-eslint/no-non-null-asserted-optional-chain': 'error',
+        '@typescript-eslint/no-non-null-assertion': 'error',
+        '@typescript-eslint/no-this-alias': 'error',
+        '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+        '@typescript-eslint/prefer-function-type': 'error',
+        '@typescript-eslint/prefer-as-const': 'error',
+        '@typescript-eslint/no-var-requires': 'error',
+        '@typescript-eslint/prefer-regexp-exec': 'error',
+        '@typescript-eslint/restrict-plus-operands': 'error',
+        '@typescript-eslint/restrict-template-expressions': 'error',
+        '@typescript-eslint/unbound-method': 'error',
+        '@typescript-eslint/no-array-constructor': 'error',
+        '@typescript-eslint/require-await': 'error',
     },
 };
