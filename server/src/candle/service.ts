@@ -1,7 +1,6 @@
 import { DateTime } from 'luxon';
 import pFilter from 'p-filter';
 import pMap from 'p-map';
-import { off } from 'process';
 
 import { BrokerService } from '../broker';
 import { CandleRepository } from '../database';
@@ -9,7 +8,7 @@ import { CacheRepository } from '../database';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
-import { Candle, CandleDuration, CandleInterval, IBrokerCandle, IInstrument, Tick } from '../types';
+import { Candle, CandleDuration, CandleInterval, IBrokerCandle, Instrument, Tick } from '../types';
 import { INSTRUMENT_ID_SEPERATOR } from '../types';
 import { toDayAndTime } from '../util';
 
@@ -56,7 +55,7 @@ async function splitCandleKey(key: string) {
 }
 
 async function mapBrokerCandleToDatabaseCandle(
-    instrument: IInstrument,
+    instrument: Instrument,
     interval: CandleInterval,
     candle: IBrokerCandle,
 ): Promise<Candle> {
@@ -81,7 +80,7 @@ async function downloadCandles({
     from,
     to,
 }: {
-    instrument: IInstrument;
+    instrument: Instrument;
     interval: CandleInterval;
     from: Date;
     to: Date;
@@ -100,8 +99,7 @@ async function downloadCandles({
 
 async function downloadHistorical(): Promise<void> {
     Log.info('Syncing candles...');
-    const instruments = await InstrumentService.getTrackedInstruments();
-    // const instruments = await InstrumentService.getTrackedFutures('NIFTY');
+    const instruments = await InstrumentService.findTrackedInstruments();
     for (const instrument of instruments) {
         const { id } = instrument;
         Log.info(`Candle sync: ${id}`);
@@ -158,8 +156,10 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
 }
 
 async function debug(): Promise<void> {
-    const candles = await CandleRepository.findBy({ id: 'NSE_SBIN', interval: CandleInterval.MIN_01 });
-    console.log(candles);
+    const instruments = await BrokerService.getInstrumentsByExchange('NSE');
+    console.log(instruments);
+    // const candles = await CandleRepository.findBy({ id: 'NSE_SBIN', interval: CandleInterval.MIN_01 });
+    // console.log(candles);
 }
 
 export const CandleService = {

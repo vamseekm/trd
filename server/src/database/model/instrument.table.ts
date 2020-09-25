@@ -1,13 +1,15 @@
 import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
 
+import { Instrument } from '../../types';
+
 @Table({ timestamps: false, tableName: 'instrument' })
-export class InstrumentModel extends Model<InstrumentModel> {
+export class InstrumentModel extends Model<InstrumentModel> implements Instrument {
     @Column({ type: DataType.STRING(128), primaryKey: true })
     id!: string;
 
     @Index
-    @Column({ allowNull: false, type: DataType.BIGINT })
-    instrumentToken!: number;
+    @Column({ allowNull: false })
+    instrumentToken!: string;
 
     @Column({ allowNull: false })
     exchangeToken!: string;

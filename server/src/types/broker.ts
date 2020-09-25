@@ -1,4 +1,4 @@
-import { IInstrument } from './instrument';
+import { Instrument } from './instrument';
 
 export interface IBrokerProfile {
     name: string;
@@ -12,7 +12,7 @@ export interface IBrokerService {
     generateAccessToken(requestToken: string): Promise<string>;
     getProfile(): Promise<IBrokerProfile>;
     getExchanges(): Promise<string[]>;
-    getInstrumentsByExchange(exchange: string): Promise<IInstrument[]>;
+    getInstrumentsByExchange(exchange: string): Promise<Instrument[]>;
 }
 
-export type BrokerQuoteLtp = Pick<IInstrument, 'id' | 'lastPrice' | 'instrumentToken'>;
+export type BrokerQuoteLtp = Pick<Instrument, 'id' | 'lastPrice' | 'instrumentToken'>;

@@ -4,7 +4,7 @@ import { Log, Rabbit } from '../infra';
 import { InstrumentService } from '../instrument';
 
 export async function startTickListener(): Promise<any> {
-    const instruments = await InstrumentService.getTrackedInstruments();
+    const instruments = await InstrumentService.findTrackedInstruments();
     const tokens = instruments.map((instrument) => instrument.instrumentToken);
     const channel = await Rabbit.createChannel();
     let stats = { totalTicks: 0, totalMessages: 0, totalSize: 0 };

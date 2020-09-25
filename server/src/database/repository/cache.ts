@@ -1,23 +1,23 @@
-import { Candle, IInstrument } from '../../types';
+import { Candle, Instrument } from '../../types';
 import { CacheGroup } from './cache-group';
 import { CandleRepository } from './candle';
 import { InstrumentRepository } from './instrument';
 
 const INSTRUMENT_CACHE_EXPIRY = 24 * 3600 * 1000;
 const instrumentTokenCache = new CacheGroup('ins_token');
-async function getInstrumentByToken(instrumentToken: number): Promise<IInstrument | undefined> {
+async function getInstrumentByToken(instrumentToken: number): Promise<Instrument | undefined> {
     return instrumentTokenCache.get({ key: `${instrumentToken}`, expiry: INSTRUMENT_CACHE_EXPIRY }, async () => {
-        return cacheInstrument(await InstrumentRepository.findOneBy({ instrumentToken }));
+        return cacheInstrument(await InstrumentRepository.findByInstrumentToken(instrumentToken));
     });
 }
 const instrumentIdCache = new CacheGroup('ins_id');
-async function getInstrumentById(id: string): Promise<IInstrument | undefined> {
+async function getInstrumentById(id: string): Promise<Instrument | undefined> {
     return instrumentIdCache.get({ key: id, expiry: INSTRUMENT_CACHE_EXPIRY }, async () => {
         console.log('miss:', id);
-        return cacheInstrument(await InstrumentRepository.findOneBy({ id }));
+        return cacheInstrument(await InstrumentRepository.findById(id));
     });
 }
-async function cacheInstrument(instrument: IInstrument | null): Promise<IInstrument | undefined> {
+async function cacheInstrument(instrument: Instrument | null): Promise<Instrument | undefined> {
     if (instrument == undefined) return;
     await instrumentIdCache.set({ key: instrument.id, value: instrument, expiry: INSTRUMENT_CACHE_EXPIRY });
     await instrumentTokenCache.set({

@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
+import { transformAndValidate } from 'class-transformer-validator';
 import { DateTime } from 'luxon';
 
 import { CacheGroup } from '../database/repository/cache-group';
-import { Config, Log, RedisService } from '../infra';
+import { Config, Log } from '../infra';
 import { PrefService } from '../pref';
 import {
     BrokerQuoteLtp,
     CandleInterval,
     IBrokerCandle,
     IBrokerProfile,
-    IInstrument,
+    Instrument,
     INSTRUMENT_ID_SEPERATOR,
     KITE_ACCESS_TOKEN,
     KITE_API_KEY,
@@ -69,60 +70,51 @@ async function getExchanges(): Promise<string[]> {
     return profile.exchanges.filter((exchange) => exchange !== 'BSE');
 }
 
-async function getLTP(instrumentIdList: string[]): Promise<BrokerQuoteLtp[]> {
+async function getLTP(inputIdList: string[]): Promise<BrokerQuoteLtp[]> {
     const kite = await kiteInstance();
-    const ltpObject = await kite.getLTP(instrumentIdList);
-    const keys = Object.keys(ltpObject);
-    const response: BrokerQuoteLtp[] = [];
-    keys.forEach((id) => {
-        response.push({
-            id,
-            instrumentToken: ltpObject[id].instrument_token,
-            lastPrice: ltpObject[id].last_price,
-        });
+    const ltpObject = await kite.getLTP(inputIdList);
+    const instrumentIdList = Object.keys(ltpObject);
+    return instrumentIdList.map(
+        (id): BrokerQuoteLtp => {
+            const { instrument_token: instrumentToken, last_price: lastPrice } = ltpObject[id];
+            return { id, instrumentToken, lastPrice };
+        },
+    );
+}
+const brokerInstrumentCahce = new CacheGroup('bk_ins');
+async function getInstrumentsByExchange(exchange: string): Promise<Instrument[]> {
+    const instruments: any = await brokerInstrumentCahce.get({ key: exchange, expiry: 2 * 3600 * 1000 }, async () => {
+        const kite = await kiteInstance();
+        return kite.getInstruments(exchange);
     });
-    return response;
+    const results: Instrument[] = [];
+    for (const inputInstrument of instruments) {
+        if (!inputInstrument.instrument_token || inputInstrument.instrument_token.length === 0) {
+            Log.json('Invalid instrument', inputInstrument);
+            continue;
+        }
+        const instrument = await transformAndValidate(Instrument, {
+            id: `${exchange}${INSTRUMENT_ID_SEPERATOR}${inputInstrument.tradingsymbol}`,
+            instrumentToken: inputInstrument.instrument_token,
+            exchangeToken: inputInstrument.exchange_token,
+            tradingSymbol: inputInstrument.tradingsymbol,
+            name: inputInstrument.name,
+            lastPrice: inputInstrument.last_price,
+            expiry: inputInstrument.expiry ? new Date(inputInstrument.expiry) : new Date(0),
+            strike: inputInstrument.strike,
+            tickSize: inputInstrument.tick_size,
+            lotSize: inputInstrument.lot_size,
+            instrumentType: inputInstrument.instrument_type,
+            segment: inputInstrument.segment,
+            exchange: inputInstrument.exchange,
+            live: true,
+        });
+        results.push(instrument);
+    }
+    return results;
 }
 
-async function getInstrumentsByExchange(exchange: string): Promise<IInstrument[]> {
-    const kite = await kiteInstance();
-    const instruments: any = await kite.getInstruments(exchange);
-    return instruments
-        .filter((item: any) => {
-            if (!item.instrument_token || item.instrument_token.length === 0) {
-                Log.json('Invalid instrument', item);
-                return false;
-            }
-            return true;
-        })
-        .map(
-            (ins: any): IInstrument => {
-                const tradingSymbol = ins.tradingsymbol;
-                return {
-                    id: `${ins.exchange}${INSTRUMENT_ID_SEPERATOR}${tradingSymbol}`,
-                    instrumentToken: ins.instrument_token,
-                    exchangeToken: ins.exchange_token,
-                    tradingSymbol,
-                    name: ins.name,
-                    lastPrice: ins.last_price,
-                    expiry: ins.expiry || new Date(0),
-                    strike: ins.strike,
-                    tickSize: ins.tick_size,
-                    lotSize: ins.lot_size,
-                    instrumentType: ins.instrument_type,
-                    segment: ins.segment,
-                    exchange: ins.exchange,
-                    live: true,
-                };
-            },
-        );
-}
-
-async function ticker(
-    instrumentTokenList: (number | string)[],
-    tick_handler: any,
-    order_update_handler?: any,
-): Promise<any> {
+async function ticker(instrumentTokenList: string[], tick_handler: any, order_update_handler?: any): Promise<any> {
     const api_key = Config.get(KITE_API_KEY);
     const access_token = await PrefService.get(KITE_ACCESS_TOKEN);
 
@@ -147,7 +139,6 @@ async function ticker(
             Log.info('Kite: Connected...');
             Log.info(`Kite: Subscribing to ${instrumentTokenList.length} instruments with full quote mode...`);
             const numberInstrumentTokenList = instrumentTokenList.map((instrumentToken) => {
-                if (typeof instrumentToken === 'number') return instrumentToken;
                 return Number.parseInt(instrumentToken, 10);
             });
             console.log(numberInstrumentTokenList);
@@ -177,7 +168,7 @@ async function getHistorical({
     from,
     to,
 }: {
-    instrumentToken: number;
+    instrumentToken: string;
     interval: CandleInterval;
     from: Date;
     to: Date;

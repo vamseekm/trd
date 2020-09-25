@@ -15,6 +15,7 @@ import { TickService } from '../tick';
 import { waitForever } from '../util';
 
 async function run(): Promise<void> {
+    await DatabaseService.databaseConnect();
     console.log(process.cwd());
     const argv = minimist(process.argv.slice(2));
     Log.json('Args', argv);
@@ -48,7 +49,6 @@ async function run(): Promise<void> {
         if (actionMap[option] == undefined) throw new Error(`Action "${option}" not found.`);
         actions.push(actionMap[option]);
     }
-    await DatabaseService.databaseConnect();
     Log.info(`Executing ${actions.length} actions.`);
     if (actions.length > 0) await Promise.all(actions.map((a) => a()));
     if (argv['force-exit']) {
@@ -64,6 +64,7 @@ async function run(): Promise<void> {
         await run();
         Log.info('Action completed.');
     } catch (error) {
+        console.trace(error);
         Log.error(error);
     } finally {
         const endTime = new Date().getTime();

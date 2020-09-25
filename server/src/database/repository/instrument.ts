@@ -1,9 +1,8 @@
 import { diff as diffObject } from 'deep-diff';
-import { FindOptions, Op, WhereOptions } from 'sequelize';
+import { FindOptions, Op, Sequelize, WhereAttributeHash } from 'sequelize';
 
-import { Log } from '../../infra';
-import { IInstrument, UpsertResults } from '../../types';
-import { diffListOfObjects, mapFromObjectList } from '../../util';
+import { Instrument, UpsertResults } from '../../types';
+import { toSetAndMap } from '../../util';
 import { InstrumentModel } from '../model';
 async function fetchFnoInstruments({
     name,
@@ -17,37 +16,33 @@ async function fetchFnoInstruments({
     segment?: string;
     expiry?: Date;
     take?: number;
-}): Promise<IInstrument[]> {
+}): Promise<Instrument[]> {
     let options: FindOptions = { where: { name, exchange, segment, expiry: { [Op.gte]: expiry } }, raw: true };
     if (take != undefined) options = { ...options, limit: take };
     return InstrumentModel.findAll(options);
 }
 
-async function fetchOptions(name: string): Promise<IInstrument[]> {
+async function fetchOptions(name: string): Promise<Instrument[]> {
     return InstrumentModel.findAll({
         where: { name, exchange: 'NFO', segment: 'NFO-OPT', live: true },
         order: [['expiry', 'ASC']],
     });
 }
 
-async function findTopInstruments({ exchange, take }: { exchange: string; take: number }): Promise<IInstrument[]> {
-    return InstrumentModel.findAll({ where: { exchange }, order: [['rank', 'ASC']], limit: take });
-}
-
-async function updateInstrument({ id, ...rest }: Partial<IInstrument>): Promise<any> {
+async function updateInstrument({ id, ...rest }: Partial<Instrument>): Promise<any> {
     if (id == undefined) throw new Error(`id can't be undefined.`);
     return InstrumentModel.update(rest, { where: { id } });
 }
 
-async function updateInstruments(instrumentList: Array<Partial<IInstrument>>): Promise<any> {
+async function updateInstruments(instrumentList: Array<Partial<Instrument>>): Promise<any> {
     return await Promise.all(
-        instrumentList.map((instrument: Partial<IInstrument>) => {
+        instrumentList.map((instrument: Partial<Instrument>) => {
             return updateInstrument(instrument);
         }),
     );
 }
 
-async function bulkUpdateInstruments(idList: string[], data: Partial<IInstrument>) {
+async function bulkUpdateInstruments(idList: string[], data: Partial<Instrument>) {
     return InstrumentModel.update(data, { where: { id: { [Op.in]: idList } } });
 }
 
@@ -60,67 +55,164 @@ async function exchangeList(): Promise<string[]> {
     // return InstrumentModel.distinct('exchange').exec();
 }
 
-async function upsertInstruments(exchange: string, inputInstruments: IInstrument[]): Promise<UpsertResults> {
-    const databaseInstruments: IInstrument[] = (await InstrumentModel.findAll({ where: { exchange }, raw: true })).map(
-        (item) => {
-            const { createdAt, updatedAt, lastPriceUpdatedOn, track, rank, ...rest } = item;
-            return { ...rest, lastPrice: 0 };
+async function upsertInstruments(exchange: string, inputInstruments: Instrument[]): Promise<UpsertResults> {
+    const databaseInstruments: Instrument[] = (
+        await InstrumentModel.findAll({ where: { exchange, live: true }, raw: true })
+    ).map((item) => {
+        const { createdAt, updatedAt, lastPriceUpdatedOn, track, rank, ...rest } = item;
+        return { ...rest, lastPrice: 0 };
+    });
+    const database = toSetAndMap(databaseInstruments, 'id');
+    const input = toSetAndMap(inputInstruments, 'id');
+    const commonIds = new Set<string>();
+    const insertInstruments: Instrument[] = [];
+    input.set.forEach((id) => {
+        if (database.set.has(id) && input.set.has(id)) commonIds.add(id);
+        if (!database.set.has(id)) insertInstruments.push(input.map.get(id) as Instrument);
+    });
+    const removedIds = new Set<string>();
+    database.set.forEach((id) => {
+        if (database.set.has(id) && input.set.has(id)) commonIds.add(id);
+        if (!input.set.has(id)) removedIds.add(id);
+    });
+    const updateInstruments: Instrument[] = [];
+    commonIds.forEach((commonId) => {
+        const diff = diffObject(input.map.get(commonId), database.map.get(commonId));
+        if (diff != undefined) updateInstruments.push(input.map.get(commonId) as Instrument);
+    });
+    const upsertInstruments = [...insertInstruments, ...updateInstruments];
+    if (upsertInstruments.length > 0) {
+        await InstrumentModel.bulkCreate(upsertInstruments, {
+            updateOnDuplicate: Object.keys(upsertInstruments[0]),
+        });
+    }
+    if (removedIds.size > 0) {
+        await bulkUpdateInstruments([...removedIds], { live: false });
+    }
+    return { insert: insertInstruments.length, update: updateInstruments.length, remove: removedIds.size };
+}
+
+async function findOptions({
+    expiry,
+    name,
+    segment,
+    strikeLimitLow,
+    strikeLimitHigh,
+    strikeInterval,
+}: {
+    expiry: Date;
+    name: string;
+    segment: string;
+    strikeLimitLow: number;
+    strikeLimitHigh: number;
+    strikeInterval: number;
+}): Promise<Instrument[]> {
+    return _findBy({
+        where: {
+            [Op.and]: [
+                { expiry },
+                { name },
+                { segment },
+                {
+                    strike: {
+                        [Op.gte]: strikeLimitLow,
+                        [Op.lte]: strikeLimitHigh,
+                    },
+                },
+                Sequelize.where(
+                    Sequelize.fn(
+                        'mod',
+                        Sequelize.cast(Sequelize.col('strike'), 'numeric'),
+                        Sequelize.literal(`${strikeInterval}`),
+                    ),
+                    Sequelize.literal('0'),
+                ),
+            ],
         },
-    );
-    const diff = diffListOfObjects(databaseInstruments, inputInstruments, 'id');
-    const removedSymbols = diff.removed.map((item) => item.id);
-    if (removedSymbols.length > 0) {
-        Log.info(`\tRemoved: ${removedSymbols.length}`);
-        await bulkUpdateInstruments(removedSymbols, { live: false });
-    }
-    const inputInstrumentMap = await mapFromObjectList(inputInstruments, 'id');
-    if (diff.updated.length > 0) {
-        Log.info('\tUpdating...');
-        const databaseInstrumentsMap = await mapFromObjectList(databaseInstruments, 'id');
-        console.log(diffObject(diff.updated[0], databaseInstrumentsMap.get(diff.updated[0].id)));
-        await updateInstruments(
-            diff.updated.map((instrument) => {
-                return { ...inputInstrumentMap.get(instrument.id), live: true };
-            }),
-        );
-    }
-    if (diff.added.length > 0) {
-        Log.info('\tInserting...');
-        await InstrumentModel.bulkCreate(
-            diff.added.map((instrument: IInstrument) => ({
-                ...instrument,
-                rank: 0,
-                live: true,
-                track: false,
-                lastPriceUpdatedOn: new Date(0),
-            })),
-        );
-    }
-    return {
-        insert: diff.added.length,
-        update: diff.updated.length,
-        remove: diff.removed.length,
-    };
+        order: [['strike', 'ASC']],
+    });
 }
 
-async function findOneBy(where: WhereOptions): Promise<IInstrument | null> {
-    return InstrumentModel.findOne({ where, raw: true });
+async function findTopInstruments({ exchange, take }: { exchange: string; take: number }): Promise<Instrument[]> {
+    return InstrumentModel.findAll({ where: { exchange }, order: [['rank', 'ASC']], limit: take });
 }
 
-async function getAutoTrackedInstrumentIds(): Promise<string[]> {
-    return (await InstrumentModel.findAll({ where: { track: true }, attributes: ['id'] })).map(
-        (instrument) => instrument.id,
-    );
+async function findInstrumentsWithPendingLTPUpdates({
+    maxExpiry,
+    lastUpdatedBefore,
+}: {
+    maxExpiry: Date;
+    lastUpdatedBefore: Date;
+}): Promise<Instrument[]> {
+    return await _findBy({
+        where: {
+            live: true,
+            [Op.and]: [
+                { expiry: { [Op.lt]: maxExpiry } },
+                {
+                    [Op.or]: [{ lastPriceUpdatedOn: { [Op.lt]: lastUpdatedBefore } }, { lastPrice: 0 }],
+                },
+            ],
+        },
+    });
+}
+
+async function findAllInstruments(maxExpiry: Date): Promise<Instrument[]> {
+    return _findBy({
+        where: {
+            segment: { [Op.in]: ['INDICES', 'NFO-FUT', 'NSE'] },
+            expiry: { [Op.lt]: maxExpiry },
+        },
+    });
+}
+
+async function findTrackedFutures(name: string): Promise<Instrument[]> {
+    return _findBy({ where: { name, segment: 'NFO-FUT', live: true, track: true }, order: [['expiry', 'ASC']] });
+}
+
+async function findTrackedInstruments(): Promise<Instrument[]> {
+    return _findBy({ where: { track: true } });
+}
+
+async function _findBy({ where, order = [] }: { where: WhereAttributeHash; order?: any[] }): Promise<Instrument[]> {
+    return InstrumentModel.findAll({ where, order, raw: true });
+}
+async function _findOneBy({
+    where,
+    order = [],
+}: {
+    where: WhereAttributeHash;
+    order?: any[];
+}): Promise<Instrument | null> {
+    return InstrumentModel.findOne({ where, order, raw: true });
+}
+
+async function findAutoTrackedInstruments(): Promise<Instrument[]> {
+    return _findBy({ where: { track: true } });
+}
+
+async function findById(id: string): Promise<Instrument | null> {
+    return _findOneBy({ where: { id } });
+}
+
+async function findByInstrumentToken(instrumentToken: number): Promise<Instrument | null> {
+    return _findOneBy({ where: { instrumentToken } });
 }
 
 export const InstrumentRepository = {
     exchangeList,
     fetchFnoInstruments,
     fetchOptions,
+    findAllInstruments,
+    findInstrumentsWithPendingLTPUpdates,
+    findOptions,
     findTopInstruments,
-    upsertInstruments,
+    findTrackedFutures,
+    findTrackedInstruments,
+    findAutoTrackedInstruments,
     trackInstruments,
-    getAutoTrackedInstrumentIds,
     updateInstruments,
-    findOneBy,
+    upsertInstruments,
+    findById,
+    findByInstrumentToken,
 };

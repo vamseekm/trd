@@ -1,5 +1,4 @@
-import { plainToClass } from 'class-transformer';
-import { validateOrReject } from 'class-validator';
+import { transformAndValidate } from 'class-transformer-validator';
 import { Op, Sequelize } from 'sequelize';
 
 import { Log } from '../../infra';
@@ -33,17 +32,19 @@ async function findBy({ id, interval }: { id: string; interval: CandleInterval }
     );
 }
 async function validate(inputCandles: Candle[]): Promise<Candle[]> {
-    const candles = await Promise.all(
-        inputCandles.map((inputCandle) =>
-            plainToClass(Candle, { ...inputCandle, volume: Number.parseInt(inputCandle.volume as any, 10) }),
-        ),
-    );
     try {
-        await Promise.all(candles.map((candle) => validateOrReject(candle)));
+        return await Promise.all(
+            inputCandles.map((inputCandle) =>
+                transformAndValidate(Candle, {
+                    ...inputCandle,
+                    volume: Number.parseInt(inputCandle.volume as any, 10),
+                }),
+            ),
+        );
     } catch (error) {
         Log.error(error);
+        throw error;
     }
-    return candles;
 }
 
 export const CandleRepository = {
