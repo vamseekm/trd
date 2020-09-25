@@ -1,0 +1,1 @@
+ignores: ["node-config", "*graphql*", "pg", "pg-hstore", "source-map-*", "npm-check-updates", "depcheck"]

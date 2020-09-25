@@ -6,7 +6,7 @@ import { Candle, CandleInterval } from '../../types';
 import { CandleModel } from '../model';
 
 async function upsertCandles(inputCandleList: Candle[]): Promise<any> {
-    return CandleModel.bulkCreate(inputCandleList, {
+    return await CandleModel.bulkCreate(inputCandleList, {
         updateOnDuplicate: [
             'timestamp',
             'open',

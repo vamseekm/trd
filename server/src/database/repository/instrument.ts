@@ -83,7 +83,7 @@ async function upsertInstruments(exchange: string, inputInstruments: Instrument[
     const upsertInstruments = [...insertInstruments, ...updateInstruments];
     if (upsertInstruments.length > 0) {
         await InstrumentModel.bulkCreate(upsertInstruments, {
-            updateOnDuplicate: Object.keys(upsertInstruments[0]),
+            updateOnDuplicate: Object.keys(upsertInstruments[0]) as any,
         });
     }
     if (removedIds.size > 0) {

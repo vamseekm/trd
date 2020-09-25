@@ -6,6 +6,7 @@ fi
 if [ "$NODE_ENV" == "dev" ]; then
     echo "In dev mode"
 fi
+rm -fr ./dist
 NODE_ENV=dev npx tsc-watch --pretty --noClear -p . --onSuccess "npm -s run dist:run -- $@"
 
 
