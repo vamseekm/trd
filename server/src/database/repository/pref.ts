@@ -1,6 +1,7 @@
 import { PrefModel } from '../model';
 
-async function get(key: string, defaultValue?: any): Promise<string> {
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+async function get(key: string, defaultValue?: string): Promise<string | undefined> {
     const item = await PrefModel.findOne({ where: { key } });
     if (item?.value != undefined) return item.value;
     return defaultValue;

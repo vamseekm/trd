@@ -3,6 +3,7 @@
 import express from 'express';
 
 import { expressWrap } from '../api-server';
+import { IController } from '../types/controller';
 import { BrokerService } from './service';
 
 async function login(request: express.Request, response: express.Response): Promise<void> {
@@ -34,7 +35,7 @@ async function publicRoutes(): Promise<express.Router> {
     return router;
 }
 
-export const BrokerController = {
+export const BrokerController: IController = {
     publicRoutes,
     privateRoutes,
 };

@@ -58,7 +58,7 @@ async function run(): Promise<void> {
     }
 }
 
-(async function main() {
+void (async function main() {
     const startTime = new Date().getTime();
     try {
         await run();

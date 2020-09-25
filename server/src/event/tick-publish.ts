@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { EXCHANGE_TICKER, MessageType } from '../bridge';
 import { BrokerService } from '../broker';
 import { Log, Rabbit } from '../infra';
 import { InstrumentService } from '../instrument';
 
-export async function startTickListener(): Promise<any> {
+export async function startTickListener(): Promise<void> {
     const instruments = await InstrumentService.findTrackedInstruments();
     const tokens = instruments.map((instrument) => instrument.instrumentToken);
     const channel = await Rabbit.createChannel();

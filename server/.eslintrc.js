@@ -37,9 +37,7 @@ module.exports = {
         '@typescript-eslint/no-var-requires': 'error',
         '@typescript-eslint/prefer-regexp-exec': 'error',
         '@typescript-eslint/restrict-plus-operands': 'error',
-        '@typescript-eslint/restrict-template-expressions': 'error',
         '@typescript-eslint/unbound-method': 'error',
         '@typescript-eslint/no-array-constructor': 'error',
-        '@typescript-eslint/require-await': 'error',
     },
 };

@@ -2,15 +2,16 @@ import { Channel, ConsumeMessage } from 'amqplib';
 
 import { Log, Rabbit } from '../infra';
 
-type ConsumerArgs = { name: string; prefetch?: number; messageType: MessageType };
-interface StatsUpdateCallback {
-    ({ totalCount }: { totalCount?: number }): void;
-}
-interface ConsumerCallback {
-    ({ channel, message }: { channel: Channel; message: ConsumeMessage }): Promise<number | boolean | undefined>;
-}
+type ConsumerArguments = { name: string; prefetch?: number; messageType: MessageType };
+type ConsumerCallback = ({
+    channel,
+    message,
+}: {
+    channel: Channel;
+    message: ConsumeMessage;
+}) => Promise<number | boolean | undefined>;
 export async function consumeQueue(
-    { name, messageType, prefetch = 1 }: ConsumerArgs,
+    { name, messageType, prefetch = 1 }: ConsumerArguments,
     callback: ConsumerCallback,
 ): Promise<void> {
     const stats = { totalCount: 0, totalMessages: 0, totalSize: 0, ack: 0, error: 0 };
@@ -22,8 +23,8 @@ export async function consumeQueue(
         await channel.assertQueue(`${messageType}Consumer`, { durable: true });
         await channel.bindQueue(`${messageType}Consumer`, EXCHANGE_TICKER, messageType);
     }
-    channel.prefetch(prefetch);
-    channel.consume(name, async (message: ConsumeMessage | null) => {
+    await channel.prefetch(prefetch);
+    await channel.consume(name, async (message: ConsumeMessage | null) => {
         if (message == undefined) return;
         try {
             const processedCount = await callback({

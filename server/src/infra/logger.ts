@@ -48,6 +48,7 @@ const json = (label: string, ...rest: any[]): void => {
     }
 };
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 const pretty = (object: any): void => {
     Log.info(JSON.stringify(object, undefined, 2));
 };

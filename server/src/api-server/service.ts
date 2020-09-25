@@ -29,8 +29,8 @@ async function mountRoutes(ctrl: IController, prefix: string): Promise<void> {
 }
 
 async function setupRoutes(): Promise<void> {
-    mountRoutes(BrokerController, '/broker');
-    mountRoutes(TaskController, '/task');
+    await mountRoutes(BrokerController, '/broker');
+    await mountRoutes(TaskController, '/task');
     app.get('/health', (_request, response) => response.send('ok'));
     app.use('/api/open/', publicRouter);
     app.use('/api', privateRouter);
