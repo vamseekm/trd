@@ -22,6 +22,7 @@ async function run(): Promise<void> {
     const entryModules: Record<string, any> = {
         APIService,
         CandleService,
+        DatabaseService,
         InstrumentService,
         TaskService,
         TickService,

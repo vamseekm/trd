@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { diff as diffObject } from 'deep-diff';
 import { FindOptions, Op, Sequelize, WhereAttributeHash } from 'sequelize';
 
@@ -195,7 +197,7 @@ async function findById(id: string): Promise<Instrument | null> {
     return _findOneBy({ where: { id } });
 }
 
-async function findByInstrumentToken(instrumentToken: number): Promise<Instrument | null> {
+async function findByInstrumentToken(instrumentToken: string): Promise<Instrument | null> {
     return _findOneBy({ where: { instrumentToken } });
 }
 

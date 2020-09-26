@@ -5,7 +5,7 @@ import { InstrumentRepository } from './instrument';
 
 const INSTRUMENT_CACHE_EXPIRY = 24 * 3600 * 1000;
 const instrumentTokenCache = new CacheGroup('ins_token');
-async function getInstrumentByToken(instrumentToken: number): Promise<Instrument | undefined> {
+async function getInstrumentByToken(instrumentToken: string): Promise<Instrument | undefined> {
     return instrumentTokenCache.get({ key: `${instrumentToken}`, expiry: INSTRUMENT_CACHE_EXPIRY }, async () => {
         return cacheInstrument(await InstrumentRepository.findByInstrumentToken(instrumentToken));
     });

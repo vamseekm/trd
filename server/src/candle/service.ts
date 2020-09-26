@@ -156,9 +156,9 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
 }
 
 async function debug(): Promise<void> {
-    const instruments = await BrokerService.getInstrumentsByExchange('NSE');
-    console.log(instruments);
-    // const candles = await CandleRepository.findBy({ id: 'NSE_SBIN', interval: CandleInterval.MIN_01 });
+    // const instruments = await BrokerService.getInstrumentsByExchange('NSE');
+    // console.log(instruments);
+    const candles = await CandleRepository.findBy({ id: 'NFO_NIFTY20OCTFUT', interval: CandleInterval.MIN_01 });
     // console.log(candles);
 }
 

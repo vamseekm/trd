@@ -21,7 +21,7 @@ export async function formatTick(tick: any): Promise<Tick | undefined> {
             depth,
         } = tick;
         const timestampDate = new Date(timestamp);
-        const instrument = await CacheRepository.getInstrumentByToken(instrument_token);
+        const instrument = await CacheRepository.getInstrumentByToken(`${instrument_token}`);
         if (instrument == undefined) throw new Error(`No instrument found with instrumentToken: ${instrument_token}`);
         const { id, exchange, tradingSymbol } = instrument;
         if (!(await ExchangeService.isValidTime({ exchange, date: timestampDate }))) return;

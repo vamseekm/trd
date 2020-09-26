@@ -16,6 +16,7 @@ const logger = winston.createLogger({
                 /(nfo|rror|arn)/gi,
                 '',
             )}`;
+            log = `${log} | `;
             if (error) {
                 if (error.stack) log = `${log}\n${error.stack}`;
                 if (process.env.NODE_ENV !== 'production') log = `${log}\n${JSON.stringify(error, undefined, 2)}`;
