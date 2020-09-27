@@ -1,0 +1,20 @@
+Instrument
+    Sync
+    Sync Meta Info
+Tick
+    Listen
+    Validate
+Candle
+    Sync historical.
+    Form 1M candles.
+       Down-res candles.
+Indictator
+    Calculate standard indicators.
+Alerts
+    Show alerts.
+        Web alerts.
+        Audiable alerts.
+OrderPlacement
+    Place orders.
+    Monitor orders
+        Trailing SL

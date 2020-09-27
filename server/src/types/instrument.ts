@@ -1,5 +1,15 @@
 import { IsBoolean, IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
-export class Instrument {
+
+export interface IMetaInfo {
+    id: string;
+    freeFloatMarketCap: number;
+    totalMarketCap: number;
+    freeFloatPercent: number;
+    metaLastUpdated: Date;
+    rank?: number;
+}
+
+export class Instrument implements Partial<IMetaInfo> {
     @IsString()
     id!: string;
     @IsString()
@@ -32,6 +42,22 @@ export class Instrument {
     @IsBoolean()
     @IsOptional()
     track?: boolean;
+
+    @IsNumber()
+    @IsOptional()
+    freeFloatMarketCap?: number;
+    @IsNumber()
+    @IsOptional()
+    totalMarketCap?: number;
+    @IsNumber()
+    @IsOptional()
+    freeFloatPercent?: number;
+    @IsDate()
+    @IsOptional()
+    metaLastUpdated?: Date;
+    @IsNumber()
+    @IsOptional()
+    rank?: number;
 }
 
 export const INSTRUMENT_ID_SEPERATOR = '_';

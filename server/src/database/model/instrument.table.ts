@@ -44,7 +44,7 @@ export class InstrumentModel extends Model<InstrumentModel> implements Instrumen
 
     @Index
     @Column({ defaultValue: 100000 })
-    rank!: number;
+    rank?: number;
 
     @Index
     @Column
@@ -65,4 +65,17 @@ export class InstrumentModel extends Model<InstrumentModel> implements Instrumen
     @Index
     @Column({ defaultValue: false, allowNull: false })
     live!: boolean;
+
+    @Index
+    @Column
+    metaLastUpdated?: Date;
+
+    @Column({ defaultValue: 0, allowNull: false, type: DataType.DOUBLE })
+    freeFloatMarketCap?: number;
+
+    @Column({ defaultValue: 0, allowNull: false, type: DataType.DOUBLE })
+    freeFloatPercent?: number;
+
+    @Column({ defaultValue: 0, allowNull: false, type: DataType.DOUBLE })
+    totalMarketCap?: number;
 }

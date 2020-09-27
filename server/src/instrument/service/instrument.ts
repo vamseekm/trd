@@ -1,12 +1,13 @@
 import lodash from 'lodash';
 import { DateTime } from 'luxon';
+import pLimit from 'p-limit';
 
 import { BrokerService } from '../../broker';
 import { InstrumentRepository } from '../../database';
-import { CacheRepository } from '../../database';
 import { Log } from '../../infra';
 import { BrokerQuoteLtp, Instrument, INSTRUMENT_ID_SEPERATOR } from '../../types';
 import { sleep } from '../../util';
+import { InstrumentMetaService } from './instrument-meta';
 
 async function syncInstruments(): Promise<void> {
     const exchanges = (await BrokerService.getExchanges()).filter(
@@ -39,7 +40,9 @@ async function getOptionExpiryListToTrack(name: string): Promise<Date[]> {
 }
 
 async function getFnoInstrumentsToTrack(name: string): Promise<Instrument[]> {
-    const futures = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', take: 2 });
+    let futures = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', take: 2 });
+    await updateLTP(futures);
+    futures = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', take: 2 });
     const expiryList = await getOptionExpiryListToTrack(name);
     //TODO: Config
     const stirkeIntervalMap: Record<string, number> = {
@@ -166,9 +169,33 @@ async function updateLTPTrackedInstruments(): Promise<void> {
     Log.info('\tDone.');
 }
 
+async function updateMeta(): Promise<void> {
+    const instruments = await InstrumentRepository.findByOutdatedMeta();
+    const limiter = pLimit(4);
+    const total = instruments.length;
+    Log.info(`Found ${total} outdated meta instruments.`);
+    let count = 0;
+    const list = instruments.map((instrument) => {
+        return limiter(async () => {
+            const metaInfo = await InstrumentMetaService.downloadSymbolMeta(instrument);
+            if (metaInfo != undefined) await InstrumentRepository.updateInstrument(metaInfo);
+            count += 1;
+            Log.json(`Updating meta: ${count}/${total}`, metaInfo?.freeFloatMarketCap);
+        });
+    });
+    await Promise.all(list);
+    const instrumentsWithMeta = lodash.sortBy(
+        await InstrumentRepository.findWithMetaLastUpdated(),
+        ({ freeFloatMarketCap }) => (freeFloatMarketCap || 0) * -1,
+    );
+    Log.info(`\tUpdating rank...`);
+    for (const [i, instrument] of instrumentsWithMeta.entries()) {
+        await InstrumentRepository.updateInstrument({ id: instrument.id, rank: i + 1 });
+    }
+}
+
 async function debug(): Promise<void> {
-    const ins = await CacheRepository.getInstrumentById('NSE_SBIN');
-    console.log(ins);
+    await getTrackableFnoInstruments();
 }
 
 export const InstrumentService = {
@@ -177,6 +204,7 @@ export const InstrumentService = {
     trackInstruments,
     updateLTPInitialInstruments,
     updateLTPTrackedInstruments,
-    findTrackedInstruments: InstrumentRepository.findTrackedInstruments.bind(InstrumentRepository),
+    updateMeta,
+    findTrackedInstruments: InstrumentRepository.findTrackedInstruments,
     debug,
 };

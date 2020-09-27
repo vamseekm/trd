@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { diff as diffObject } from 'deep-diff';
+import lodash from 'lodash';
+import { DateTime } from 'luxon';
 import { FindOptions, Op, Sequelize, WhereAttributeHash } from 'sequelize';
 
 import { Instrument, UpsertResults } from '../../types';
@@ -58,11 +60,12 @@ async function exchangeList(): Promise<string[]> {
 }
 
 async function upsertInstruments(exchange: string, inputInstruments: Instrument[]): Promise<UpsertResults> {
+    if (inputInstruments.length === 0) return { insert: 0, update: 0, remove: 0 };
+    const fieldsToCompare = Object.keys(inputInstruments[0]);
     const databaseInstruments: Instrument[] = (
         await InstrumentModel.findAll({ where: { exchange, live: true }, raw: true })
     ).map((item) => {
-        const { createdAt, updatedAt, lastPriceUpdatedOn, track, rank, ...rest } = item;
-        return { ...rest, lastPrice: 0 };
+        return lodash.pick(item, fieldsToCompare) as Instrument;
     });
     const database = toSetAndMap(databaseInstruments, 'id');
     const input = toSetAndMap(inputInstruments, 'id');
@@ -136,7 +139,7 @@ async function findOptions({
 }
 
 async function findTopInstruments({ exchange, take }: { exchange: string; take: number }): Promise<Instrument[]> {
-    return InstrumentModel.findAll({ where: { exchange }, order: [['rank', 'ASC']], limit: take });
+    return InstrumentModel.findAll({ where: { exchange }, order: [['rank', 'ASC']], limit: take, raw: true });
 }
 
 async function findInstrumentsWithPendingLTPUpdates({
@@ -201,6 +204,42 @@ async function findByInstrumentToken(instrumentToken: string): Promise<Instrumen
     return _findOneBy({ where: { instrumentToken } });
 }
 
+async function findByOutdatedMeta(): Promise<Instrument[]> {
+    return InstrumentModel.findAll({
+        where: {
+            [Op.and]: [
+                {
+                    exchange: 'NSE',
+                },
+                {
+                    [Op.or]: [
+                        {
+                            metaLastUpdated: null,
+                        },
+                        {
+                            metaLastUpdated: {
+                                [Op.lte]: DateTime.local().minus({ day: 7 }).toJSDate(),
+                            },
+                        },
+                    ],
+                },
+            ],
+        },
+        raw: true,
+    });
+}
+
+async function findWithMetaLastUpdated(): Promise<Instrument[]> {
+    return InstrumentModel.findAll({
+        where: {
+            metaLastUpdated: {
+                [Op.ne]: null,
+            },
+        },
+        raw: true,
+    });
+}
+
 export const InstrumentRepository = {
     exchangeList,
     fetchFnoInstruments,
@@ -213,8 +252,11 @@ export const InstrumentRepository = {
     findTrackedInstruments,
     findAutoTrackedInstruments,
     trackInstruments,
+    updateInstrument,
     updateInstruments,
     upsertInstruments,
     findById,
     findByInstrumentToken,
+    findByOutdatedMeta,
+    findWithMetaLastUpdated,
 };
