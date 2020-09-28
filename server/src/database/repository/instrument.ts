@@ -4,6 +4,7 @@ import { diff as diffObject } from 'deep-diff';
 import lodash from 'lodash';
 import { DateTime } from 'luxon';
 import { FindOptions, Op, Sequelize, WhereAttributeHash } from 'sequelize';
+import { Log } from '../../infra';
 
 import { Instrument, UpsertResults } from '../../types';
 import { toSetAndMap } from '../../util';
@@ -81,8 +82,11 @@ async function upsertInstruments(exchange: string, inputInstruments: Instrument[
         if (!input.set.has(id)) removedIds.add(id);
     });
     const updateInstruments: Instrument[] = [];
+    let _diff: any = null;
     commonIds.forEach((commonId) => {
         const diff = diffObject(input.map.get(commonId), database.map.get(commonId));
+        if (diff == undefined) return;
+        if (_diff == undefined) Log.json('Diff', (_diff = diff));
         if (diff != undefined) updateInstruments.push(input.map.get(commonId) as Instrument);
     });
     const upsertInstruments = [...insertInstruments, ...updateInstruments];
