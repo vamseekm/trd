@@ -1,4 +1,6 @@
 import { IsDate, IsInt, IsNumber, IsString } from 'class-validator';
+import Ajv from 'ajv';
+const ajv = new Ajv({ allErrors: true });
 
 export enum CandleInterval {
     MIN_01 = 'M01',
@@ -51,3 +53,33 @@ export class Candle {
     @IsInt()
     totalOpenInterest!: number;
 }
+
+const CandleSchema = {
+    properties: {
+        key: { type: 'string' },
+        timestamp: { type: 'object' },
+        open: { type: 'number' },
+        high: { type: 'number' },
+        low: { type: 'number' },
+        close: { type: 'number' },
+        volume: { type: 'number' },
+        openInterest: { type: 'number' },
+        totalVolume: { type: 'number' },
+        totalOpenInterest: { type: 'number' },
+    },
+    required: [
+        'key',
+        'timestamp',
+        'open',
+        'high',
+        'low',
+        'close',
+        'volume',
+        'openInterest',
+        'totalVolume',
+        'totalOpenInterest',
+    ],
+    additionalProperties: false,
+};
+
+export const validateCandle = ajv.compile(CandleSchema);

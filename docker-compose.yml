@@ -128,7 +128,7 @@ services:
 
   c_tick_processor:
     image: c_server_img
-    command: "bash ./server.sh --Event::startTickRawConsumer --Event::startTickProcessConsumer --Event::startTickStoreConsumer"
+    command: "bash ./server.sh --Event::startTickRawConsumer  --Event::startTickStoreConsumer --Event::startTickProcessConsumer"
     environment:
       NODE_ENV: docker
     restart: always

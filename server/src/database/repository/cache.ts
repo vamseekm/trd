@@ -2,6 +2,7 @@ import { Candle, Instrument } from '../../types';
 import { CacheGroup } from './cache-group';
 import { CandleRepository } from './candle';
 import { InstrumentRepository } from './instrument';
+import { validateCandle } from '../../types/candle';
 
 const INSTRUMENT_CACHE_EXPIRY = 24 * 3600 * 1000;
 const instrumentTokenCache = new CacheGroup('ins_token');
@@ -31,18 +32,23 @@ async function cacheInstrument(instrument: Instrument | null): Promise<Instrumen
 const CANDLE_CACHE_EXPIRY_TIME = 24 * 3600 * 1000;
 const candleCache = new CacheGroup('candle');
 async function getCandle(key: string): Promise<Candle | undefined> {
-    return candleCache.get({ key, expiry: CANDLE_CACHE_EXPIRY_TIME }, async () => {
+    const candle = await candleCache.get({ key, expiry: CANDLE_CACHE_EXPIRY_TIME }, async () => {
         return CandleRepository.getCandle(key);
     });
+    if (candle == undefined) return;
+    candle.volume = Number.parseInt(candle.volume);
+    if (typeof candle.timestamp === 'string') {
+        candle.timestamp = new Date(candle.timestamp);
+    }
+    if (validateCandle(candle) === false) throw new Error(JSON.stringify(validateCandle.errors, null, 2));
+    return candle;
 }
 
 async function writeCandles(candles: Candle[]): Promise<Candle[]> {
-    await Promise.all(
-        candles.map(async (candle) => {
-            return candleCache.set({ key: candle.key, expiry: CANDLE_CACHE_EXPIRY_TIME, value: candle });
-        }),
-    );
-    await CandleRepository.upsertCandles(candles);
+    const list: any = candles.map(async (candle) => {
+        return candleCache.set({ key: candle.key, expiry: CANDLE_CACHE_EXPIRY_TIME, value: candle });
+    });
+    await Promise.all([...list, CandleRepository.upsertCandles(candles)]);
     return candles;
 }
 

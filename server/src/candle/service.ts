@@ -1,4 +1,3 @@
-import { update } from 'lodash';
 import { DateTime } from 'luxon';
 import pFilter from 'p-filter';
 import pMap from 'p-map';
@@ -12,6 +11,7 @@ import { InstrumentService } from '../instrument';
 import { Candle, CandleDuration, CandleInterval, IBrokerCandle, Instrument, Tick } from '../types';
 import { INSTRUMENT_ID_SEPERATOR } from '../types';
 import { sleep, toDayAndTime } from '../util';
+import { validateCandle } from '../types/candle';
 
 async function candleKey({
     instrumentId,
@@ -22,6 +22,7 @@ async function candleKey({
     interval: CandleInterval;
     timestamp: Date;
 }): Promise<string> {
+    // if (instrumentId.indexOf('_') >= 0) throw new Error(`Invalid ${instrumentId}`);
     const { day, time } = await toDayAndTime(timestamp);
     const separator = INSTRUMENT_ID_SEPERATOR;
     return `${instrumentId}${separator}${interval}${separator}${day}${time}`;
@@ -119,6 +120,7 @@ async function convertTickToCandle(tick: Tick, interval: CandleInterval) {
     const currentCandleTime = await getAlignedTime(candleConfig);
     const currentCandleKey = await candleKey({ ...candleConfig, timestamp: currentCandleTime });
     let currentCandle = await CacheRepository.getCandle(currentCandleKey);
+    //TODO: Validate candle read from cache as the timestamp is string instead of Date.
     if (currentCandle == undefined) {
         currentCandle = {
             key: currentCandleKey,
@@ -133,6 +135,7 @@ async function convertTickToCandle(tick: Tick, interval: CandleInterval) {
             openInterest: tick.openInterest,
         };
     } else {
+        currentCandle.timestamp = currentCandleTime;
         currentCandle.high = Math.max(currentCandle.high, tick.lastTradedPrice);
         currentCandle.low = Math.min(currentCandle.low, tick.lastTradedPrice);
         currentCandle.close = tick.lastTradedPrice;
@@ -161,12 +164,15 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
             allCandles.push(...candles);
         }),
     );
-    return CacheRepository.writeCandles(allCandles);
+    const candles = await CacheRepository.writeCandles(allCandles);
+    return candles;
 }
 
 async function downResCandle(sourceCandle: Candle, newInterval: CandleInterval) {
     const [exchange, tradingSymbol, interval] = sourceCandle.key.split(INSTRUMENT_ID_SEPERATOR);
-    if (interval !== CandleInterval.MIN_01) throw new Error(`Wrong interval ${interval}`);
+    // console.log(interval, sourceCandle.key);
+    if (interval !== CandleInterval.MIN_01) throw new Error(`Wrong interval ${interval} in ${sourceCandle.key}`);
+    // if (interval !== CandleInterval.MIN_01) return sourceCandle;
     const instrumentId = `${exchange}${INSTRUMENT_ID_SEPERATOR}${tradingSymbol}`;
     const candleConfig = { ...sourceCandle, interval: newInterval, exchange };
     const currentCandleTime = await getAlignedTime(candleConfig);
@@ -176,20 +182,39 @@ async function downResCandle(sourceCandle: Candle, newInterval: CandleInterval) 
     const updatedCandle: Candle = {
         key: currentCandleKey,
         timestamp: currentCandleTime,
-        open: sourceCandle.close,
+        open: currentCandle?.open || sourceCandle.close,
         high: Math.max(currentCandle?.high || sourceCandle.close, sourceCandle.high),
         low: Math.min(currentCandle?.low || sourceCandle.close, sourceCandle.low),
-        close: sourceCandle.close,
+        close: currentCandle?.close || sourceCandle.close,
         volume: sourceCandle.volume,
         totalVolume: sourceCandle.totalVolume,
         openInterest: sourceCandle.openInterest,
         totalOpenInterest: sourceCandle.totalOpenInterest,
     };
-    return updatedCandle;
+    if (currentCandle == undefined) return updatedCandle;
+    const keys = Object.keys(currentCandle);
+    for (const key of keys) {
+        const val1 = (currentCandle as any)[key];
+        const val2 = (updatedCandle as any)[key];
+        if (val1.getMonth && val2.getMonth) {
+            if (val1.getTime() !== val2.getTime()) return updatedCandle;
+            continue;
+        }
+        if (val1 !== val2) {
+            return updatedCandle;
+        }
+    }
+    // const diff = diffObject(currentCandle, updatedCandle);
+    // if (diff == undefined) return;
+    // if (diff != undefined) {
+    //     diff_count += 1;
+    // } else {
+    //     no_diff_count += 1;
+    // }
 }
 
 async function batchDownResCandles(candle: Candle): Promise<Candle[]> {
-    return Promise.all([
+    const candles = await Promise.all([
         downResCandle(candle, CandleInterval.MIN_05),
         downResCandle(candle, CandleInterval.MIN_10),
         downResCandle(candle, CandleInterval.MIN_15),
@@ -197,6 +222,7 @@ async function batchDownResCandles(candle: Candle): Promise<Candle[]> {
         downResCandle(candle, CandleInterval.MIN_60),
         downResCandle(candle, CandleInterval.DAY_01),
     ]);
+    return candles.filter((candle) => candle != undefined) as Candle[];
 }
 
 async function debug(): Promise<void> {
@@ -204,8 +230,9 @@ async function debug(): Promise<void> {
     // console.log(instruments);
     const candles = await CandleRepository.findBy({ id: 'NFO_NIFTY20OCTFUT', interval: CandleInterval.MIN_01 });
     for (const candle of candles) {
-        const downCandles = await batchDownResCandles(candle);
-        await CacheRepository.writeCandles(downCandles);
+        if (validateCandle(candle) === false) console.log(validateCandle.errors);
+        // const downCandles = await batchDownResCandles(candle);
+        // await CacheRepository.writeCandles(downCandles);
     }
     // console.log(candles);
 }

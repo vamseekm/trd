@@ -1,8 +1,6 @@
-import { transformAndValidate } from 'class-transformer-validator';
-
 import { consumeQueue, EXCHANGE_TICKER, MessageType } from '../bridge';
 import { CandleService } from '../candle';
-import { Tick } from '../types';
+import { Tick, validateTick } from '../types';
 import { waitForever } from '../util';
 
 export async function startTickProcessConsumer(): Promise<void> {
@@ -11,17 +9,17 @@ export async function startTickProcessConsumer(): Promise<void> {
         if (!rawTicks) return 0;
         const validatedTicks: Tick[] = [];
         for (const tick of rawTicks) {
-            validatedTicks.push(
-                await transformAndValidate(Tick, {
-                    ...tick,
-                    lastTradeTimestamp: new Date(tick.lastTradeTimestamp),
-                    timestamp: new Date(tick.timestamp),
-                    openInterest: tick.openInterest || 0,
-                    totalSellQuantity: tick.totalSellQuantity || 0,
-                    totalBuyQuantity: tick.totalBuyQuantity || 0,
-                    totalVolume: tick.totalVolume || 0,
-                }),
-            );
+            const newTick: Tick = {
+                ...tick,
+                lastTradeTimestamp: new Date(tick.lastTradeTimestamp),
+                timestamp: new Date(tick.timestamp),
+                openInterest: tick.openInterest || 0,
+                totalSellQuantity: tick.totalSellQuantity || 0,
+                totalBuyQuantity: tick.totalBuyQuantity || 0,
+                totalVolume: tick.totalVolume || 0,
+            };
+            if (validateTick(newTick) === false) throw new Error(JSON.stringify(validateTick.errors, null, 2));
+            validatedTicks.push(newTick);
         }
         const candles = await CandleService.bulkConvertTicksToCandles(validatedTicks);
         channel.publish(EXCHANGE_TICKER, MessageType.candle, Buffer.from(JSON.stringify({ candles })), {

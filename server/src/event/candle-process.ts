@@ -10,7 +10,6 @@ export async function startCandleProcessConsumer(): Promise<void> {
         async ({ message }) => {
             const { candles }: { candles: Candle[] } = JSON.parse(message.content.toString());
             if (!candles || candles.length === 0) return 0;
-            console.log(candles[0].key);
             await CacheRepository.writeCandles(candles);
             return candles.length;
         },
