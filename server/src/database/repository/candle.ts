@@ -27,6 +27,7 @@ async function getCandle(key: string): Promise<Candle | null> {
 
 async function findBy({ id, interval }: { id: string; interval: CandleInterval }): Promise<Candle[]> {
     const keyPrefix = `${id}_${interval}_%`;
+    console.log(keyPrefix);
     return validate(
         await CandleModel.findAll({ where: { key: { [Op.like]: keyPrefix } }, order: Sequelize.col('key'), raw: true }),
     );

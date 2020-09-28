@@ -1,13 +1,13 @@
 import { IsDate, IsInt, IsNumber, IsString } from 'class-validator';
 
 export enum CandleInterval {
-    MIN_01 = 'M1',
-    MIN_05 = 'M5',
+    MIN_01 = 'M01',
+    MIN_05 = 'M05',
     MIN_10 = 'M10',
     MIN_15 = 'M15',
     MIN_30 = 'M30',
     MIN_60 = 'M60',
-    DAY_01 = 'D1',
+    DAY_01 = 'D01',
 }
 
 export const CandleDuration: Record<CandleInterval, number> = {

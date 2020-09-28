@@ -1,13 +1,13 @@
 import { InstrumentService } from '../instrument';
 
-async function startCron(): Promise<void> {
-    await InstrumentService.syncInstruments();
+async function cron(): Promise<void> {
+    await InstrumentService.download();
     await InstrumentService.updateMeta();
-    await InstrumentService.updateLTPInitialInstruments();
-    await InstrumentService.trackInstruments();
-    await InstrumentService.updateLTPTrackedInstruments();
+    await InstrumentService.updateLTPInitial();
+    await InstrumentService.track();
+    await InstrumentService.updateLTPTracked();
 }
 
 export const TaskService = {
-    startCron,
+    cron,
 };

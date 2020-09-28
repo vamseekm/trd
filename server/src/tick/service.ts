@@ -2,13 +2,13 @@ import { DateTime } from 'luxon';
 
 import { TickRepository } from '../database';
 import { Log } from '../infra';
-async function removeOldTicks(): Promise<void> {
-    console.log('Removing old ticks ...');
+async function clean(): Promise<void> {
+    Log.info('Removing old ticks ...');
     const removeDataOlderThan = DateTime.local().minus({ day: 1 }).toJSDate();
     const count = await TickRepository.removeDataOlderThan(removeDataOlderThan);
     Log.info(`\tRemoved ${count} ticks.`);
 }
 
 export const TickService = {
-    removeOldTicks,
+    clean,
 };

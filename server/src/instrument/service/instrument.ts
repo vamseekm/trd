@@ -9,7 +9,7 @@ import { BrokerQuoteLtp, Instrument, INSTRUMENT_ID_SEPERATOR } from '../../types
 import { sleep } from '../../util';
 import { InstrumentMetaService } from './instrument-meta';
 
-async function syncInstruments(): Promise<void> {
+async function download(): Promise<void> {
     const exchanges = (await BrokerService.getExchanges()).filter(
         (exchange) => exchange === 'NSE' || exchange === 'NFO',
     );
@@ -79,7 +79,7 @@ async function getTrackableFnoInstruments(): Promise<string[]> {
         .map((instrument) => instrument.id);
 }
 
-async function trackInstruments(): Promise<void> {
+async function track(): Promise<void> {
     Log.info('Tracking instruments...');
     const indices: string[] = [
         'NSE:INDIA VIX',
@@ -154,7 +154,7 @@ async function updateLTPAll(): Promise<void> {
     await updateLTP(instruments);
 }
 
-async function updateLTPInitialInstruments(): Promise<void> {
+async function updateLTPInitial(): Promise<void> {
     Log.info('Updating LTP of initial instruments...');
     const maxExpiry = DateTime.local().plus({ month: 2 }).toJSDate();
     const instruments = await InstrumentRepository.findAllInstruments(maxExpiry);
@@ -162,7 +162,7 @@ async function updateLTPInitialInstruments(): Promise<void> {
     Log.info('\tDone.');
 }
 
-async function updateLTPTrackedInstruments(): Promise<void> {
+async function updateLTPTracked(): Promise<void> {
     const trackedInstruments = await InstrumentRepository.findTrackedInstruments();
     Log.info(`Updating LTP of ${trackedInstruments.length} tracked instruments...`);
     await updateLTP(trackedInstruments);
@@ -199,12 +199,12 @@ async function debug(): Promise<void> {
 }
 
 export const InstrumentService = {
-    syncInstruments,
+    download,
     updateLTPAll,
-    trackInstruments,
-    updateLTPInitialInstruments,
-    updateLTPTrackedInstruments,
+    track,
+    updateLTPInitial,
+    updateLTPTracked,
     updateMeta,
-    findTrackedInstruments: InstrumentRepository.findTrackedInstruments,
+    findTracked: InstrumentRepository.findTrackedInstruments,
     debug,
 };

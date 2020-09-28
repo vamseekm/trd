@@ -60,4 +60,4 @@ export class Instrument implements Partial<IMetaInfo> {
     rank?: number;
 }
 
-export const INSTRUMENT_ID_SEPERATOR = '_';
+export const INSTRUMENT_ID_SEPERATOR = ':';

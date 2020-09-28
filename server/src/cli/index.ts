@@ -15,7 +15,7 @@ import { TickService } from '../tick';
 import { waitForever } from '../util';
 
 async function run(): Promise<void> {
-    await DatabaseService.databaseConnect();
+    await DatabaseService.connect();
     console.log(process.cwd());
     const argv = minimist(process.argv.slice(2));
     Log.json('Args', argv);
