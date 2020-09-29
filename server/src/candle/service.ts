@@ -12,6 +12,7 @@ import { Candle, CandleDuration, CandleInterval, IBrokerCandle, Instrument, Tick
 import { INSTRUMENT_ID_SEPERATOR } from '../types';
 import { sleep, toDayAndTime } from '../util';
 import { validateCandle } from '../types/candle';
+import { RedisService } from '../infra/redis';
 
 async function candleKey({
     instrumentId,
@@ -168,28 +169,33 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
     return candles;
 }
 
+async function parseCandleKey({ key }: { key: string }) {
+    const [exchange, tradingSymbol, interval, time] = key.split(INSTRUMENT_ID_SEPERATOR);
+    const ret = { key, exchange, tradingSymbol, interval, time };
+    return ret;
+}
+
 async function downResCandle(sourceCandle: Candle, newInterval: CandleInterval) {
-    const [exchange, tradingSymbol, interval] = sourceCandle.key.split(INSTRUMENT_ID_SEPERATOR);
-    // console.log(interval, sourceCandle.key);
+    const { exchange, tradingSymbol, interval } = await parseCandleKey(sourceCandle);
     if (interval !== CandleInterval.MIN_01) throw new Error(`Wrong interval ${interval} in ${sourceCandle.key}`);
-    // if (interval !== CandleInterval.MIN_01) return sourceCandle;
     const instrumentId = `${exchange}${INSTRUMENT_ID_SEPERATOR}${tradingSymbol}`;
     const candleConfig = { ...sourceCandle, interval: newInterval, exchange };
     const currentCandleTime = await getAlignedTime(candleConfig);
     const currentCandleKey = await candleKey({ ...candleConfig, timestamp: currentCandleTime, instrumentId });
 
     let currentCandle = await CacheRepository.getCandle(currentCandleKey);
+    const { close: sourceClose, volume, totalVolume, openInterest, totalOpenInterest } = sourceCandle;
     const updatedCandle: Candle = {
         key: currentCandleKey,
         timestamp: currentCandleTime,
-        open: currentCandle?.open || sourceCandle.close,
-        high: Math.max(currentCandle?.high || sourceCandle.close, sourceCandle.high),
-        low: Math.min(currentCandle?.low || sourceCandle.close, sourceCandle.low),
-        close: currentCandle?.close || sourceCandle.close,
-        volume: sourceCandle.volume,
-        totalVolume: sourceCandle.totalVolume,
-        openInterest: sourceCandle.openInterest,
-        totalOpenInterest: sourceCandle.totalOpenInterest,
+        open: currentCandle?.open || sourceCandle.open,
+        high: Math.max(currentCandle?.high || sourceClose, sourceCandle.high),
+        low: Math.min(currentCandle?.low || sourceClose, sourceCandle.low),
+        close: sourceClose,
+        volume: Math.max(volume, currentCandle?.volume || volume),
+        totalVolume: Math.max(totalVolume, currentCandle?.totalVolume || totalVolume),
+        openInterest: Math.max(openInterest, currentCandle?.openInterest || openInterest),
+        totalOpenInterest: Math.max(totalOpenInterest, sourceCandle?.totalOpenInterest || totalOpenInterest),
     };
     if (currentCandle == undefined) return updatedCandle;
     const keys = Object.keys(currentCandle);
@@ -204,13 +210,6 @@ async function downResCandle(sourceCandle: Candle, newInterval: CandleInterval) 
             return updatedCandle;
         }
     }
-    // const diff = diffObject(currentCandle, updatedCandle);
-    // if (diff == undefined) return;
-    // if (diff != undefined) {
-    //     diff_count += 1;
-    // } else {
-    //     no_diff_count += 1;
-    // }
 }
 
 async function batchDownResCandles(candle: Candle): Promise<Candle[]> {
@@ -226,14 +225,15 @@ async function batchDownResCandles(candle: Candle): Promise<Candle[]> {
 }
 
 async function debug(): Promise<void> {
+    await CacheRepository.flushCandles();
     // const instruments = await BrokerService.getInstrumentsByExchange('NSE');
     // console.log(instruments);
-    const candles = await CandleRepository.findBy({ id: 'NFO_NIFTY20OCTFUT', interval: CandleInterval.MIN_01 });
-    for (const candle of candles) {
-        if (validateCandle(candle) === false) console.log(validateCandle.errors);
-        // const downCandles = await batchDownResCandles(candle);
-        // await CacheRepository.writeCandles(downCandles);
-    }
+    // const candles = await CandleRepository.findBy({ id: 'NFO:NIFTY20OCTFUT' });
+    // for (const candle of candles) {
+    //     console.log(await CacheRepository.deleteCandle(candle));
+    //     // const downCandles = await batchDownResCandles(candle);
+    //     // await CacheRepository.writeCandles(downCandles);
+    // }
     // console.log(candles);
 }
 

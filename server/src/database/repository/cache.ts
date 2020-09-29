@@ -52,9 +52,19 @@ async function writeCandles(candles: Candle[]): Promise<Candle[]> {
     return candles;
 }
 
+async function deleteCandle(candle: Candle): Promise<any> {
+    return Promise.all([candleCache.remove(candle), CandleRepository.removeCandle(candle)]);
+}
+
+async function flushCandles(): Promise<any> {
+    return candleCache.flush();
+}
+
 export const CacheRepository = {
     getInstrumentByToken,
     getInstrumentById,
     getCandle,
     writeCandles,
+    deleteCandle,
+    flushCandles,
 };

@@ -9,7 +9,8 @@ import { Log } from './logger';
 const client = redis.createClient(Config.get('redis'));
 client.on('error', (error) => Log.error(error));
 
-function proxyCommand(name: string, arguments_: any[]): Promise<any> {
+function proxyCommand(name: string, ...arguments_: any[]): Promise<any> {
+    // console.log(name, arguments_);
     return new Promise((resolve: any, reject: any) => {
         arguments_.push((error: any, ...results: any[]) => {
             if (error) {
@@ -22,20 +23,18 @@ function proxyCommand(name: string, arguments_: any[]): Promise<any> {
     });
 }
 
-function get(...arguments_: any[]): Promise<string> {
-    return proxyCommand('get', arguments_);
+function collectArgs(name: string, ...arguments_: any[]): Promise<any> {
+    return proxyCommand(name, arguments_);
 }
 
-function set(...arguments_: any[]): Promise<void> {
-    return proxyCommand('set', arguments_);
-}
-
-function del(...arguments_: any[]): Promise<void> {
-    return proxyCommand('del', arguments_);
-}
+const keys: (pattern: string) => Promise<string[]> = proxyCommand.bind(null, 'keys');
+const del = proxyCommand.bind(null, 'del');
+const set = proxyCommand.bind(null, 'set');
+const get = proxyCommand.bind(null, 'get');
 
 export const RedisService = {
     get,
     set,
     del,
+    keys,
 };

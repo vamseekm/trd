@@ -25,13 +25,15 @@ async function getCandle(key: string): Promise<Candle | null> {
     return CandleModel.findOne({ where: { key }, raw: true });
 }
 
-async function findBy({ id, interval }: { id: string; interval: CandleInterval }): Promise<Candle[]> {
-    const keyPrefix = `${id}${INSTRUMENT_ID_SEPERATOR}${interval}${INSTRUMENT_ID_SEPERATOR}%`;
+async function findBy({ id, interval }: { id: string; interval?: CandleInterval }): Promise<Candle[]> {
+    const keyTokens: string[] = [id, interval || '%'];
+    const keyPrefix = `${keyTokens.join(INSTRUMENT_ID_SEPERATOR)}:%`;
     console.log(keyPrefix);
     return validate(
         await CandleModel.findAll({ where: { key: { [Op.like]: keyPrefix } }, order: Sequelize.col('key'), raw: true }),
     );
 }
+
 async function validate(inputCandles: Candle[]): Promise<Candle[]> {
     try {
         return await Promise.all(
@@ -51,8 +53,13 @@ async function validate(inputCandles: Candle[]): Promise<Candle[]> {
     }
 }
 
+async function removeCandle({ key }: { key: string }): Promise<any> {
+    return CandleModel.destroy({ where: { key } });
+}
+
 export const CandleRepository = {
     upsertCandles,
     getCandle,
     findBy,
+    removeCandle,
 };
