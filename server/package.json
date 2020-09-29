@@ -30,6 +30,7 @@
     "license": "ISC",
     "dependencies": {
         "@types/bluebird": "^3.5.32",
+        "@types/lru-cache": "^5.1.0",
         "@types/luxon": "^1.25.0",
         "@types/minimist": "^1.2.0",
         "@types/validator": "^13.1.0",
@@ -52,6 +53,7 @@
         "graphql-playground-middleware-express": "^1.7.21",
         "kiteconnect": "^3.1.0",
         "lodash": "^4.17.20",
+        "lru-cache": "^6.0.0",
         "luxon": "^1.25.0",
         "minimist": "^1.2.5",
         "morgan": "^1.10.0",

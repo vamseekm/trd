@@ -21,6 +21,7 @@ export async function startTickProcessConsumer(): Promise<void> {
             if (validateTick(newTick) === false) throw new Error(JSON.stringify(validateTick.errors, null, 2));
             validatedTicks.push(newTick);
         }
+        if (validatedTicks.length === 0) return 0;
         const candles = await CandleService.bulkConvertTicksToCandles(validatedTicks);
         channel.publish(EXCHANGE_TICKER, MessageType.candle, Buffer.from(JSON.stringify({ candles })), {
             persistent: true,

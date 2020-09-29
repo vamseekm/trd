@@ -53,29 +53,6 @@ services:
     volumes:
       - redis-insight-db:/db
 
-  # i_mongo:
-  #   image: mongo:4.4-bionic
-  #   restart: always
-  #   ports:
-  #     - 127.0.0.1:27017:27017
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: root
-  #     MONGO_INITDB_ROOT_PASSWORD: example
-  #   volumes:
-  #     - mongo-data:/data/db
-
-  # i_adminmongo:
-  #   image: mrvautin/adminmongo
-  #   ports:
-  #     - 127.0.0.1:1234:1234
-  #   environment:
-  #     - HOST=0.0.0.0
-  #     - CONN_NAME=whatever
-  #     - DB_HOST=i_mongo
-  #     - DB_PORT=27017
-  #     - DB_USERNAME=root
-  #     - DB_PASSWORD=example
-
   c_client_server:
     build:
       context: "./client"
@@ -128,7 +105,8 @@ services:
 
   c_tick_processor:
     image: c_server_img
-    command: "bash ./server.sh --Event::startTickRawConsumer  --Event::startTickStoreConsumer --Event::startTickProcessConsumer"
+    # command: "bash ./server.sh --Event::startTickRawConsumer  --Event::startTickStoreConsumer --Event::startTickProcessConsumer"
+    command: "bash ./server.sh --Event::startTickRawConsumer  --Event::startTickStoreConsumer"
     environment:
       NODE_ENV: docker
     restart: always
