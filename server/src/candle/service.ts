@@ -1,10 +1,6 @@
-import { EHOSTUNREACH } from 'constants';
 import { DateTime } from 'luxon';
-import pFilter from 'p-filter';
-import pMap from 'p-map';
 
 import { BrokerService } from '../broker';
-import { CandleRepository } from '../database';
 import { CacheRepository } from '../database';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
@@ -12,25 +8,29 @@ import { InstrumentService } from '../instrument';
 import { Candle, CandleDuration, CandleInterval, IBrokerCandle, Instrument, Tick } from '../types';
 import { INSTRUMENT_ID_SEPERATOR } from '../types';
 import { sleep, toDayAndTime } from '../util';
+import { InstrumentRepository } from '../database/repository/instrument';
+import { IExchangeTimeProps } from '../types/exchange';
+import { timeStamp } from 'console';
+import { updateComputedPropertyName } from 'typescript';
+import { start } from 'repl';
 
-async function candleKey({
+async function getCandleMetaProps({
     instrumentId,
     interval,
     timestamp,
 }: {
     instrumentId: string;
-    interval: CandleInterval;
+    interval: CandleInterval | string;
     timestamp: Date;
-}): Promise<string | undefined> {
-    // if (instrumentId.indexOf('_') >= 0) throw new Error(`Invalid ${instrumentId}`);
-    const [exchange, ...rest] = instrumentId.split(INSTRUMENT_ID_SEPERATOR);
-    if (!ExchangeService.isValidTime({ date: timestamp, exchange })) {
-        console.log('Invalid key');
-        return;
-    }
+}): Promise<{ key: string } & IExchangeTimeProps> {
+    const [exchange] = instrumentId.split(INSTRUMENT_ID_SEPERATOR);
     const { day, time } = await toDayAndTime(timestamp);
     const separator = INSTRUMENT_ID_SEPERATOR;
-    return `${instrumentId}${separator}${interval}${separator}${day}${time}`;
+    const props = await ExchangeService.exchangeTimeProps({ exchange, timestamp });
+    return {
+        key: `${instrumentId}${separator}${interval}${separator}${day}${time}`,
+        ...props,
+    };
 }
 
 async function getAlignedTime({
@@ -41,12 +41,12 @@ async function getAlignedTime({
 }: {
     exchange: string;
     timestamp: Date;
-    interval: CandleInterval;
+    interval: CandleInterval | string;
     offset?: number;
 }): Promise<Date> {
     const exchangeConfig = await ExchangeService.getExchangeTime(exchange);
     const unixTime = timestamp.getTime() - exchangeConfig.dayStartOffset;
-    const intervalInMs = CandleDuration[interval] * 1000;
+    const intervalInMs = CandleDuration[interval as CandleInterval] * 1000;
     const alignedTime = unixTime - (unixTime % intervalInMs) + intervalInMs * offset + exchangeConfig.dayStartOffset;
     return new Date(alignedTime);
 }
@@ -66,11 +66,16 @@ async function mapBrokerCandleToNativeCandle(
     interval: CandleInterval,
     candle: IBrokerCandle,
 ): Promise<Candle | undefined> {
-    const { id } = instrument;
-    const key = await candleKey({ instrumentId: id, interval, timestamp: candle.date });
+    const { id: instrumentId, exchange } = instrument;
+    const { key } = await getCandleMetaProps({ instrumentId, interval, timestamp: candle.date });
+    const { timeCode } = await toDayAndTime(candle.date);
     if (key == undefined) return;
     return {
         key,
+        exchange,
+        instrumentId,
+        interval,
+        timeCode: timeCode,
         timestamp: candle.date,
         open: candle.open,
         high: candle.high,
@@ -107,18 +112,53 @@ async function downloadCandles({
     }
     return processedCandles;
 }
+async function getPreviousCandle(candle: Candle): Promise<Candle | undefined> {
+    const instrument = await CacheRepository.getInstrumentById(candle.instrumentId);
+    if (instrument == undefined) return;
+    const { exchange, instrumentId, interval, timestamp } = candle;
+    const prevCandleTime = await getAlignedTime({
+        exchange,
+        timestamp,
+        interval: interval as CandleInterval,
+        offset: -1,
+    });
+    const { key: prevCandleKey } = await getCandleMetaProps({
+        instrumentId,
+        interval: interval as CandleInterval,
+        timestamp: prevCandleTime,
+    });
+    return CacheRepository.getCandle(prevCandleKey);
+}
 
-async function downloadHistorical(): Promise<void> {
+async function writeHistoricalCandle(inputCandle: Candle): Promise<Candle[]> {
+    const previousCandle = await getPreviousCandle(inputCandle);
+    const { dayBegin } = await getCandleMetaProps(inputCandle);
+    if (dayBegin) {
+        inputCandle.totalVolume = inputCandle.volume;
+        inputCandle.totalOpenInterest = inputCandle.totalOpenInterest;
+    } else if (previousCandle != undefined) {
+        inputCandle.totalVolume += previousCandle.totalVolume + inputCandle.volume;
+        inputCandle.totalOpenInterest += previousCandle.totalOpenInterest + inputCandle.openInterest;
+    }
+    return CacheRepository.writeCandles([inputCandle]);
+}
+
+async function downloadHistorical(instrument: Instrument): Promise<void> {
+    const { id } = instrument;
+    Log.info(`Candle sync: ${id}`);
+    const to = new Date();
+    const from = DateTime.local().minus({ day: 1 }).toJSDate();
+    const candles = await await downloadCandles({ instrument: instrument, interval: CandleInterval.MIN_01, from, to });
+    for (const candle of candles) {
+        await writeHistoricalCandle(candle);
+    }
+}
+
+async function bulkDownloadHistorical(): Promise<void> {
     Log.info('Syncing candles...');
     const instruments = await InstrumentService.findTracked();
     for (const instrument of instruments) {
-        const { id } = instrument;
-        Log.info(`Candle sync: ${id}`);
-        const to = new Date();
-        const from = DateTime.local().minus({ day: 7 }).toJSDate();
-        const candles = await downloadCandles({ instrument: instrument, interval: CandleInterval.MIN_01, from, to });
-
-        if (candles.length > 0) await CandleRepository.upsertCandles(candles);
+        await downloadHistorical(instrument);
         await sleep(300);
     }
 }
@@ -127,43 +167,42 @@ async function convertTickToCandle(tick: Tick, interval: CandleInterval) {
     // Log.pretty(tick);
     const candleConfig = { ...tick, interval };
     const currentCandleTime = await getAlignedTime(candleConfig);
-    const currentCandleKey = await candleKey({ ...candleConfig, timestamp: currentCandleTime });
+    const { timeCode } = await toDayAndTime(currentCandleTime);
+    const { key: currentCandleKey, dayBegin } = await getCandleMetaProps({
+        ...candleConfig,
+        timestamp: currentCandleTime,
+    });
     if (currentCandleKey == undefined) return;
-    let currentCandle = await CacheRepository.getCandle(currentCandleKey);
-    //TODO: Validate candle read from cache as the timestamp is string instead of Date.
-    if (currentCandle == undefined) {
-        currentCandle = {
-            key: currentCandleKey,
-            timestamp: currentCandleTime,
-            open: tick.lastTradedPrice,
-            high: tick.lastTradedPrice,
-            low: tick.lastTradedPrice,
-            close: tick.lastTradedPrice,
-            volume: tick.totalVolume,
-            totalVolume: tick.totalVolume,
-            totalOpenInterest: tick.openInterest,
-            openInterest: tick.openInterest,
-        };
-    } else {
-        currentCandle.timestamp = currentCandleTime;
-        currentCandle.high = Math.max(currentCandle.high, tick.lastTradedPrice);
-        currentCandle.low = Math.min(currentCandle.low, tick.lastTradedPrice);
-        currentCandle.close = tick.lastTradedPrice;
-        currentCandle.volume = currentCandle.totalVolume = tick.totalVolume;
-        currentCandle.openInterest = currentCandle.totalOpenInterest = tick.openInterest;
-    }
+    const currentCandle = await CacheRepository.getCandle(currentCandleKey);
+    const { instrumentId, exchange } = tick;
+    const updatedCandle: Candle = {
+        instrumentId,
+        exchange,
+        interval,
+        timeCode,
+        key: currentCandleKey,
+        timestamp: currentCandleTime,
+        open: currentCandle?.open || tick.lastTradedPrice,
+        high: Math.max(currentCandle?.high || tick.lastTradedPrice, tick.lastTradedPrice),
+        low: Math.min(currentCandle?.low || tick.lastTradedPrice, tick.lastTradedPrice),
+        close: tick.lastTradedPrice,
+        volume: tick.totalVolume,
+        totalVolume: tick.totalVolume,
+        totalOpenInterest: tick.openInterest,
+        openInterest: tick.openInterest,
+    };
     const previousCandleTime = await getAlignedTime({ ...candleConfig, offset: -1 });
-    const previousCandleKey = await candleKey({
+    const { key: previousCandleKey } = await getCandleMetaProps({
         ...candleConfig,
         timestamp: previousCandleTime,
     });
+
     const previousCandle = await CacheRepository.getCandle(previousCandleKey);
-    if (previousCandle != undefined) {
-        currentCandle.volume = currentCandle.totalVolume - previousCandle.totalVolume;
-        currentCandle.openInterest = currentCandle.totalOpenInterest - previousCandle.totalOpenInterest;
+    if (dayBegin === false && previousCandle != undefined) {
+        updatedCandle.volume = updatedCandle.totalVolume - previousCandle.totalVolume;
+        updatedCandle.openInterest = updatedCandle.totalOpenInterest - previousCandle.totalOpenInterest;
     }
-    // console.timeEnd('tick-prep');
-    return currentCandle;
+    return updatedCandle;
 }
 const _intervals = [
     CandleInterval.MIN_05,
@@ -171,8 +210,58 @@ const _intervals = [
     CandleInterval.MIN_15,
     CandleInterval.MIN_30,
     CandleInterval.MIN_60,
-    CandleInterval.DAY_01,
+    // CandleInterval.DAY_01,
 ];
+
+async function downResCandle(sourceCandle: Candle, interval: CandleInterval): Promise<Candle | undefined> {
+    const startTime = new Date();
+    try {
+        const { exchange, instrumentId } = sourceCandle;
+        const timestamp = await getAlignedTime({ exchange, timestamp: sourceCandle.timestamp, interval });
+        const { key: currentCandleKey, dayBegin } = await getCandleMetaProps({
+            instrumentId,
+            interval,
+            timestamp,
+        });
+        const { timeCode } = await toDayAndTime(timestamp);
+        const currentCandle = await CacheRepository.getCandle(currentCandleKey);
+        const { key: previousCandleKey } = await getCandleMetaProps({
+            instrumentId,
+            interval,
+            timestamp: await getAlignedTime({ exchange, timestamp: sourceCandle.timestamp, interval, offset: -1 }),
+        });
+        const previousCandle = await CacheRepository.getCandle(previousCandleKey);
+        const atBegin = timeCode === sourceCandle.timeCode;
+        const updatedCandle: Candle = {
+            key: currentCandleKey,
+            exchange,
+            instrumentId,
+            timeCode,
+            interval,
+            timestamp,
+            open: atBegin ? sourceCandle.open : currentCandle?.open || sourceCandle.open,
+            high: Math.max(sourceCandle.high, currentCandle?.high || sourceCandle.high),
+            low: Math.min(sourceCandle.low, currentCandle?.low || sourceCandle.low),
+            close: sourceCandle.close,
+            volume: sourceCandle.totalVolume,
+            openInterest: sourceCandle.totalOpenInterest,
+            totalVolume: sourceCandle.totalVolume,
+            totalOpenInterest: sourceCandle.totalOpenInterest,
+        };
+        if (dayBegin === false && previousCandle != undefined) {
+            updatedCandle.volume = updatedCandle.totalVolume - previousCandle.totalVolume;
+            updatedCandle.openInterest = updatedCandle.totalVolume - previousCandle.totalVolume;
+        }
+        if (currentCandle == undefined) return updatedCandle;
+        const keys = Object.keys(updatedCandle);
+        for (const key of keys) {
+            if (key === 'timestamp') continue;
+            if ((currentCandle as any)[key] !== (updatedCandle as any)[key]) return updatedCandle;
+        }
+    } finally {
+        const diff = new Date().getTime() - startTime.getTime();
+    }
+}
 
 async function processTicks(ticks: Tick[]): Promise<Candle[]> {
     const allCandles: Candle[] = [];
@@ -190,11 +279,11 @@ async function processTicks(ticks: Tick[]): Promise<Candle[]> {
 }
 
 const _tickMap: Record<string, Tick> = {};
-async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
-    const startTime = new Date();
-    for (const tick of ticks) {
-        _tickMap[tick.instrumentId] = tick;
-    }
+let _lastChecked: Date | undefined;
+
+async function computeMissingTicks(ticks: Tick[]): Promise<Tick[]> {
+    if (ticks.length === 0) return [];
+    if (_lastChecked != undefined && ticks[0].timestamp.getTime() - _lastChecked.getTime() < 10000) return [];
     const tickKeys = Object.keys(_tickMap);
     const missingTicks: Tick[] = [];
     for (const key of tickKeys) {
@@ -205,15 +294,33 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
             missingTicks.push(renewedTick);
         }
     }
+    _lastChecked = new Date();
+    return missingTicks;
+}
+
+async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
+    const startTime = new Date();
+    for (const tick of ticks) {
+        _tickMap[tick.instrumentId] = tick;
+    }
+    const missingTicks: Tick[] = await computeMissingTicks(ticks);
     const allCandles = await processTicks([...ticks, ...missingTicks]);
+    const candleMap = new Map<string, Candle>();
+    allCandles.forEach((candle) => candleMap.set(candle.key, candle));
+    const uniqueCandles = [...candleMap.values()];
+    const startWriteTime = new Date();
+    await CacheRepository.writeCandles(uniqueCandles);
+    const timeCode = uniqueCandles.length > 0 ? uniqueCandles[0].timeCode : 0;
     Log.json('stats', {
         ticks: ticks.length,
+        mapSize: Object.keys(_tickMap).length,
         missingTicks: missingTicks.length,
         candles: allCandles.length,
+        writeTime: new Date().getTime() - startWriteTime.getTime(),
         time: new Date().getTime() - startTime.getTime(),
+        timeCode,
     });
-    const candles = await CacheRepository.writeCandles(allCandles);
-    return candles;
+    return uniqueCandles;
 }
 
 async function parseCandleKey({ key }: { key: string }) {
@@ -222,83 +329,25 @@ async function parseCandleKey({ key }: { key: string }) {
     return ret;
 }
 
-async function downResCandle(sourceCandle: Candle, newInterval: CandleInterval) {
-    const { exchange, tradingSymbol, interval } = await parseCandleKey(sourceCandle);
-    if (interval !== CandleInterval.MIN_01) throw new Error(`Wrong interval ${interval} in ${sourceCandle.key}`);
-    const instrumentId = `${exchange}${INSTRUMENT_ID_SEPERATOR}${tradingSymbol}`;
-    const candleConfig = { ...sourceCandle, interval: newInterval, exchange };
-    const currentCandleTime = await getAlignedTime(candleConfig);
-    const currentCandleKey = await candleKey({ ...candleConfig, timestamp: currentCandleTime, instrumentId });
-    if (currentCandleKey == undefined) return;
-    const previousCandleTime = await getAlignedTime({ ...candleConfig, offset: -1 });
-    const previousCandleKey = await candleKey({
-        ...candleConfig,
-        instrumentId,
-        timestamp: previousCandleTime,
-    });
-    let [currentCandle, previousCandle] = await Promise.all([
-        CacheRepository.getCandle(currentCandleKey),
-        CacheRepository.getCandle(previousCandleKey),
-    ]);
-    const { close: sourceClose, volume, totalVolume, openInterest, totalOpenInterest } = sourceCandle;
-    const updatedCandle: Candle = {
-        key: currentCandleKey,
-        timestamp: currentCandleTime,
-        open: currentCandle?.open || sourceCandle.open,
-        high: Math.max(currentCandle?.high || sourceClose, sourceCandle.high),
-        low: Math.min(currentCandle?.low || sourceClose, sourceCandle.low),
-        close: sourceClose,
-        volume: Math.max(volume, currentCandle?.volume || volume),
-        totalVolume: Math.max(totalVolume, currentCandle?.totalVolume || totalVolume),
-        openInterest: Math.max(openInterest, currentCandle?.openInterest || openInterest),
-        totalOpenInterest: Math.max(totalOpenInterest, sourceCandle?.totalOpenInterest || totalOpenInterest),
-    };
-    if (previousCandle != undefined) {
-        updatedCandle.volume = updatedCandle.totalVolume - previousCandle.totalVolume;
-        updatedCandle.openInterest = updatedCandle.totalOpenInterest - previousCandle.totalOpenInterest;
-    }
-    if (currentCandle == undefined) return updatedCandle;
-    const keys = Object.keys(currentCandle);
-    for (const key of keys) {
-        const val1 = (currentCandle as any)[key];
-        const val2 = (updatedCandle as any)[key];
-        if (val1.getMonth && val2.getMonth) {
-            if (val1.getTime() !== val2.getTime()) return updatedCandle;
-            continue;
-        }
-        if (val1 !== val2) {
-            return updatedCandle;
-        }
-    }
-}
-
-async function batchDownResCandles(candle: Candle): Promise<Candle[]> {
-    const candles = await Promise.all([
-        downResCandle(candle, CandleInterval.MIN_05),
-        downResCandle(candle, CandleInterval.MIN_10),
-        downResCandle(candle, CandleInterval.MIN_15),
-        downResCandle(candle, CandleInterval.MIN_30),
-        downResCandle(candle, CandleInterval.MIN_60),
-        downResCandle(candle, CandleInterval.DAY_01),
-    ]);
-    return candles.filter((candle) => candle != undefined) as Candle[];
-}
-
 async function debug(): Promise<void> {
-    await CacheRepository.flushCandles();
+    // await CandleRepository.flush();
     // const instruments = await BrokerService.getInstrumentsByExchange('NSE');
+    const instrument = await InstrumentRepository.findById('NFO:NIFTY20OCTFUT');
+    if (instrument == undefined) return;
+    await downloadHistorical(instrument);
     // console.log(instruments);
-    // const candles = await CandleRepository.findBy({ id: 'NFO:NIFTY20OCTFUT' });
+    // const candles = (await CandleRepository.findBy({ ...instrument, interval: CandleInterval.MIN_01 })).slice(0, 10);
+
     // for (const candle of candles) {
-    //     console.log(await CacheRepository.deleteCandle(candle));
-    //     // const downCandles = await batchDownResCandles(candle);
-    //     // await CacheRepository.writeCandles(downCandles);
+    //     const downCandles = await batchDownResCandles(candle);
+    //     await CacheRepository.writeCandles(downCandles);
+    //     console.log(candle);
+    //     console.log(downCandles[0]);
     // }
-    // console.log(candles);
 }
 
 export const CandleService = {
-    downloadHistorical,
+    downloadHistorical: bulkDownloadHistorical,
     bulkConvertTicksToCandles,
     debug,
     parseCandleKey,

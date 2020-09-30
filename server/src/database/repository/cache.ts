@@ -36,11 +36,18 @@ async function cacheInstrument(instrument: Instrument | null): Promise<Instrumen
 }
 
 const CANDLE_CACHE_EXPIRY_TIME = 8 * 3600 * 1000;
-const candleCache = new LRUCache<string, Candle | undefined>({ max: 10000, maxAge: CANDLE_CACHE_EXPIRY_TIME });
+const candleCache = new LRUCache<string, Candle | undefined>({ max: 20000, maxAge: CANDLE_CACHE_EXPIRY_TIME });
+const missMap: Record<string, number> = {};
 async function getCandle(key: string | undefined): Promise<Candle | undefined> {
     if (key == undefined) return;
     if (candleCache.has(key)) return candleCache.get(key);
     const candle = await CandleRepository.getCandle(key);
+    // missMap[key] = missMap[key] || 0;
+    // missMap[key] += 1;
+    // if (missMap[key] > 3) {
+    //     console.log('Miss:', missMap[key], key);
+    //     console.log('Miss:', candle);
+    // }
     if (candle == undefined) return setCandle(key, undefined);
     if (typeof candle.timestamp === 'string') {
         candle.timestamp = new Date(candle.timestamp);
@@ -75,6 +82,7 @@ async function flushCandles(): Promise<any> {
 export const CacheRepository = {
     getInstrumentByToken,
     getInstrumentById,
+    setCandle,
     getCandle,
     writeCandles,
     deleteCandle,

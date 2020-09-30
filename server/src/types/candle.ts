@@ -34,22 +34,43 @@ export interface IBrokerCandle {
 export class Candle {
     @IsString()
     key!: string;
+
+    @IsString()
+    exchange!: string;
+
+    @IsString()
+    instrumentId!: string;
+
+    @IsString()
+    interval!: string;
+
+    @IsNumber()
+    timeCode!: number;
+
     @IsDate()
     timestamp!: Date;
+
     @IsNumber()
     open!: number;
+
     @IsNumber()
     high!: number;
+
     @IsNumber()
     low!: number;
+
     @IsNumber()
     close!: number;
+
     @IsInt()
     volume!: number;
+
     @IsInt()
     openInterest!: number;
+
     @IsInt()
     totalVolume!: number;
+
     @IsInt()
     totalOpenInterest!: number;
 }
@@ -66,6 +87,10 @@ const CandleSchema = {
         openInterest: { type: 'number' },
         totalVolume: { type: 'number' },
         totalOpenInterest: { type: 'number' },
+        exchange: { type: 'string' },
+        instrumentId: { type: 'string' },
+        timeCode: { type: 'number' },
+        interval: { type: 'string' },
     },
     required: [
         'key',
@@ -78,6 +103,10 @@ const CandleSchema = {
         'openInterest',
         'totalVolume',
         'totalOpenInterest',
+        'exchange',
+        'instrumentId',
+        'timeCode',
+        'interval',
     ],
     additionalProperties: false,
 };

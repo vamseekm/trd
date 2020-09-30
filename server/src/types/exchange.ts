@@ -13,3 +13,8 @@ export interface IExchangeConfig {
     dayStartOffset: number;
     dayEndOffset: number;
 }
+
+export interface IExchangeTimeProps {
+    valid: boolean;
+    dayBegin: boolean;
+}

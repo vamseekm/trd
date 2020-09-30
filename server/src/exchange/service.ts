@@ -5,6 +5,8 @@ import { Config } from '../infra';
 import { IExchangeConfig } from '../types';
 import { toDayAndTime } from '../util';
 import { CacheGroup } from '../database/repository/cache-group';
+import { timeStamp } from 'console';
+import { IExchangeTimeProps } from '../types/exchange';
 
 let _cachedExchangeTimes: Record<string, IExchangeConfig>;
 const cacheLock = new Mutex();
@@ -14,6 +16,7 @@ async function getAllExchangeTimes(): Promise<Record<string, IExchangeConfig>> {
     const releaseLock = await cacheLock.acquire();
     try {
         if (_cachedExchangeTimes != undefined) return _cachedExchangeTimes;
+        console.log('miss');
         const exchangeTimes: Record<string, IExchangeConfig> = {};
         const exchangeConfig = Config.get('EXCHANGE_CONFIG') as Record<string, IExchangeConfig>;
         const names: string[] = Object.keys(exchangeConfig);
@@ -35,7 +38,7 @@ async function getAllExchangeTimes(): Promise<Record<string, IExchangeConfig>> {
                 };
             }
         }
-        return exchangeTimes;
+        _cachedExchangeTimes = exchangeTimes;
         return _cachedExchangeTimes;
     } finally {
         releaseLock();
@@ -54,8 +57,26 @@ async function isValidTime({ date, exchange }: { date: Date; exchange: string })
     return Number.parseInt(time, 10) > exchangeConfig.startTime && Number.parseInt(time, 10) < exchangeConfig.endTime;
 }
 
+async function exchangeTimeProps({
+    timestamp,
+    exchange,
+}: {
+    timestamp: Date;
+    exchange: string;
+}): Promise<IExchangeTimeProps> {
+    const exchangeConfig = (await getAllExchangeTimes())[exchange];
+    if (exchangeConfig == undefined) throw new Error(`Didn't find exchange config for ${exchange}`);
+    const { time } = await toDayAndTime(timestamp);
+    return {
+        valid:
+            Number.parseInt(time, 10) > exchangeConfig.startTime && Number.parseInt(time, 10) < exchangeConfig.endTime,
+        dayBegin: Number.parseInt(time) === exchangeConfig.startTime,
+    };
+}
+
 export const ExchangeService = {
     getAllExchangeTimes,
     getExchangeTime,
     isValidTime,
+    exchangeTimeProps,
 };

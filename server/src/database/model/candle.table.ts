@@ -2,11 +2,28 @@
 import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
 
 import { Candle } from '../../types/candle';
+import { ExchangeService } from '../../exchange/service';
 
 @Table({ tableName: 'candle', timestamps: false })
 export class CandleModel extends Model<CandleModel> implements Candle {
     @Column({ primaryKey: true, type: DataType.STRING(128) })
     key!: string;
+
+    @Index
+    @Column({ type: DataType.STRING(64) })
+    instrumentId!: string;
+
+    @Index
+    @Column({ type: DataType.STRING(8) })
+    exchange!: string;
+
+    @Index
+    @Column({ type: DataType.STRING(8) })
+    interval!: string;
+
+    @Index
+    @Column
+    timeCode!: number;
 
     @Index
     @Column({ allowNull: false })

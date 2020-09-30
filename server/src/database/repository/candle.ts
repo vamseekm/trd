@@ -57,9 +57,14 @@ async function removeCandle({ key }: { key: string }): Promise<any> {
     return CandleModel.destroy({ where: { key } });
 }
 
+async function flush() {
+    return CandleModel.truncate();
+}
+
 export const CandleRepository = {
     upsertCandles,
     getCandle,
     findBy,
     removeCandle,
+    flush,
 };
