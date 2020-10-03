@@ -1,12 +1,7 @@
-import { timeStamp } from 'console';
 import { DateTime } from 'luxon';
-import { start } from 'repl';
-import { updateComputedPropertyName } from 'typescript';
 
 import { BrokerService } from '../broker';
-import { CacheRepository } from '../database';
-import { CandleRepository } from '../database/repository/candle';
-import { InstrumentRepository } from '../database/repository/instrument';
+import { CacheRepository, CandleRepository } from '../database';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
@@ -149,10 +144,8 @@ async function downloadHistorical(instrument: Instrument): Promise<void> {
     Log.info(`Candle sync: ${id}`);
     const to = new Date();
     const from = DateTime.local().minus({ day: 1 }).toJSDate();
-    const candles = await await downloadCandles({ instrument: instrument, interval: CandleInterval.MIN_01, from, to });
-    for (const candle of candles) {
-        await writeHistoricalCandle(candle);
-    }
+    const candles = await downloadCandles({ instrument: instrument, interval: CandleInterval.MIN_01, from, to });
+    for (const candle of candles) await writeHistoricalCandle(candle);
 }
 
 async function bulkDownloadHistorical(): Promise<void> {
@@ -260,7 +253,6 @@ async function downResCandle(sourceCandle: Candle, interval: CandleInterval): Pr
             if ((currentCandle as any)[key] !== (updatedCandle as any)[key]) return updatedCandle;
         }
     } finally {
-        const diff = new Date().getTime() - startTime.getTime();
     }
 }
 
@@ -324,7 +316,11 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
     return uniqueCandles;
 }
 
-async function parseCandleKey({ key }: { key: string }) {
+async function parseCandleKey({
+    key,
+}: {
+    key: string;
+}): Promise<{ key: string; exchange: string; tradingSymbol: string; interval: string; time: string }> {
     const [exchange, tradingSymbol, interval, time] = key.split(INSTRUMENT_ID_SEPERATOR);
     return { key, exchange, tradingSymbol, interval, time };
 }

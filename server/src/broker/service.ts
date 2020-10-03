@@ -113,7 +113,7 @@ async function getInstrumentsByExchange(exchange: string): Promise<Instrument[]>
     return results;
 }
 
-async function ticker(instrumentTokenList: string[], tick_handler: any, order_update_handler?: any): Promise<any> {
+async function ticker(instrumentTokenList: string[], tickHandler: any, orderUpdateHandler?: any): Promise<any> {
     const api_key = Config.get(KITE_API_KEY);
     const access_token = await PrefService.get(KITE_ACCESS_TOKEN);
 
@@ -122,9 +122,9 @@ async function ticker(instrumentTokenList: string[], tick_handler: any, order_up
             api_key,
             access_token,
         });
-        ticker.on('ticks', tick_handler);
-        if (order_update_handler) {
-            ticker.on('order_update', order_update_handler);
+        ticker.on('ticks', tickHandler);
+        if (orderUpdateHandler) {
+            ticker.on('order_update', orderUpdateHandler);
         }
         ticker.autoReconnect(true, -1, 5);
         ticker.on('disconnect', (error: any) => {
