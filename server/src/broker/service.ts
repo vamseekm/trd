@@ -162,12 +162,12 @@ async function kiteDateFormat(date: Date): Promise<string> {
     return DateTime.fromJSDate(date).setZone('UTC+05:30').toFormat('yyyy-MM-dd HH:mm:ss');
 }
 async function getHistorical({
-    instrumentToken,
+    id,
     interval,
     from,
     to,
 }: {
-    instrumentToken: string;
+    id: string;
     interval: CandleInterval;
     from: Date;
     to: Date;
@@ -176,7 +176,7 @@ async function getHistorical({
     const kiteInterval = kiteIntervalMap[interval];
     const fromString = await kiteDateFormat(from);
     const toString = await kiteDateFormat(to);
-    return kite.getHistoricalData(instrumentToken, kiteInterval, fromString, toString);
+    return kite.getHistoricalData(id, kiteInterval, fromString, toString);
 }
 
 export const BrokerService = {

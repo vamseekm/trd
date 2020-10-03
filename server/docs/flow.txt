@@ -1,6 +1,7 @@
 Instrument
 Tick
 Candle
+    Verify candle formation.
 Indictator
     Calculate standard indicators.
 Alerts

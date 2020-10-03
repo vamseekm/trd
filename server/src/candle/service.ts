@@ -13,6 +13,7 @@ import { IExchangeTimeProps } from '../types/exchange';
 import { timeStamp } from 'console';
 import { updateComputedPropertyName } from 'typescript';
 import { start } from 'repl';
+import { CandleRepository } from '../database/repository/candle';
 
 async function getCandleMetaProps({
     instrumentId,
@@ -99,8 +100,8 @@ async function downloadCandles({
     from: Date;
     to: Date;
 }): Promise<Candle[]> {
-    const { instrumentToken } = instrument;
-    const rawCandles = await BrokerService.getHistorical({ instrumentToken, interval, from, to });
+    const { instrumentToken: id } = instrument;
+    const rawCandles = await BrokerService.getHistorical({ id, interval, from, to });
     const processedCandles = [];
     for (const candle of rawCandles) {
         const nativeCandle = await mapBrokerCandleToNativeCandle(instrument, interval, candle);
@@ -329,21 +330,21 @@ async function parseCandleKey({ key }: { key: string }) {
     return ret;
 }
 
-async function debug(): Promise<void> {
-    // await CandleRepository.flush();
-    // const instruments = await BrokerService.getInstrumentsByExchange('NSE');
-    const instrument = await InstrumentRepository.findById('NFO:NIFTY20OCTFUT');
-    if (instrument == undefined) return;
-    await downloadHistorical(instrument);
-    // console.log(instruments);
-    // const candles = (await CandleRepository.findBy({ ...instrument, interval: CandleInterval.MIN_01 })).slice(0, 10);
+async function verifyCandles(): Promise<void> {
+    const from = DateTime.local(2020, 10, 1, 0, 0, 0).toJSDate();
+    const to = DateTime.fromJSDate(from).plus({ day: 1 }).toJSDate();
+    const searchOptions = {
+        id: 'NFO:NIFTY20OCTFUT',
+        interval: CandleInterval.MIN_01,
+        from,
+        to,
+    };
+    const dbCandles = await CandleRepository.findBy(searchOptions);
+    const brokerCandles = await BrokerService.getHistorical(searchOptions);
+}
 
-    // for (const candle of candles) {
-    //     const downCandles = await batchDownResCandles(candle);
-    //     await CacheRepository.writeCandles(downCandles);
-    //     console.log(candle);
-    //     console.log(downCandles[0]);
-    // }
+async function debug(): Promise<void> {
+    await verifyCandles();
 }
 
 export const CandleService = {
