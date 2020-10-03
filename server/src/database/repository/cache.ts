@@ -1,9 +1,10 @@
+import LRUCache from 'lru-cache';
+
 import { Candle, Instrument } from '../../types';
+import { validateCandle } from '../../types/candle';
+import { CandleModel } from '../model/candle.table';
 import { CandleRepository } from './candle';
 import { InstrumentRepository } from './instrument';
-import { validateCandle } from '../../types/candle';
-import LRUCache from 'lru-cache';
-import { CandleModel } from '../model/candle.table';
 
 const INSTRUMENT_CACHE_EXPIRY = 24 * 3600 * 1000;
 const INSTRUMENT_COUNT = 5000;
@@ -48,7 +49,7 @@ async function getCandle(key: string | undefined): Promise<Candle | undefined> {
     //     console.log('Miss:', missMap[key], key);
     //     console.log('Miss:', candle);
     // }
-    if (candle == undefined) return setCandle(key, undefined);
+    if (candle == undefined) return setCandle(key);
     if (typeof candle.timestamp === 'string') {
         candle.timestamp = new Date(candle.timestamp);
     }
@@ -57,7 +58,7 @@ async function getCandle(key: string | undefined): Promise<Candle | undefined> {
     return setCandle(key, candle);
 }
 
-async function setCandle(key: string, candle: Candle | undefined) {
+async function setCandle(key: string, candle?: Candle) {
     candleCache.set(key, candle);
     return candle;
 }

@@ -23,7 +23,7 @@ function proxyCommand(name: string, ...arguments_: any[]): Promise<any> {
     });
 }
 
-function collectArgs(name: string, ...arguments_: any[]): Promise<any> {
+function collectArguments(name: string, ...arguments_: any[]): Promise<any> {
     return proxyCommand(name, arguments_);
 }
 

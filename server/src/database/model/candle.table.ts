@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
 
-import { Candle } from '../../types/candle';
 import { ExchangeService } from '../../exchange/service';
+import { Candle } from '../../types/candle';
 
 @Table({ tableName: 'candle', timestamps: false })
 export class CandleModel extends Model<CandleModel> implements Candle {

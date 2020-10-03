@@ -1,5 +1,5 @@
-import { IsDate, IsInt, IsNumber, IsString } from 'class-validator';
 import Ajv from 'ajv';
+import { IsDate, IsInt, IsNumber, IsString } from 'class-validator';
 const ajv = new Ajv({ allErrors: true });
 
 export enum CandleInterval {

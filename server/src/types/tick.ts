@@ -1,6 +1,7 @@
 import Ajv from 'ajv';
 const ajv = new Ajv({ allErrors: true });
 import { IsDate, IsDecimal, IsInt, IsNumber, IsString } from 'class-validator';
+
 import { ExchangeService } from '../exchange/service';
 
 export class OrderItem {

@@ -1,12 +1,12 @@
 import { Mutex } from 'async-mutex';
+import { timeStamp } from 'console';
 import { DateTime } from 'luxon';
 
+import { CacheGroup } from '../database/repository/cache-group';
 import { Config } from '../infra';
 import { IExchangeConfig } from '../types';
+import { IExchangeTImeProperties } from '../types/exchange';
 import { toDayAndTime } from '../util';
-import { CacheGroup } from '../database/repository/cache-group';
-import { timeStamp } from 'console';
-import { IExchangeTimeProps } from '../types/exchange';
 
 let _cachedExchangeTimes: Record<string, IExchangeConfig>;
 const cacheLock = new Mutex();
@@ -57,13 +57,13 @@ async function isValidTime({ date, exchange }: { date: Date; exchange: string })
     return Number.parseInt(time, 10) > exchangeConfig.startTime && Number.parseInt(time, 10) < exchangeConfig.endTime;
 }
 
-async function exchangeTimeProps({
+async function exchangeTimeProperties({
     timestamp,
     exchange,
 }: {
     timestamp: Date;
     exchange: string;
-}): Promise<IExchangeTimeProps> {
+}): Promise<IExchangeTImeProperties> {
     const exchangeConfig = (await getAllExchangeTimes())[exchange];
     if (exchangeConfig == undefined) throw new Error(`Didn't find exchange config for ${exchange}`);
     const { time } = await toDayAndTime(timestamp);
@@ -78,5 +78,5 @@ export const ExchangeService = {
     getAllExchangeTimes,
     getExchangeTime,
     isValidTime,
-    exchangeTimeProps,
+    exchangeTimeProps: exchangeTimeProperties,
 };

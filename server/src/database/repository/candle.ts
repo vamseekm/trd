@@ -2,8 +2,8 @@ import { Op, Sequelize, WhereOptions } from 'sequelize';
 
 import { Log } from '../../infra';
 import { Candle, CandleInterval, INSTRUMENT_ID_SEPERATOR } from '../../types';
-import { CandleModel } from '../model';
 import { validateCandle } from '../../types/candle';
+import { CandleModel } from '../model';
 
 async function upsertCandles(inputCandleList: Candle[]): Promise<any> {
     return await CandleModel.bulkCreate(inputCandleList, {

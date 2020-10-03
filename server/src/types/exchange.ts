@@ -14,7 +14,7 @@ export interface IExchangeConfig {
     dayEndOffset: number;
 }
 
-export interface IExchangeTimeProps {
+export interface IExchangeTImeProperties {
     valid: boolean;
     dayBegin: boolean;
 }
