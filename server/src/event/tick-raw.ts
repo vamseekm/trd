@@ -8,6 +8,7 @@ export async function startTickRawConsumer(): Promise<void> {
         if (!ticks) return;
         const processedTicks = await Promise.all(ticks.map((tick: any) => formatTick(tick)));
         const validTicks = processedTicks.filter((tick) => !!tick);
+        if (validTicks.length === 0) return 0;
         await channel.publish(
             EXCHANGE_TICKER,
             MessageType.tick,
