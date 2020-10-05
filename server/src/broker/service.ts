@@ -6,6 +6,7 @@ import { DateTime } from 'luxon';
 import { CacheGroup } from '../database/repository/cache-group';
 import { Config, Log } from '../infra';
 import { PrefService } from '../pref';
+import { CacheRepository } from '../database/repository/cache';
 import {
     BrokerQuoteLtp,
     CandleInterval,
@@ -176,7 +177,10 @@ async function getHistorical({
     const kiteInterval = kiteIntervalMap[interval];
     const fromString = await kiteDateFormat(from);
     const toString = await kiteDateFormat(to);
-    return kite.getHistoricalData(id, kiteInterval, fromString, toString);
+    const instrument = await CacheRepository.getInstrumentById(id);
+    if (!instrument) throw new Error(`Can't find instrument: ${id}`);
+    // console.log({ token: instrument.instrumentToken, kiteInterval, fromString, toString });
+    return kite.getHistoricalData(instrument.instrumentToken, kiteInterval, fromString, toString);
 }
 
 export const BrokerService = {
