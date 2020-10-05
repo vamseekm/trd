@@ -17,6 +17,7 @@ services:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+    command: -c synchronous_commit=off -c wal_writer_delay=1000 -c wal_buffers=16MB -c shared_buffers=256MB
     volumes:
       - pg-data3:/var/lib/postgresql/data/
     ports:
@@ -106,7 +107,7 @@ services:
   c_tick_processor:
     image: c_server_img
     command: "bash ./server.sh --Event::startTickRawConsumer  --Event::startTickStoreConsumer --Event::startTickProcessConsumer"
-    # command: "bash ./server.sh --Event::startTickRawConsumer  --Event::startTickStoreConsumer"
+    # command: "bash ./server.sh --Event::startTickRawConsumer --Event::startTickStoreConsumer"
     environment:
       NODE_ENV: docker
     restart: always

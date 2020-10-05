@@ -8,7 +8,6 @@ import { CandleModel } from '../model';
 async function upsertCandles(inputCandleList: Candle[]): Promise<any> {
     return await CandleModel.bulkCreate(inputCandleList, {
         updateOnDuplicate: [
-            'timestamp',
             'open',
             'high',
             'low',
@@ -18,6 +17,7 @@ async function upsertCandles(inputCandleList: Candle[]): Promise<any> {
             'totalVolume',
             'totalOpenInterest',
         ],
+        returning: false,
     });
 }
 

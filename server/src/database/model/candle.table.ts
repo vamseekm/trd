@@ -9,23 +9,18 @@ export class CandleModel extends Model<CandleModel> implements Candle {
     @Column({ primaryKey: true, type: DataType.STRING(128) })
     key!: string;
 
-    @Index
     @Column({ type: DataType.STRING(64) })
     instrumentId!: string;
 
-    @Index
     @Column({ type: DataType.STRING(8) })
     exchange!: string;
 
-    @Index
     @Column({ type: DataType.STRING(8) })
     interval!: string;
 
-    @Index
     @Column
     timeCode!: number;
 
-    @Index
     @Column({ allowNull: false })
     timestamp!: Date;
 

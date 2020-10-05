@@ -292,7 +292,7 @@ async function computeMissingTicks(ticks: Tick[]): Promise<Tick[]> {
 }
 
 async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
-    const startTime = new Date();
+    const startTime = Date.now();
     for (const tick of ticks) {
         _tickMap[tick.instrumentId] = tick;
     }
@@ -301,7 +301,8 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
     const candleMap = new Map<string, Candle>();
     allCandles.forEach((candle) => candleMap.set(candle.key, candle));
     const uniqueCandles = [...candleMap.values()];
-    const startWriteTime = new Date();
+    const startWriteTime = Date.now();
+    const processTime = Date.now() - startTime;
     await CacheRepository.writeCandles(uniqueCandles);
     const timeCode = uniqueCandles.length > 0 ? uniqueCandles[0].timeCode : 0;
     Log.json('stats', {
@@ -309,8 +310,8 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
         mapSize: Object.keys(_tickMap).length,
         missingTicks: missingTicks.length,
         candles: allCandles.length,
-        writeTime: new Date().getTime() - startWriteTime.getTime(),
-        time: new Date().getTime() - startTime.getTime(),
+        writeTime: Date.now() - startWriteTime,
+        time: Date.now() - startTime,
         timeCode,
     });
     return uniqueCandles;
