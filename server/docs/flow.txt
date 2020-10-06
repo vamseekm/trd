@@ -1,5 +1,7 @@
 Instrument
+    Only track two week options.
 Tick
+    Cron to auto clean old ticks keep only last trading day ticks.
 Candle
     Verify candle formation.
 Indictator

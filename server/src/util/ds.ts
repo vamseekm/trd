@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import CliProgress from 'cli-progress';
 import { DateTime } from 'luxon';
+import { Log } from '../infra';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const diff = require('diff-arrays-of-objects');
@@ -81,4 +82,14 @@ export function toSetAndMap<T, K extends keyof T>(items: T[], key: K): { set: Se
         map.set(item[key], item);
     }
     return { set, map };
+}
+export function printStats(name: string, stats: any) {
+    const keys = Object.keys(stats);
+    const tokens: string[] = [];
+    tokens.push(name.padStart(20));
+    for (const key of keys) {
+        tokens.push(` ${key.padStart(10, ' ')}: `);
+        tokens.push(`${stats[key]}`.padStart(6, ' '));
+    }
+    Log.info(tokens.join(''));
 }

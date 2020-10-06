@@ -8,7 +8,7 @@ import { InstrumentService } from '../instrument';
 import { Candle, CandleDuration, CandleInterval, IBrokerCandle, Instrument, Tick } from '../types';
 import { INSTRUMENT_ID_SEPERATOR } from '../types';
 import { IExchangeTImeProperties } from '../types/exchange';
-import { sleep, toDayAndTime } from '../util';
+import { printStats, sleep, toDayAndTime } from '../util';
 
 async function getCandleMetaProperties({
     instrumentId,
@@ -305,13 +305,13 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
     const processTime = Date.now() - startTime;
     await CacheRepository.writeCandles(uniqueCandles);
     const timeCode = uniqueCandles.length > 0 ? uniqueCandles[0].timeCode : 0;
-    Log.json('stats', {
+    printStats('stats', {
         ticks: ticks.length,
         mapSize: Object.keys(_tickMap).length,
-        missingTicks: missingTicks.length,
+        cacheMiss: missingTicks.length,
         candles: allCandles.length,
-        writeTime: Date.now() - startWriteTime,
-        time: Date.now() - startTime,
+        flushTime: Date.now() - startWriteTime,
+        totalTime: Date.now() - startTime,
         timeCode,
     });
     return uniqueCandles;
