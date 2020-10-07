@@ -35,10 +35,10 @@ async function getOptionExpiryListToTrack(name: string): Promise<Date[]> {
     });
     const instruments = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-OPT' });
     const optionExpirySet = new Set<string>(instruments.map((instrument) => instrument.expiry.toISOString()));
-    const expiryList = [...optionExpirySet].sort().slice(0, 2).sort();
-    console.log(expiryList);
+    const expiryList = [...optionExpirySet].sort().slice(0, OPTION_EXPIRIES_TO_TRACK).sort();
     return [...new Set(expiryList)].map((expiry) => new Date(expiry));
 }
+const OPTION_EXPIRIES_TO_TRACK = 2;
 const FUTURES_TO_TRACK = 1;
 async function getFnoInstrumentsToTrack(name: string): Promise<Instrument[]> {
     let futures = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', take: FUTURES_TO_TRACK });

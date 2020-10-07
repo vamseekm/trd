@@ -1,7 +1,5 @@
 Instrument
-    Only track two week options.
 Tick
-    Cron to auto clean old ticks keep only last trading day ticks.
 Candle
     Verify candle formation.
 Indictator
@@ -10,7 +8,15 @@ Alerts
     Show alerts.
         Web alerts.
         Audiable alerts.
+        Telegram bot alerts.
 OrderPlacement
     Place orders.
+        Cli
+        Telegram
     Monitor orders
         Trailing SL
+Misc
+    Auto restart on config change.
+    Cron to clean old candles/ticks.
+    Cron to sync candles.
+    Cron to auto login.
