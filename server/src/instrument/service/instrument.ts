@@ -28,21 +28,22 @@ async function download(): Promise<void> {
 }
 
 async function getOptionExpiryListToTrack(name: string): Promise<Date[]> {
-    const futureInstruments = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', take: 2 });
+    const futureInstruments = await InstrumentRepository.fetchFnoInstruments({
+        name,
+        segment: 'NFO-FUT',
+        take: FUTURES_TO_TRACK,
+    });
     const instruments = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-OPT' });
     const optionExpirySet = new Set<string>(instruments.map((instrument) => instrument.expiry.toISOString()));
-    const expiryList = [...optionExpirySet]
-        .sort()
-        .slice(0, 2)
-        .concat(futureInstruments.map((instrument) => instrument.expiry.toISOString()))
-        .sort();
+    const expiryList = [...optionExpirySet].sort().slice(0, 2).sort();
+    console.log(expiryList);
     return [...new Set(expiryList)].map((expiry) => new Date(expiry));
 }
-
+const FUTURES_TO_TRACK = 1;
 async function getFnoInstrumentsToTrack(name: string): Promise<Instrument[]> {
-    let futures = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', take: 2 });
+    let futures = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', take: FUTURES_TO_TRACK });
     await updateLTP(futures);
-    futures = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', take: 2 });
+    futures = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-FUT', take: FUTURES_TO_TRACK });
     const expiryList = await getOptionExpiryListToTrack(name);
     //TODO: Config
     const stirkeIntervalMap: Record<string, number> = {
@@ -109,7 +110,7 @@ async function track(): Promise<void> {
     );
     const fnoInstruments = await getTrackableFnoInstruments();
     const allInstruments = [...indices, ...topInstruments, ...fnoInstruments];
-    Log.json('Tracking:', {
+    Log.json('Tracking', {
         indices: indices.length,
         topInstruments: topInstruments.length,
         fnoInstruments: fnoInstruments.length,
@@ -118,10 +119,9 @@ async function track(): Promise<void> {
     const alreadyTrackedIds = await (await InstrumentRepository.findAutoTrackedInstruments()).map(
         (instrument) => instrument.id,
     );
-    Log.info(`\tUntracking previously tracked ${alreadyTrackedIds.length} instruments.`);
     await InstrumentRepository.trackInstruments(alreadyTrackedIds, false);
     await InstrumentRepository.trackInstruments(allInstruments, true);
-    Log.info(`\tTracking ${allInstruments.length} instruments.`);
+    Log.info(`Tracking total ${allInstruments.length} instruments.`);
 }
 
 async function updateLTP(insrumentList: Instrument[]): Promise<void> {

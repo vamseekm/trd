@@ -40,7 +40,9 @@ const logger = winston.createLogger({
 });
 
 const error = logger.error.bind(logger);
-const info = logger.info.bind(logger);
+const info = (...args: string[]) => {
+    logger.info(args.join(' '));
+};
 const json = (label: string, ...rest: any[]): void => {
     if (rest && rest.length > 0) {
         Log.info(`${label}: ${JSON.stringify(rest)}`);

@@ -18,6 +18,7 @@ import {
     KITE_API_KEY,
     KITE_API_SECRET,
 } from '../types';
+import { maskString } from '../util';
 
 const { KiteConnect, KiteTicker } = require('kiteconnect');
 
@@ -29,8 +30,8 @@ async function kiteInstance(): Promise<KiteConnectType> {
     const apiKey = await Config.get(KITE_API_KEY);
     _kite = new KiteConnect({ api_key: apiKey });
     const accessToken = await PrefService.get(KITE_ACCESS_TOKEN, '');
-    console.log('Access token:', accessToken);
-    if (!accessToken || accessToken.length === 0) Log.error(`Access token not available: ${accessToken}`);
+    Log.info('Access token:', maskString(accessToken || ''));
+    if (!accessToken || accessToken.length === 0) Log.error(`Access token not available.`);
     _kite.setAccessToken(accessToken);
     return _kite;
 }
@@ -42,10 +43,10 @@ async function getLoginUrl(): Promise<string> {
 async function generateAccessToken(requestToken: string): Promise<string> {
     try {
         const kite = await kiteInstance();
-        const { access_token } = await kite.generateSession(requestToken, Config.get(KITE_API_SECRET));
-        await PrefService.set(KITE_ACCESS_TOKEN, access_token);
-        console.log('Access token:', access_token);
-        return access_token;
+        const { access_token: accessToken } = await kite.generateSession(requestToken, Config.get(KITE_API_SECRET));
+        await PrefService.set(KITE_ACCESS_TOKEN, accessToken);
+        console.log('Access token:', maskString(accessToken));
+        return accessToken;
     } catch (error) {
         return Promise.reject(error);
     }

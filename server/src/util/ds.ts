@@ -93,3 +93,7 @@ export function printStats(name: string, stats: any) {
     }
     Log.info(tokens.join(''));
 }
+
+export function maskString(str: string) {
+    return str.slice(0, 3) + str.slice(3, str.length - 3).replace(/./g, '*') + str.slice(str.length - 3, str.length);
+}

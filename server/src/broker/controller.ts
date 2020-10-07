@@ -14,7 +14,7 @@ async function login(request: express.Request, response: express.Response): Prom
 async function redirect(request: express.Request, response: express.Response): Promise<void> {
     const { request_token } = request.query;
     await BrokerService.generateAccessToken(request_token as string);
-    response.send('generated access token');
+    response.send('Generated access token.');
 }
 
 async function profile(request: express.Request, response: express.Response): Promise<void> {
