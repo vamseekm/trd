@@ -6,3 +6,4 @@ export * from './tick';
 export * from './candle';
 export * from './database';
 export * from './exchange';
+export * from './indicator';

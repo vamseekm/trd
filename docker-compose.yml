@@ -32,6 +32,7 @@ services:
 
   i_redis:
     image: redis
+    command: --save "" --appendonly no
     volumes:
       - redis-data:/data:delegated
     ports:

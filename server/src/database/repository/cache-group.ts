@@ -4,7 +4,7 @@ import { RedisService } from '../../infra';
 const CACHE_PREFIX = 'cache:';
 export class CacheGroup {
     private _prefix: string;
-    constructor(private name: string) {
+    constructor(private name: string, private allowNull: boolean = false) {
         this._prefix = `cache:${name}`;
     }
 
@@ -21,18 +21,25 @@ export class CacheGroup {
         return keys.length;
     }
 
-    async get({ key, expiry = 3600 }: { key: string; expiry?: number }, callback: () => Promise<any>): Promise<any> {
+    async get(
+        { key, expiry = 24 * 3600 * 1000 }: { key: string; expiry?: number },
+        callback: () => Promise<any>,
+    ): Promise<any> {
         const redisArguments: string[] = [this.redisCacheKey(key)];
         const item = await RedisService.get(...redisArguments);
-        if (item != undefined) return JSON.parse(item).value;
+        if (item != undefined) {
+            const { value, isnull } = JSON.parse(item);
+            if (isnull === true && this.allowNull) return undefined;
+            if (isnull === false) return value;
+        }
         const value = await callback();
         return this.set({ key, expiry, value });
     }
 
-    async set({ key, expiry = 3600, value }: { key: string; expiry?: number; value: any }): Promise<any> {
-        if (value == undefined) return;
+    async set({ key, expiry = 24 * 3600 * 1000, value }: { key: string; expiry?: number; value: any }): Promise<any> {
+        if (value == undefined && this.allowNull === false) return;
         const redisArguments: string[] = [this.redisCacheKey(key)];
-        redisArguments.push(JSON.stringify({ value }));
+        redisArguments.push(JSON.stringify({ value, isnull: value == undefined }));
         if (expiry) {
             redisArguments.push('PX', `${expiry}`);
         }
@@ -40,7 +47,7 @@ export class CacheGroup {
         return value;
     }
 
-    async remove({ key }: { key: string }): Promise<any> {
+    async remove(key: string): Promise<any> {
         return RedisService.del(this.redisCacheKey(key));
     }
 }

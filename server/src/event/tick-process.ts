@@ -2,6 +2,7 @@ import { consumeQueue, EXCHANGE_TICKER, MessageType } from '../bridge';
 import { CandleService } from '../candle';
 import { Tick, validateTick } from '../types';
 import { waitForever } from '../util';
+import { CacheRepository } from '../database/repository/cache';
 
 export async function startTickProcessConsumer(): Promise<void> {
     await consumeQueue({ name: 'tickConsumer', messageType: MessageType.tick }, async ({ message, channel }) => {
