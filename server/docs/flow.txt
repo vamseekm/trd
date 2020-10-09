@@ -1,20 +1,22 @@
 Instrument
 Tick
 Candle
-    Verify candle formation.
+    L. Sync last 1 week worth of candle data.
+    L. Verify candle formation.
 Indictator
-    Calculate standard indicators.
+    H. Calculate standard indicators.
 Alerts
-    Show alerts.
-        Web alerts.
-        Audiable alerts.
-        Telegram bot alerts.
+    H. Show alerts.
+        L. Web alerts.
+        L. Audiable alerts.
+        L. Slack bot alerts.
+        H. CLI alerts.
 OrderPlacement
     Place orders.
-        Cli
-        Telegram
+        H. Cli
+        L. Slack
     Monitor orders
-        Trailing SL
+        H. Trailing SL
 Misc
     Auto restart on config change.
     Cron to clean old candles/ticks.

@@ -7,6 +7,7 @@ import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
 import { Candle, CandleDuration, CandleInterval, IBrokerCandle, Instrument, Tick } from '../types';
 import { INSTRUMENT_ID_SEPERATOR } from '../types';
+import { validateCandle } from '../types/candle';
 import { IExchangeTImeProperties } from '../types/exchange';
 import { printStats, sleep, toDayAndTime } from '../util';
 
@@ -325,22 +326,43 @@ async function parseCandleKey({
     const [exchange, tradingSymbol, interval, time] = key.split(INSTRUMENT_ID_SEPERATOR);
     return { key, exchange, tradingSymbol, interval, time };
 }
-
+async function candleDiff(brokerCandle: IBrokerCandle, databaseCandle: IBrokerCandle) {
+    console.log(brokerCandle.date.toLocaleString(), databaseCandle.date.toLocaleString());
+    console.log(brokerCandle.open - databaseCandle.open);
+    console.log(brokerCandle.high - databaseCandle.high);
+    console.log(brokerCandle.low - databaseCandle.low);
+    console.log(brokerCandle.close - databaseCandle.close);
+    console.log(brokerCandle.volume - databaseCandle.volume);
+}
 async function verifyCandles(): Promise<void> {
-    const from = DateTime.local(2020, 10, 1, 0, 0, 0).toJSDate();
+    const from = DateTime.local(2020, 10, 8, 0, 0, 0).toJSDate();
     const to = DateTime.fromJSDate(from).plus({ day: 1 }).toJSDate();
     const searchOptions = {
         id: 'NFO:NIFTY20OCTFUT',
-        interval: CandleInterval.MIN_01,
+        interval: CandleInterval.MIN_05,
         from,
         to,
     };
     const databaseCandles = await CandleRepository.findBy(searchOptions);
     const brokerCandles = await BrokerService.getHistorical(searchOptions);
+    console.log(brokerCandles.length, databaseCandles.length);
+    // console.log(brokerCandles.slice(-1).pop());
+    // console.log(databaseCandles.slice(-1).pop());
+    const brokerCandle = brokerCandles.slice(-1).pop();
+    const databaseCandle = databaseCandles.slice(-1).pop();
+    if (brokerCandle && databaseCandle) {
+        await candleDiff(brokerCandle, { ...databaseCandle, date: databaseCandle.timestamp });
+        console.log(brokerCandle.date.toLocaleString());
+        console.log(brokerCandle.volume, databaseCandle.volume);
+        console.log(databaseCandle.totalVolume);
+    }
 }
 
 async function debug(): Promise<void> {
-    await verifyCandles();
+    while (true) {
+        await verifyCandles();
+        await sleep(5000);
+    }
 }
 
 export const CandleService = {

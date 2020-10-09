@@ -38,7 +38,8 @@ async function findBy({
 }): Promise<Candle[]> {
     // const keyTokens: string[] = [id, interval || '%'];
     // const keyPrefix = `${keyTokens.join(INSTRUMENT_ID_SEPERATOR)}:%`;
-    const keyPrefix = `${id}:%`;
+    const prefix = [id, interval].filter((token) => token != undefined).join(':');
+    const keyPrefix = `${prefix}:%`;
     let where: WhereOptions = { key: { [Op.like]: keyPrefix } };
     if (from && to) where = { ...where, timestamp: { [Op.gte]: from, [Op.lte]: to } };
     return validate(await CandleModel.findAll({ where, order: Sequelize.col('key'), raw: true }));
@@ -77,4 +78,5 @@ export const CandleRepository = {
     findBy,
     removeCandle,
     flush,
+    validate,
 };

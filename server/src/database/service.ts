@@ -2,7 +2,9 @@ import { Sequelize } from 'sequelize-typescript';
 
 import { Config } from '../infra';
 import { CandleModel, InstrumentModel, PrefModel, TickModel } from './model';
+
 let _seq: Sequelize;
+
 async function connect(): Promise<void> {
     if (_seq != undefined) return;
     const databaseConfig = Config.get('postgres');
