@@ -30,91 +30,90 @@ services:
     ports:
       - 127.0.0.1:8080:8080
 
-  i_redis:
-    image: redis
-    command: --save "" --appendonly no
-    volumes:
-      - redis-data:/data:delegated
-    ports:
-      - 127.0.0.1:6379:6379
+  # i_redis:
+  #   image: redis
+  #   volumes:
+  #     - redis-data:/data:delegated
+  #   ports:
+  #     - 127.0.0.1:6379:6379
 
-  i_redis_interface:
-    image: rediscommander/redis-commander:latest
-    restart: always
-    environment:
-      REDIS_HOSTS: local:i_redis:6379
-      ADDRESS: 0.0.0.0
-      URL_PREFIX: /rc
-    ports:
-      - 8081:8081
+  # i_redis_interface:
+  #   image: rediscommander/redis-commander:latest
+  #   restart: always
+  #   environment:
+  #     REDIS_HOSTS: local:i_redis:6379
+  #     ADDRESS: 0.0.0.0
+  #     URL_PREFIX: /rc
+  #   ports:
+  #     - 8081:8081
 
-  i_redis_insight:
-    image: redislabs/redisinsight:latest
-    restart: always
-    ports:
-      - 8001:8001
-    volumes:
-      - redis-insight-db:/db
+  # i_redis_insight:
+  #   image: redislabs/redisinsight:latest
+  #   restart: always
+  #   ports:
+  #     - 8001:8001
+  #   volumes:
+  #     - redis-insight-db:/db
 
-  c_client_server:
-    build:
-      context: "./client"
-    image: ${HTTP_CLIENT_SERVER_HOST}
-    command: "yarn client:dev"
-    ports:
-      - ${HTTP_CLIENT_SERVER_PORT}:${HTTP_CLIENT_SERVER_PORT}
-    environment:
-      HTTP_CLIENT_SERVER_PORT: ${HTTP_CLIENT_SERVER_PORT}
-    healthcheck:
-      test: "curl --fail localhost:${HTTP_CLIENT_SERVER_PORT}/app || exit 1"
-      interval: "30s"
-      timeout: "1s"
-      retries: 5
+  # c_client_server:
+  #   build:
+  #     context: "./client"
+  #   image: ${HTTP_CLIENT_SERVER_HOST}
+  #   command: "yarn client:dev"
+  #   ports:
+  #     - ${HTTP_CLIENT_SERVER_PORT}:${HTTP_CLIENT_SERVER_PORT}
+  #   environment:
+  #     HTTP_CLIENT_SERVER_PORT: ${HTTP_CLIENT_SERVER_PORT}
+  #   healthcheck:
+  #     test: "curl --fail localhost:${HTTP_CLIENT_SERVER_PORT}/app || exit 1"
+  #     interval: "30s"
+  #     timeout: "1s"
+  #     retries: 5
 
-  c_server_img:
-    build:
-      context: "./server"
-    image: c_server_img
-    command: "tail -f /dev/null"
-    environment:
-      DATABASE_URL: postgresql://postgres:example@i_pg:5432/postgres
+  # c_server_img:
+  #   build:
+  #     context: "./server"
+  #   image: c_server_img
+  #   command: "tail -f /dev/null"
+  #   environment:
+  #     DATABASE_URL: postgresql://postgres:example@i_pg:5432/postgres
 
-  c_api_server:
-    image: c_server_img
-    ports:
-      - ${HTTP_API_SERVER_PORT}:${HTTP_API_SERVER_PORT}
-    command: "bash ./server.sh --API::startServer"
-    environment:
-      HTTP_API_SERVER_PORT: ${HTTP_API_SERVER_PORT}
-      NODE_ENV: docker
-      # WATCH: "yes"
-    restart: always
-    depends_on:
-      - c_server_img
-    healthcheck:
-      test: "curl --fail localhost:${HTTP_API_SERVER_PORT}/health || exit 1"
-      interval: "20s"
-      timeout: "1s"
-      retries: 3
+  # c_api_server:
+  #   image: c_server_img
+  #   ports:
+  #     - ${HTTP_API_SERVER_PORT}:${HTTP_API_SERVER_PORT}
+  #   command: "bash ./server.sh --API::startServer"
+  #   environment:
+  #     HTTP_API_SERVER_PORT: ${HTTP_API_SERVER_PORT}
+  #     NODE_ENV: docker
+  #     # WATCH: "yes"
+  #   restart: always
+  #   depends_on:
+  #     - c_server_img
+  #   healthcheck:
+  #     test: "curl --fail localhost:${HTTP_API_SERVER_PORT}/health || exit 1"
+  #     interval: "20s"
+  #     timeout: "1s"
+  #     retries: 3
 
-  c_tick_listener:
-    image: c_server_img
-    command: "bash ./server.sh --Event::startTickListener"
-    environment:
-      NODE_ENV: docker
-    restart: always
-    depends_on:
-      - c_server_img
+  # c_tick_listener:
+  #   image: c_server_img
+  #   command: "bash ./server.sh --Event::startTickListener"
+  #   environment:
+  #     NODE_ENV: docker
+  #   restart: always
+  #   depends_on:
+  #     - c_server_img
 
-  c_tick_processor:
-    image: c_server_img
-    command: "bash ./server.sh --Event::startTickRawConsumer  --Event::startTickStoreConsumer --Event::startTickProcessConsumer"
-    # command: "bash ./server.sh --Event::startTickRawConsumer --Event::startTickStoreConsumer"
-    environment:
-      NODE_ENV: docker
-    restart: always
-    depends_on:
-      - c_server_img
+  # c_tick_processor:
+  #   image: c_server_img
+  #   command: "bash ./server.sh --Event::startTickRawConsumer  --Event::startTickStoreConsumer --Event::startTickProcessConsumer"
+  #   # command: "bash ./server.sh --Event::startTickRawConsumer --Event::startTickStoreConsumer"
+  #   environment:
+  #     NODE_ENV: docker
+  #   restart: always
+  #   depends_on:
+  #     - c_server_img
 
 volumes:
   # db-data:

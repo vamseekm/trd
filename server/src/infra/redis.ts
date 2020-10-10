@@ -8,6 +8,9 @@ import { Log } from './logger';
 
 const client = redis.createClient(Config.get('redis'));
 client.on('error', (error) => Log.error(error));
+client.on('reconnecting', (info) => Log.json("Redis reconnecting", info));
+client.on('connect', () => Log.json("Redis connected."));
+client.on('ready', () => Log.json("Redis ready."));
 
 function proxyCommand(name: string, ...arguments_: any[]): Promise<any> {
     // console.log(name, arguments_);
