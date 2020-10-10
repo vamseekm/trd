@@ -25,8 +25,8 @@ async function getAllExchangeTimes(): Promise<Record<string, IExchangeConfig>> {
                 const { start, end } = exchangeConfig[name];
                 const startDate = DateTime.fromObject({ year: 1970, month: 1, day: 1, ...start }).toJSDate();
                 const endDate = DateTime.fromObject({ year: 1970, month: 1, day: 1, ...end }).toJSDate();
-                const { time: startTime } = await toDayAndTime(startDate);
-                const { time: endTime } = await toDayAndTime(endDate);
+                const { time: startTime } = toDayAndTime(startDate);
+                const { time: endTime } = toDayAndTime(endDate);
                 exchangeTimes[name] = {
                     name,
                     startTime: Number.parseInt(startTime),
@@ -53,7 +53,7 @@ async function getExchangeTime(exchange: string): Promise<IExchangeConfig> {
 async function isValidTime({ date, exchange }: { date: Date; exchange: string }): Promise<boolean> {
     const exchangeConfig = (await getAllExchangeTimes())[exchange];
     if (exchangeConfig == undefined) return true;
-    const { time } = await toDayAndTime(date);
+    const { time } = toDayAndTime(date);
     return Number.parseInt(time, 10) > exchangeConfig.startTime && Number.parseInt(time, 10) < exchangeConfig.endTime;
 }
 
@@ -66,7 +66,7 @@ async function exchangeTimeProperties({
 }): Promise<IExchangeTImeProperties> {
     const exchangeConfig = (await getAllExchangeTimes())[exchange];
     if (exchangeConfig == undefined) throw new Error(`Didn't find exchange config for ${exchange}`);
-    const { time } = await toDayAndTime(timestamp);
+    const { time } = toDayAndTime(timestamp);
     return {
         valid:
             Number.parseInt(time, 10) > exchangeConfig.startTime && Number.parseInt(time, 10) < exchangeConfig.endTime,

@@ -25,7 +25,7 @@ export async function formatTick(tick: any): Promise<Tick | undefined> {
         if (instrument == undefined) throw new Error(`No instrument found with instrumentToken: ${instrument_token}`);
         const { id, exchange, tradingSymbol } = instrument;
         if (!(await ExchangeService.isValidTime({ exchange, date: timestampDate }))) return;
-        const { day, time } = await toDayAndTime(timestampDate);
+        const { day, time } = toDayAndTime(timestampDate);
         return {
             instrumentId: id,
             exchange,

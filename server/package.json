@@ -20,6 +20,7 @@
         "dist:run": "date; node -r source-map-support/register dist/cli/index.js",
         "dist:doctor:run": "npm run timestamp; clinic doctor -- node -r source-map-support/register dist/cli/index.js",
         "dist:flame:run": "npm run timestamp; clinic flame -- node -r source-map-support/register dist/cli/index.js",
+        "dist:bubble:run": "npm run timestamp; clinic bubbleprof -- node -r source-map-support/register dist/cli/index.js",
         "dist:prof:run": "npm run timestamp; node --prof -r source-map-support/register dist/cli/index.js",
         "api-server": "npm run dist:run -- --api-server",
         "run-debug": "npm run dist:run -- --debug",

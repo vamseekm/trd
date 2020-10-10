@@ -1,3 +1,9 @@
+Cron
+    Clean docker cache.
+    Clean ticks.
+    Completely remove and recreate rabbitmq container.
+Init
+    Init Exchange at startup.
 Instrument
 Tick
 Candle

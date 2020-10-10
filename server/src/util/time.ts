@@ -19,7 +19,7 @@ export async function xtoDayAndTime(date: Date): Promise<{ day: string; time: st
 function padNumber(num: number, times: number = 2): string {
     return `${num}`.padStart(times, '0');
 }
-export async function toDayAndTime(date: Date): Promise<{ day: string; time: string; timeCode: number }> {
+export function toDayAndTime(date: Date): { day: string; time: string; timeCode: number } {
     const adjustedTime = new Date(date.getTime() + 5 * 60 * 60 * 1000 + 30 * 60 * 1000);
     const day = padNumber(
         ((adjustedTime.getUTCFullYear() % 100) * 100 + (adjustedTime.getUTCMonth() + 1)) * 100 +
