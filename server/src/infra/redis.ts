@@ -15,6 +15,9 @@ client.on('ready', () => Log.json('Redis ready.'));
 function proxyCommand(name: string, ...arguments_: any[]): Promise<any> {
     return new Promise((resolve: any, reject: any) => {
         arguments_.push((error: any, ...results: any[]) => {
+            // console.log(name);
+            // console.log(arguments);
+            // console.log(results);
             if (error) {
                 reject(error, ...results);
             } else {

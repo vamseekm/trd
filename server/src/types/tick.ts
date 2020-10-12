@@ -1,7 +1,5 @@
-import Ajv from 'ajv';
-const ajv = new Ajv({ allErrors: true });
-
 import { ExchangeService } from '../exchange/service';
+import { newValidator } from './validator';
 
 export class OrderItem {
     quantity!: number;
@@ -37,13 +35,29 @@ const TickSchema = {
         totalVolume: { type: 'number' },
         totalBuyQuantity: { type: 'number' },
         totalSellQuantity: { type: 'number' },
-        timestamp: { type: 'object' },
+        timestamp: { instanceOf: 'Date' },
         time: { type: 'number' },
         day: { type: 'number' },
-        lastTradeTimestamp: { type: 'object' },
+        lastTradeTimestamp: { instanceOf: 'Date' },
         openInterest: { type: 'number' },
         depth: { type: 'object' },
     },
+    required: [
+        'instrumentId',
+        'exchange',
+        'tradingSymbol',
+        'lastTradedPrice',
+        'totalVolume',
+        'totalBuyQuantity',
+        'totalSellQuantity',
+        'timestamp',
+        'time',
+        'day',
+        'lastTradeTimestamp',
+        'openInterest',
+        'depth',
+    ],
+    additionalProperties: false,
 };
 
-export const validateTick = ajv.compile(TickSchema);
+export const validateTick = newValidator().compile(TickSchema);

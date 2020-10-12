@@ -1,4 +1,5 @@
 import lodash from 'lodash';
+import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
 
 import { RedisService } from '../../infra';
 const CACHE_PREFIX = 'cache:';
@@ -25,17 +26,17 @@ export class CacheGroup {
         { keys, expiry = 24 * 60 * 60 * 1000 }: { keys: string[]; expiry?: number },
         callback: (args: any) => Promise<any>,
     ): Promise<any> {
+        // keys = ['NFO:BANKNIFTY20O1521800CE:M01:2010121011', 'NFO:BANKNIFTY20O1524000PE:M01:2010121011'];
         const cachedKeys = keys.map((key) => this.redisCacheKey(key));
         const items = await RedisService.mget(...cachedKeys);
         return Promise.all(
             items.map(async (item: any, index: number) => {
                 if (item != undefined) {
                     const { value } = JSON.parse(item);
-                    return item;
+                    return value;
                 } else {
                     const missedValue = await callback(keys[index]);
-                    await this.set({ key: keys[index], value: missedValue });
-                    return missedValue;
+                    return this.set({ key: keys[index], value: missedValue, expiry });
                 }
             }),
         );
@@ -64,6 +65,7 @@ export class CacheGroup {
         if (expiry) {
             redisArguments.push('PX', `${expiry}`);
         }
+        // console.log(redisArguments);
         // console.log(new Error().stack);
         // console.log(redisArguments);
         await RedisService.set(...redisArguments);

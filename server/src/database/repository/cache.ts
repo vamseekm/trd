@@ -42,10 +42,8 @@ const CANDLE_CACHE_EXPIRY_TIME = 8 * 3600 * 1000;
 const missMap: Record<string, number> = {};
 const candleCache = new CacheGroup('candle', true);
 
-async function getCandles(keys: string[]) {
+async function getCandles(keys: string[]): Promise<Candle[]> {
     const candles = await candleCache.getMulti({ keys }, CandleRepository.getCandle);
-    console.log(candles);
-    console.log(keys);
     for (const candle of candles) {
         if (candle == undefined) continue;
         if (typeof candle.timestamp === 'string') {
@@ -84,6 +82,7 @@ async function setCandle(key: string, candle?: Candle) {
 }
 
 async function writeCandles(candles: Candle[]): Promise<Candle[]> {
+    if (candles.length === 0) return candles;
     const candleSavePromises: any = candles.map(async (candle) => {
         return setCandle(candle.key, candle);
     });

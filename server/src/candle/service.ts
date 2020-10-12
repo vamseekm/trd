@@ -10,7 +10,10 @@ import { INSTRUMENT_ID_SEPERATOR } from '../types';
 import { validateCandle } from '../types/candle';
 import { IExchangeTImeProperties } from '../types/exchange';
 import { printStats, sleep, toDayAndTime } from '../util';
-import { TickPipeline } from './candle-pipeline';
+import { TickPipeline } from './pipeline';
+import { InstrumentRepository } from '../database/repository/instrument';
+import { validate } from 'graphql';
+import { validateTick } from '../types/tick';
 
 function getCandleMetaProperties({
     instrumentId,
@@ -312,14 +315,9 @@ async function processTicks(ticks: Tick[]): Promise<Candle[]> {
     ExchangeService.getAllExchangeTimes();
     ExchangeService.getAllExchangeTimes();
     ExchangeService.getAllExchangeTimes();
-    const iterCount = 1;
-    console.time('processTicks');
-    for (let i = 0; i < iterCount; i++) {
-        await new TickPipeline(ticks).execute();
-    }
-    console.timeEnd('processTicks');
-    console.log(iterCount);
-    return [];
+    const pipeline = await new TickPipeline(ticks);
+    await pipeline.execute();
+    return pipeline.fetchUpdatedCandles();
 }
 
 const _tickMap: Record<string, Tick> = {};
@@ -342,34 +340,30 @@ function computeMissingTicks(ticks: Tick[]): Tick[] {
     return missingTicks;
 }
 async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
-    await CacheRepository.flushCandles();
-    await processTicks(ticks);
-    return [];
-    // const startTime = Date.now();
-    // for (const tick of ticks) {
-    //     _tickMap[tick.instrumentId] = tick;
-    // }
-    // const missingTicks: Tick[] = computeMissingTicks(ticks);
-    // const processTicksStart = Date.now();
-    // const allCandles = await oldProcessTicks([...missingTicks, ...ticks]);
-    // const candleMap = new Map<string, Candle>();
-    // allCandles.forEach((candle) => candleMap.set(candle.key, candle));
-    // const uniqueCandles = [...candleMap.values()];
-    // const startWriteTime = Date.now();
-    // const processTime = Date.now() - startTime;
-    // await CacheRepository.writeCandles(uniqueCandles);
-    // const timeCode = uniqueCandles.length > 0 ? uniqueCandles[0].timeCode : 0;
-    // printStats('stats', {
-    //     ticks: ticks.length,
-    //     mapSize: Object.keys(_tickMap).length,
-    //     cacheMiss: missingTicks.length,
-    //     candles: allCandles.length,
-    //     flushTime: Date.now() - startWriteTime,
-    //     processTicksTime: Date.now() - processTicksStart,
-    //     totalTime: Date.now() - startTime,
-    //     timeCode,
-    // });
-    // return uniqueCandles;
+    // await CacheRepository.flushCandles();
+    // const candles = await processTicks(ticks);
+    // await CacheRepository.writeCandles(candles);
+    // console.log('Writing ', candles.length, ' candles.');
+    // return candles;
+    const startTime = Date.now();
+    for (const tick of ticks) {
+        _tickMap[tick.instrumentId] = tick;
+    }
+    const missingTicks: Tick[] = computeMissingTicks(ticks);
+    const allCandles = await processTicks([...missingTicks, ...ticks]);
+    const startWriteTime = Date.now();
+    await CacheRepository.writeCandles(allCandles);
+    const timeCode = allCandles.length > 0 ? allCandles[0].timeCode : 0;
+    printStats('stats', {
+        ticks: ticks.length,
+        mapSize: Object.keys(_tickMap).length,
+        cacheMiss: missingTicks.length,
+        candles: allCandles.length,
+        flushTime: Date.now() - startWriteTime,
+        totalTime: Date.now() - startTime,
+        timeCode,
+    });
+    return allCandles;
 }
 
 async function parseCandleKey({
@@ -419,6 +413,41 @@ async function debug(): Promise<void> {
     }
 }
 
+async function testTickPipeline(): Promise<void> {
+    await CacheRepository.flushCandles();
+    const instruments = await InstrumentService.findTracked();
+    const date = new Date();
+    date.setHours(9);
+    date.setMinutes(15);
+    date.setSeconds(1);
+    const { day, time } = toDayAndTime(date);
+    const ticks = instruments.map(
+        (instrument): Tick => {
+            const { tradingSymbol, exchange, id: instrumentId } = instrument;
+            return {
+                lastTradeTimestamp: date,
+                timestamp: date,
+                instrumentId,
+                exchange,
+                tradingSymbol,
+                lastTradedPrice: 101.11,
+                totalVolume: 100,
+                totalBuyQuantity: 0,
+                totalSellQuantity: 0,
+                time: Number.parseInt(time),
+                day: Number.parseInt(day),
+                openInterest: 100,
+                depth: { buy: [], sell: [] },
+            };
+        },
+    );
+    for (const tick of ticks) {
+        if (validateTick(tick) === false) throw new Error(JSON.stringify(validateTick.errors, undefined, 2));
+    }
+    await bulkConvertTicksToCandles(ticks);
+    await bulkConvertTicksToCandles(ticks);
+}
+
 export const CandleService = {
     downloadHistorical: bulkDownloadHistorical,
     bulkConvertTicksToCandles,
@@ -426,4 +455,5 @@ export const CandleService = {
     parseCandleKey,
     getAlignedTime,
     getCandleMetaProperties,
+    testTickPipeline,
 };
