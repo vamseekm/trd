@@ -1,14 +1,17 @@
 Cron
-    Clean docker cache.
-    Clean ticks.
-    Completely remove and recreate rabbitmq container.
+    L. Clean docker cache.
+    L. Clean ticks.
 Init
-    Init Exchange at startup.
 Instrument
 Tick
 Candle
+    H. Load candles into redis.
+        H. Keep track of accurate time lines.
+    H. Pipeline downres candles.
+    H. Verify missing candles.
     L. Sync last 1 week worth of candle data.
     L. Verify candle formation.
+    L. Write pump.
 Indictator
     H. Calculate standard indicators.
 Alerts
@@ -24,7 +27,7 @@ OrderPlacement
     Monitor orders
         H. Trailing SL
 Misc
-    Auto restart on config change.
-    Cron to clean old candles/ticks.
-    Cron to sync candles.
-    Cron to auto login.
+    L. Auto restart on config change.
+    L. Cron to clean old candles/ticks.
+    L. Cron to sync candles.
+    L. Cron to auto login.
