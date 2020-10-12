@@ -1,0 +1,35 @@
+
+
+----------------------
+[[90m10:55:36 AM[0m] Starting compilation in watch mode...
+
+[[90m10:55:40 AM[0m][32m Found 0 errors. Watching for file changes.[39m
+
+7171| 77.9M|10:55:42.778|[32mi[39m |  Connecting to Rabbit...
+7171| 83.1M|10:55:42.793|[32mi[39m |  "Redis connected."
+7171| 83.2M|10:55:42.796|[32mi[39m |  "Redis ready."
+7171| 84.2M|10:55:42.899|[32mi[39m |  Args: [{"_":[],"Event::startTickProcessConsumer":true}]
+7171| 84.2M|10:55:42.899|[32mi[39m |  Available entry points:
+7171| 84.2M|10:55:42.900|[32mi[39m |  	 => API::startServer
+7171| 84.2M|10:55:42.900|[32mi[39m |  	 => Candle::downloadHistorical
+7171| 84.2M|10:55:42.900|[32mi[39m |  	 => Candle::debug
+7171| 84.2M|10:55:42.900|[32mi[39m |  	 => Database::connect
+7171| 84.2M|10:55:42.900|[32mi[39m |  	 => Database::syncSchema
+7171| 84.2M|10:55:42.900|[32mi[39m |  	 => Instrument::download
+7171| 84.2M|10:55:42.901|[32mi[39m |  	 => Instrument::updateLTPAll
+7171| 84.2M|10:55:42.901|[32mi[39m |  	 => Instrument::track
+7171| 84.2M|10:55:42.901|[32mi[39m |  	 => Instrument::updateLTPInitial
+7171| 84.2M|10:55:42.901|[32mi[39m |  	 => Instrument::updateLTPTracked
+7171| 84.2M|10:55:42.901|[32mi[39m |  	 => Instrument::updateMeta
+7171| 84.2M|10:55:42.901|[32mi[39m |  	 => Instrument::findTracked
+7171| 84.2M|10:55:42.901|[32mi[39m |  	 => Instrument::debug
+7171| 84.2M|10:55:42.901|[32mi[39m |  	 => Task::cron
+7171| 84.2M|10:55:42.901|[32mi[39m |  	 => Tick::clean
+7171| 84.2M|10:55:42.901|[32mi[39m |  	 => Event::startTickProcessConsumer
+7171| 84.2M|10:55:42.901|[32mi[39m |  	 => Event::startTickRawConsumer
+7171| 84.2M|10:55:42.901|[32mi[39m |  	 => Event::startTickStoreConsumer
+7171| 84.2M|10:55:42.902|[32mi[39m |  	 => Event::startTickListener
+7171| 84.2M|10:55:42.902|[32mi[39m |  	 => Event::startCandleProcessConsumer
+7171| 84.2M|10:55:42.902|[32mi[39m |  Executing 1 actions.
+Waiting forever...
+miss

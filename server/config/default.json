@@ -1,6 +1,7 @@
 {
     "KITE_API_KEY": "",
     "KITE_API_SECRET": "",
+    "HTTP_API_SERVER_PORT": 3100,
     "EXCHANGE_CONFIG": {
         "NSE": {
             "start": {

@@ -10,8 +10,9 @@ import { INSTRUMENT_ID_SEPERATOR } from '../types';
 import { validateCandle } from '../types/candle';
 import { IExchangeTImeProperties } from '../types/exchange';
 import { printStats, sleep, toDayAndTime } from '../util';
+import { TickPipeline } from './candle-pipeline';
 
-async function getCandleMetaProperties({
+function getCandleMetaProperties({
     instrumentId,
     interval,
     timestamp,
@@ -19,18 +20,23 @@ async function getCandleMetaProperties({
     instrumentId: string;
     interval: CandleInterval | string;
     timestamp: Date;
-}): Promise<{ key: string } & IExchangeTImeProperties> {
-    const [exchange] = instrumentId.split(INSTRUMENT_ID_SEPERATOR);
-    const { day, time } = toDayAndTime(timestamp);
+}): { key: string } & IExchangeTImeProperties {
     const separator = INSTRUMENT_ID_SEPERATOR;
-    const properties = await ExchangeService.exchangeTimeProps({ exchange, timestamp });
-    return {
+    const [exchange] = instrumentId.split(separator);
+    const { day, time } = toDayAndTime(timestamp);
+    const result = {
         key: `${instrumentId}${separator}${interval}${separator}${day}${time}`,
-        ...properties,
     };
+    Object.assign(result, ExchangeService.exchangeTimeProps({ exchange, timestamp }));
+    return result as any;
+    // const properties = ExchangeService.exchangeTimeProps({ exchange, timestamp });
+
+    // return {
+    //     ...properties,
+    // };
 }
 
-async function getAlignedTime({
+function getAlignedTime({
     exchange,
     timestamp,
     interval,
@@ -40,8 +46,8 @@ async function getAlignedTime({
     timestamp: Date;
     interval: CandleInterval | string;
     offset?: number;
-}): Promise<Date> {
-    const exchangeConfig = await ExchangeService.getExchangeTime(exchange);
+}): Date {
+    const exchangeConfig = ExchangeService.getExchangeTime(exchange);
     const unixTime = timestamp.getTime() - exchangeConfig.dayStartOffset;
     const intervalInMs = CandleDuration[interval as CandleInterval] * 1000;
     const alignedTime = unixTime - (unixTime % intervalInMs) + intervalInMs * offset + exchangeConfig.dayStartOffset;
@@ -157,7 +163,7 @@ async function bulkDownloadHistorical(): Promise<void> {
         await sleep(300);
     }
 }
-
+let _active = 0;
 async function convertTickToCandle(tick: Tick, interval: CandleInterval) {
     // Log.pretty(tick);
     const candleConfig = { ...tick, interval };
@@ -168,7 +174,19 @@ async function convertTickToCandle(tick: Tick, interval: CandleInterval) {
         timestamp: currentCandleTime,
     });
     if (currentCandleKey == undefined) return;
-    const currentCandle = await CacheRepository.getCandle(currentCandleKey);
+    const previousCandleTime = await getAlignedTime({ ...candleConfig, offset: -1 });
+    const { key: previousCandleKey } = await getCandleMetaProperties({
+        ...candleConfig,
+        timestamp: previousCandleTime,
+    });
+    Log.info(currentCandleKey);
+    console.time(currentCandleKey);
+    _active += 1;
+    const [previousCandle, currentCandle] = await Promise.all([
+        CacheRepository.getCandle(previousCandleKey),
+        CacheRepository.getCandle(currentCandleKey),
+    ]);
+
     const { instrumentId, exchange } = tick;
     const updatedCandle: Candle = {
         instrumentId,
@@ -186,17 +204,14 @@ async function convertTickToCandle(tick: Tick, interval: CandleInterval) {
         totalOpenInterest: tick.openInterest,
         openInterest: tick.openInterest,
     };
-    const previousCandleTime = await getAlignedTime({ ...candleConfig, offset: -1 });
-    const { key: previousCandleKey } = await getCandleMetaProperties({
-        ...candleConfig,
-        timestamp: previousCandleTime,
-    });
-
-    const previousCandle = await CacheRepository.getCandle(previousCandleKey);
     if (dayBegin === false && previousCandle != undefined) {
         updatedCandle.volume = updatedCandle.totalVolume - previousCandle.totalVolume;
         updatedCandle.openInterest = updatedCandle.totalOpenInterest - previousCandle.totalOpenInterest;
     }
+    _active -= 1;
+    Log.info('End:', `${_active}`);
+    console.timeEnd(currentCandleKey);
+
     return updatedCandle;
 }
 const _intervals = [
@@ -219,13 +234,16 @@ async function downResCandle(sourceCandle: Candle, interval: CandleInterval): Pr
             timestamp,
         });
         const { timeCode } = toDayAndTime(timestamp);
-        const currentCandle = await CacheRepository.getCandle(currentCandleKey);
         const { key: previousCandleKey } = await getCandleMetaProperties({
             instrumentId,
             interval,
             timestamp: await getAlignedTime({ exchange, timestamp: sourceCandle.timestamp, interval, offset: -1 }),
         });
-        const previousCandle = await CacheRepository.getCandle(previousCandleKey);
+
+        const [currentCandle, previousCandle] = await Promise.all([
+            CacheRepository.getCandle(currentCandleKey),
+            CacheRepository.getCandle(previousCandleKey),
+        ]);
         const atBegin = timeCode === sourceCandle.timeCode;
         const updatedCandle: Candle = {
             key: currentCandleKey,
@@ -257,19 +275,51 @@ async function downResCandle(sourceCandle: Candle, interval: CandleInterval): Pr
     }
 }
 
-async function processTicks(ticks: Tick[]): Promise<Candle[]> {
+async function oldProcessTick(tick: Tick): Promise<Candle[]> {
     const allCandles: Candle[] = [];
-    for (const tick of ticks) {
-        const candle = await convertTickToCandle(tick, CandleInterval.MIN_01);
-        if (candle == undefined) continue;
-        allCandles.push(candle);
-        for (const interval of _intervals) {
-            const dcandle = await downResCandle(candle, interval);
-            if (dcandle == undefined) continue;
-            allCandles.push(dcandle);
-        }
-    }
+    const candle = await convertTickToCandle(tick, CandleInterval.MIN_01);
+    if (candle == undefined) return allCandles;
+    allCandles.push(candle);
+    // await Promise.all(
+    //     _intervals.map(async (interval) => {
+    //         const dcandle = await downResCandle(candle, interval);
+    //         if (dcandle == undefined) return;
+    //         allCandles.push(dcandle);
+    //     }),
+    // );
+    // for (const interval of _intervals) {
+    //     const dcandle = await downResCandle(candle, interval);
+    //     if (dcandle == undefined) continue;
+    //     allCandles.push(dcandle);
+    // }
     return allCandles;
+}
+
+async function oldProcessTicks(ticks: Tick[]): Promise<Candle[]> {
+    const allCandles: Candle[] = [];
+    await Promise.all(
+        ticks.map(async (tick) => {
+            const candles = await oldProcessTick(tick);
+            candles.forEach((candle) => allCandles.push(candle));
+        }),
+    );
+    return allCandles;
+}
+
+async function convertTicksToCandles(ticks: Tick[]) {}
+
+async function processTicks(ticks: Tick[]): Promise<Candle[]> {
+    ExchangeService.getAllExchangeTimes();
+    ExchangeService.getAllExchangeTimes();
+    ExchangeService.getAllExchangeTimes();
+    const iterCount = 1;
+    console.time('processTicks');
+    for (let i = 0; i < iterCount; i++) {
+        await new TickPipeline(ticks).execute();
+    }
+    console.timeEnd('processTicks');
+    console.log(iterCount);
+    return [];
 }
 
 const _tickMap: Record<string, Tick> = {};
@@ -291,31 +341,35 @@ function computeMissingTicks(ticks: Tick[]): Tick[] {
     _lastChecked = new Date();
     return missingTicks;
 }
-
 async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
-    const startTime = Date.now();
-    for (const tick of ticks) {
-        _tickMap[tick.instrumentId] = tick;
-    }
-    const missingTicks: Tick[] = computeMissingTicks(ticks);
-    const allCandles = await processTicks([...missingTicks, ...ticks]);
-    const candleMap = new Map<string, Candle>();
-    allCandles.forEach((candle) => candleMap.set(candle.key, candle));
-    const uniqueCandles = [...candleMap.values()];
-    const startWriteTime = Date.now();
-    const processTime = Date.now() - startTime;
-    await CacheRepository.writeCandles(uniqueCandles);
-    const timeCode = uniqueCandles.length > 0 ? uniqueCandles[0].timeCode : 0;
-    printStats('stats', {
-        ticks: ticks.length,
-        mapSize: Object.keys(_tickMap).length,
-        cacheMiss: missingTicks.length,
-        candles: allCandles.length,
-        flushTime: Date.now() - startWriteTime,
-        totalTime: Date.now() - startTime,
-        timeCode,
-    });
-    return uniqueCandles;
+    await CacheRepository.flushCandles();
+    await processTicks(ticks);
+    return [];
+    // const startTime = Date.now();
+    // for (const tick of ticks) {
+    //     _tickMap[tick.instrumentId] = tick;
+    // }
+    // const missingTicks: Tick[] = computeMissingTicks(ticks);
+    // const processTicksStart = Date.now();
+    // const allCandles = await oldProcessTicks([...missingTicks, ...ticks]);
+    // const candleMap = new Map<string, Candle>();
+    // allCandles.forEach((candle) => candleMap.set(candle.key, candle));
+    // const uniqueCandles = [...candleMap.values()];
+    // const startWriteTime = Date.now();
+    // const processTime = Date.now() - startTime;
+    // await CacheRepository.writeCandles(uniqueCandles);
+    // const timeCode = uniqueCandles.length > 0 ? uniqueCandles[0].timeCode : 0;
+    // printStats('stats', {
+    //     ticks: ticks.length,
+    //     mapSize: Object.keys(_tickMap).length,
+    //     cacheMiss: missingTicks.length,
+    //     candles: allCandles.length,
+    //     flushTime: Date.now() - startWriteTime,
+    //     processTicksTime: Date.now() - processTicksStart,
+    //     totalTime: Date.now() - startTime,
+    //     timeCode,
+    // });
+    // return uniqueCandles;
 }
 
 async function parseCandleKey({
@@ -370,4 +424,6 @@ export const CandleService = {
     bulkConvertTicksToCandles,
     debug,
     parseCandleKey,
+    getAlignedTime,
+    getCandleMetaProperties,
 };

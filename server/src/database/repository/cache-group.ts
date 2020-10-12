@@ -21,16 +21,36 @@ export class CacheGroup {
         return keys.length;
     }
 
+    async getMulti(
+        { keys, expiry = 24 * 60 * 60 * 1000 }: { keys: string[]; expiry?: number },
+        callback: (args: any) => Promise<any>,
+    ): Promise<any> {
+        const cachedKeys = keys.map((key) => this.redisCacheKey(key));
+        const items = await RedisService.mget(...cachedKeys);
+        return Promise.all(
+            items.map(async (item: any, index: number) => {
+                if (item != undefined) {
+                    const { value } = JSON.parse(item);
+                    return item;
+                } else {
+                    const missedValue = await callback(keys[index]);
+                    await this.set({ key: keys[index], value: missedValue });
+                    return missedValue;
+                }
+            }),
+        );
+    }
+
     async get(
-        { key, expiry = 24 * 3600 * 1000 }: { key: string; expiry?: number },
+        { key, expiry = 24 * 60 * 60 * 1000 }: { key: string; expiry?: number },
         callback: () => Promise<any>,
     ): Promise<any> {
         const redisArguments: string[] = [this.redisCacheKey(key)];
         const item = await RedisService.get(...redisArguments);
         if (item != undefined) {
             const { value, isnull } = JSON.parse(item);
+            if (value != undefined) return value;
             if (isnull === true && this.allowNull) return undefined;
-            if (isnull === false) return value;
         }
         const value = await callback();
         return this.set({ key, expiry, value });
@@ -38,16 +58,19 @@ export class CacheGroup {
 
     async set({ key, expiry = 24 * 3600 * 1000, value }: { key: string; expiry?: number; value: any }): Promise<any> {
         if (value == undefined && this.allowNull === false) return;
+        // console.log('set', key, value);
         const redisArguments: string[] = [this.redisCacheKey(key)];
         redisArguments.push(JSON.stringify({ value, isnull: value == undefined }));
         if (expiry) {
             redisArguments.push('PX', `${expiry}`);
         }
+        // console.log(new Error().stack);
+        // console.log(redisArguments);
         await RedisService.set(...redisArguments);
         return value;
     }
 
-    async remove(key: string): Promise<any> {
+    async del(key: string): Promise<any> {
         return RedisService.del(this.redisCacheKey(key));
     }
 }

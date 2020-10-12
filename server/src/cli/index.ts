@@ -13,8 +13,10 @@ import { InstrumentService } from '../instrument';
 import { TaskService } from '../task';
 import { TickService } from '../tick';
 import { waitForever } from '../util';
+import { BridgeService } from '../bridge/service';
 
 async function run(): Promise<void> {
+    await BridgeService.init();
     await DatabaseService.connect();
     const argv = minimist(process.argv.slice(2));
     Log.json('Args', argv);

@@ -33,3 +33,7 @@ export function toDayAndTime(date: Date): { day: string; time: string; timeCode:
         timeCode: Number.parseInt(`${day}${time}`, 10),
     };
 }
+
+export function hoursInMs(hours: number): number {
+    return hours * 3600 * 1000;
+}

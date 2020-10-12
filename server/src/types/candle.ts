@@ -1,5 +1,4 @@
 import Ajv from 'ajv';
-import { IsDate, IsInt, IsNumber, IsString } from 'class-validator';
 const ajv = new Ajv({ allErrors: true });
 
 export enum CandleInterval {
@@ -32,46 +31,19 @@ export interface IBrokerCandle {
 }
 
 export class Candle {
-    @IsString()
     key!: string;
-
-    @IsString()
     exchange!: string;
-
-    @IsString()
     instrumentId!: string;
-
-    @IsString()
     interval!: string;
-
-    @IsNumber()
     timeCode!: number;
-
-    @IsDate()
     timestamp!: Date;
-
-    @IsNumber()
     open!: number;
-
-    @IsNumber()
     high!: number;
-
-    @IsNumber()
     low!: number;
-
-    @IsNumber()
     close!: number;
-
-    @IsInt()
     volume!: number;
-
-    @IsInt()
     openInterest!: number;
-
-    @IsInt()
     totalVolume!: number;
-
-    @IsInt()
     totalOpenInterest!: number;
 }
 

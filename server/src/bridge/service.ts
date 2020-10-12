@@ -1,7 +1,20 @@
 import { Channel, ConsumeMessage } from 'amqplib';
 
-import { Log, Rabbit } from '../infra';
+import { Rabbit } from '../infra';
 import { printStats } from '../util';
+import { hoursInMs } from '../util';
+
+const messageTtl = hoursInMs(24);
+const durable = true;
+
+enum MessageType {
+    rawTick = 'rawTick',
+    tick = 'tick',
+    candle = 'candle',
+    orderUpdate = 'orderUpdate',
+}
+
+const EXCHANGE_TICKER = 'ex.ticker';
 
 type ConsumerArguments = { name: string; prefetch?: number; messageType: MessageType };
 type ConsumerCallback = ({
@@ -11,17 +24,23 @@ type ConsumerCallback = ({
     channel: Channel;
     message: ConsumeMessage;
 }) => Promise<number | boolean | undefined>;
-export async function consumeQueue(
+
+async function init(): Promise<Channel> {
+    const channel = await Rabbit.createChannel();
+    await channel.assertExchange(BridgeService.EXCHANGE_TICKER, 'topic', { durable });
+    return channel;
+}
+
+async function consumeQueue(
     { name, messageType, prefetch = 1 }: ConsumerArguments,
     callback: ConsumerCallback,
 ): Promise<void> {
     const stats = { items: 0, messages: 0, size: 0, ack: 0, error: 0 };
-    const channel = await Rabbit.createChannel();
-    await channel.assertExchange(EXCHANGE_TICKER, 'topic', { durable: true });
-    await channel.assertQueue(name, { durable: true });
+    const channel = await init();
+    await channel.assertQueue(name, { durable, messageTtl });
     await channel.bindQueue(name, EXCHANGE_TICKER, messageType);
     for (const messageType in MessageType) {
-        await channel.assertQueue(`${messageType}Consumer`, { durable: true });
+        await channel.assertQueue(`${messageType}Consumer`, { durable, messageTtl });
         await channel.bindQueue(`${messageType}Consumer`, EXCHANGE_TICKER, messageType);
     }
     await channel.prefetch(prefetch);
@@ -54,11 +73,9 @@ export async function consumeQueue(
     }, 10000);
 }
 
-export enum MessageType {
-    rawTick = 'rawTick',
-    tick = 'tick',
-    candle = 'candle',
-    orderUpdate = 'orderUpdate',
-}
-
-export const EXCHANGE_TICKER = 'ex.ticker';
+export const BridgeService = {
+    EXCHANGE_TICKER,
+    MessageType,
+    consumeQueue,
+    init,
+};

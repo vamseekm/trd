@@ -7,64 +7,63 @@ import { Config } from '../infra';
 import { IExchangeConfig } from '../types';
 import { IExchangeTImeProperties } from '../types/exchange';
 import { toDayAndTime } from '../util';
+import sp from 'synchronized-promise';
+import { MissingSubscriptionTopicsError } from 'type-graphql';
 
 let _cachedExchangeTimes: Record<string, IExchangeConfig>;
 const cacheLock = new Mutex();
 const exchangeConfigCahce = new CacheGroup('exchange');
-async function getAllExchangeTimes(): Promise<Record<string, IExchangeConfig>> {
+let missCount = 0;
+function getAllExchangeTimes(): Record<string, IExchangeConfig> {
     if (_cachedExchangeTimes != undefined) return _cachedExchangeTimes;
-    const releaseLock = await cacheLock.acquire();
-    try {
-        if (_cachedExchangeTimes != undefined) return _cachedExchangeTimes;
-        console.log('miss');
-        const exchangeTimes: Record<string, IExchangeConfig> = {};
-        const exchangeConfig = Config.get('EXCHANGE_CONFIG') as Record<string, IExchangeConfig>;
-        const names: string[] = Object.keys(exchangeConfig);
-        for (const name of names) {
-            if (exchangeConfig[name]) {
-                const { start, end } = exchangeConfig[name];
-                const startDate = DateTime.fromObject({ year: 1970, month: 1, day: 1, ...start }).toJSDate();
-                const endDate = DateTime.fromObject({ year: 1970, month: 1, day: 1, ...end }).toJSDate();
-                const { time: startTime } = toDayAndTime(startDate);
-                const { time: endTime } = toDayAndTime(endDate);
-                exchangeTimes[name] = {
-                    name,
-                    startTime: Number.parseInt(startTime),
-                    endTime: Number.parseInt(endTime),
-                    start,
-                    end,
-                    dayStartOffset: startDate.getTime(),
-                    dayEndOffset: endDate.getTime(),
-                };
-            }
-        }
-        _cachedExchangeTimes = exchangeTimes;
-        return _cachedExchangeTimes;
-    } finally {
-        releaseLock();
+    missCount += 1;
+    if (missCount > 1) {
+        throw new Error(`getAllExchageTimes missed cache more than ${missCount}`);
     }
+    const exchangeTimes: Record<string, IExchangeConfig> = {};
+    const exchangeConfig = Config.get('EXCHANGE_CONFIG') as Record<string, IExchangeConfig>;
+    const names: string[] = Object.keys(exchangeConfig);
+    for (const name of names) {
+        if (exchangeConfig[name]) {
+            const { start, end } = exchangeConfig[name];
+            const startDate = DateTime.fromObject({ year: 1970, month: 1, day: 1, ...start }).toJSDate();
+            const endDate = DateTime.fromObject({ year: 1970, month: 1, day: 1, ...end }).toJSDate();
+            const { time: startTime } = toDayAndTime(startDate);
+            const { time: endTime } = toDayAndTime(endDate);
+            exchangeTimes[name] = {
+                name,
+                startTime: Number.parseInt(startTime),
+                endTime: Number.parseInt(endTime),
+                start,
+                end,
+                dayStartOffset: startDate.getTime(),
+                dayEndOffset: endDate.getTime(),
+            };
+        }
+    }
+    return (_cachedExchangeTimes = exchangeTimes);
 }
-async function getExchangeTime(exchange: string): Promise<IExchangeConfig> {
-    const exchangeConfig = (await getAllExchangeTimes())[exchange];
+function getExchangeTime(exchange: string): IExchangeConfig {
+    const exchangeConfig = getAllExchangeTimes()[exchange];
     if (!exchangeConfig) throw new Error(`Can't find config for exchange:${exchange}`);
     return exchangeConfig;
 }
 
-async function isValidTime({ date, exchange }: { date: Date; exchange: string }): Promise<boolean> {
-    const exchangeConfig = (await getAllExchangeTimes())[exchange];
+function isValidTime({ date, exchange }: { date: Date; exchange: string }): boolean {
+    const exchangeConfig = getAllExchangeTimes()[exchange];
     if (exchangeConfig == undefined) return true;
     const { time } = toDayAndTime(date);
     return Number.parseInt(time, 10) > exchangeConfig.startTime && Number.parseInt(time, 10) < exchangeConfig.endTime;
 }
 
-async function exchangeTimeProperties({
+function exchangeTimeProperties({
     timestamp,
     exchange,
 }: {
     timestamp: Date;
     exchange: string;
-}): Promise<IExchangeTImeProperties> {
-    const exchangeConfig = (await getAllExchangeTimes())[exchange];
+}): IExchangeTImeProperties {
+    const exchangeConfig = getAllExchangeTimes()[exchange];
     if (exchangeConfig == undefined) throw new Error(`Didn't find exchange config for ${exchange}`);
     const { time } = toDayAndTime(timestamp);
     return {

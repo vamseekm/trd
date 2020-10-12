@@ -1,0 +1,36 @@
+
+
+----------------------
+[[90m10:51:21 AM[0m] Starting compilation in watch mode...
+
+[[90m10:51:24 AM[0m][32m Found 0 errors. Watching for file changes.[39m
+
+5149| 83.8M|10:51:25.194|[32mi[39m |  Connecting to Rabbit...
+5149| 88.7M|10:51:25.208|[32mi[39m |  "Redis connected."
+5149| 88.8M|10:51:25.211|[32mi[39m |  "Redis ready."
+2020-10-12T05:21:25.241Z sequelize:pool pool created with max/min: 5/0, no replication
+5149| 89.5M|10:51:25.270|[32mi[39m |  Args: [{"_":[],"Event::startTickProcessConsumer":true}]
+5149| 89.6M|10:51:25.270|[32mi[39m |  Available entry points:
+5149| 89.6M|10:51:25.270|[32mi[39m |  	 => API::startServer
+5149| 89.6M|10:51:25.270|[32mi[39m |  	 => Candle::downloadHistorical
+5149| 89.6M|10:51:25.270|[32mi[39m |  	 => Candle::debug
+5149| 89.6M|10:51:25.271|[32mi[39m |  	 => Database::connect
+5149| 89.6M|10:51:25.271|[32mi[39m |  	 => Database::syncSchema
+5149| 89.6M|10:51:25.271|[32mi[39m |  	 => Instrument::download
+5149| 89.6M|10:51:25.271|[32mi[39m |  	 => Instrument::updateLTPAll
+5149| 89.6M|10:51:25.271|[32mi[39m |  	 => Instrument::track
+5149| 89.6M|10:51:25.271|[32mi[39m |  	 => Instrument::updateLTPInitial
+5149| 89.6M|10:51:25.271|[32mi[39m |  	 => Instrument::updateLTPTracked
+5149| 89.6M|10:51:25.271|[32mi[39m |  	 => Instrument::updateMeta
+5149| 89.6M|10:51:25.271|[32mi[39m |  	 => Instrument::findTracked
+5149| 89.6M|10:51:25.271|[32mi[39m |  	 => Instrument::debug
+5149| 89.6M|10:51:25.272|[32mi[39m |  	 => Task::cron
+5149| 89.6M|10:51:25.272|[32mi[39m |  	 => Tick::clean
+5149| 89.6M|10:51:25.272|[32mi[39m |  	 => Event::startTickProcessConsumer
+5149| 89.6M|10:51:25.272|[32mi[39m |  	 => Event::startTickRawConsumer
+5149| 89.6M|10:51:25.272|[32mi[39m |  	 => Event::startTickStoreConsumer
+5149| 89.6M|10:51:25.272|[32mi[39m |  	 => Event::startTickListener
+5149| 89.6M|10:51:25.272|[32mi[39m |  	 => Event::startCandleProcessConsumer
+5149| 89.6M|10:51:25.272|[32mi[39m |  Executing 1 actions.
+Waiting forever...
+miss

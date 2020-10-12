@@ -8,12 +8,11 @@ import { Log } from './logger';
 
 const client = redis.createClient(Config.get('redis'));
 client.on('error', (error) => Log.error(error));
-client.on('reconnecting', (info) => Log.json("Redis reconnecting", info));
-client.on('connect', () => Log.json("Redis connected."));
-client.on('ready', () => Log.json("Redis ready."));
+client.on('reconnecting', (info) => Log.json('Redis reconnecting', info));
+client.on('connect', () => Log.json('Redis connected.'));
+client.on('ready', () => Log.json('Redis ready.'));
 
 function proxyCommand(name: string, ...arguments_: any[]): Promise<any> {
-    // console.log(name, arguments_);
     return new Promise((resolve: any, reject: any) => {
         arguments_.push((error: any, ...results: any[]) => {
             if (error) {
@@ -34,9 +33,11 @@ const keys: (pattern: string) => Promise<string[]> = proxyCommand.bind(null, 'ke
 const del = proxyCommand.bind(null, 'del');
 const set = proxyCommand.bind(null, 'set');
 const get = proxyCommand.bind(null, 'get');
+const mget = proxyCommand.bind(null, 'mget');
 
 export const RedisService = {
     get,
+    mget,
     set,
     del,
     keys,

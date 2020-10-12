@@ -1,5 +1,4 @@
-import { IsBoolean, IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
-
+import { newValidator } from './validator';
 export interface IMetaInfo {
     id: string;
     freeFloatMarketCap: number;
@@ -10,54 +9,70 @@ export interface IMetaInfo {
 }
 
 export class Instrument implements Partial<IMetaInfo> {
-    @IsString()
     id!: string;
-    @IsString()
     instrumentToken!: string;
-    @IsString()
     exchangeToken!: string;
-    @IsString()
     tradingSymbol!: string;
-    @IsString()
     name!: string;
-    @IsNumber()
     lastPrice!: number;
-    @IsDate()
     expiry!: Date;
-    @IsNumber()
     strike!: number;
-    @IsNumber()
     tickSize!: number;
-    @IsNumber()
     lotSize!: number;
-    @IsString()
     instrumentType!: string;
-    @IsString()
     segment!: string;
-    @IsString()
     exchange!: string;
-    @IsBoolean()
-    @IsOptional()
+
     live?: boolean;
-    @IsBoolean()
-    @IsOptional()
     track?: boolean;
 
-    @IsNumber()
-    @IsOptional()
     freeFloatMarketCap?: number;
-    @IsNumber()
-    @IsOptional()
     totalMarketCap?: number;
-    @IsNumber()
-    @IsOptional()
     freeFloatPercent?: number;
-    @IsDate()
-    @IsOptional()
     metaLastUpdated?: Date;
-    @IsNumber()
-    @IsOptional()
     rank?: number;
 }
+
+const InstrumentSchema = {
+    properties: {
+        id: { type: 'string' },
+        instrumentToken: { type: 'string' },
+        exchangeToken: { type: 'string' },
+        tradingSymbol: { type: 'string' },
+        name: { type: 'string' },
+        lastPrice: { type: 'number' },
+        expiry: { instanceOf: 'Date' },
+        strike: { type: 'number' },
+        tickSize: { type: 'number' },
+        lotSize: { type: 'number' },
+        instrumentType: { type: 'string' },
+        segment: { type: 'string' },
+        exchange: { type: 'string' },
+        live: { type: 'boolean' },
+        track: { type: 'boolean' },
+        freeFloatMarketCap: { type: 'number' },
+        totalMarketCap: { type: 'number' },
+        freeFloatPercent: { type: 'number' },
+        metaLastUpdated: { instanceOf: 'Date' },
+        rank: { type: 'number' },
+    },
+    required: [
+        'id',
+        'instrumentToken',
+        'exchangeToken',
+        'tradingSymbol',
+        'name',
+        'lastPrice',
+        'expiry',
+        'strike',
+        'tickSize',
+        'lotSize',
+        'instrumentType',
+        'segment',
+        'exchange',
+    ],
+};
+
+export const validateInstrument = newValidator().compile(InstrumentSchema);
 
 export const INSTRUMENT_ID_SEPERATOR = ':';

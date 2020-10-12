@@ -36,8 +36,8 @@ async function downloadSymbolMeta({
         if (response.status !== 200) {
             throw new Error(response.statusText);
         }
-        const totalMarketCap = lodash.get(response, 'data.marketDeptOrderBook.tradeInfo.totalMarketCap', 0);
-        const freeFloatMarketCap = lodash.get(response, 'data.marketDeptOrderBook.tradeInfo.ffmc', 0);
+        const totalMarketCap = lodash.get(response, 'data.marketDeptOrderBook.tradeInfo.totalMarketCap', 0) || 0;
+        const freeFloatMarketCap = lodash.get(response, 'data.marketDeptOrderBook.tradeInfo.ffmc', 0) || 0;
         const freeFloatPercent = totalMarketCap && freeFloatMarketCap ? (freeFloatMarketCap * 100) / totalMarketCap : 0;
         const id = `${exchange}${INSTRUMENT_ID_SEPERATOR}${tradingSymbol}`;
         return {

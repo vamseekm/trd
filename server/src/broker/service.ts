@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { transformAndValidate } from 'class-transformer-validator';
 import { DateTime } from 'luxon';
 
 import { CacheGroup } from '../database/repository/cache-group';
@@ -19,6 +18,7 @@ import {
     KITE_API_SECRET,
 } from '../types';
 import { maskString } from '../util';
+import { validateInstrument } from '../types/instrument';
 
 const { KiteConnect, KiteTicker } = require('kiteconnect');
 
@@ -94,7 +94,7 @@ async function getInstrumentsByExchange(exchange: string): Promise<Instrument[]>
             Log.json('Invalid instrument', inputInstrument);
             continue;
         }
-        const instrument = await transformAndValidate(Instrument, {
+        const instrument = {
             id: `${exchange}${INSTRUMENT_ID_SEPERATOR}${inputInstrument.tradingsymbol}`,
             instrumentToken: inputInstrument.instrument_token,
             exchangeToken: inputInstrument.exchange_token,
@@ -108,8 +108,12 @@ async function getInstrumentsByExchange(exchange: string): Promise<Instrument[]>
             instrumentType: inputInstrument.instrument_type,
             segment: inputInstrument.segment,
             exchange: inputInstrument.exchange,
+
             live: true,
-        });
+        };
+
+        if (validateInstrument(instrument) === false)
+            throw new Error(JSON.stringify(validateInstrument.errors, null, 2));
         results.push(instrument);
     }
     return results;
@@ -134,6 +138,7 @@ async function ticker(instrumentTokenList: string[], tickHandler: any, orderUpda
         });
         ticker.on('error', (error: any) => {
             Log.error(error);
+            setTimeout(() => process.exit(0), 1000);
             reject(error);
         });
         ticker.on('connect', () => {
