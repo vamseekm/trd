@@ -55,7 +55,6 @@ const TickSchema = {
         'day',
         'lastTradeTimestamp',
         'openInterest',
-        'depth',
     ],
     additionalProperties: false,
 };

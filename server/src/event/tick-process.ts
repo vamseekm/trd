@@ -26,7 +26,6 @@ export async function startTickProcessConsumer(): Promise<void> {
             }
             if (validatedTicks.length === 0) return 0;
             const candles = await CandleService.bulkConvertTicksToCandles(validatedTicks);
-            return false;
             channel.publish(
                 BridgeService.EXCHANGE_TICKER,
                 BridgeService.MessageType.candle,

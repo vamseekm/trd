@@ -14,6 +14,8 @@ import { TickPipeline } from './pipeline';
 import { InstrumentRepository } from '../database/repository/instrument';
 import { validate } from 'graphql';
 import { validateTick } from '../types/tick';
+import { SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION } from 'constants';
+import lodash from 'lodash';
 
 function getCandleMetaProperties({
     instrumentId,
@@ -226,11 +228,11 @@ const _intervals = [
     // CandleInterval.DAY_01,
 ];
 
-async function downResCandle(sourceCandle: Candle, interval: CandleInterval): Promise<Candle | undefined> {
+async function xdownResCandle(sourceCandle: Candle, interval: CandleInterval): Promise<Candle | undefined> {
     const startTime = new Date();
     try {
         const { exchange, instrumentId } = sourceCandle;
-        const timestamp = await getAlignedTime({ exchange, timestamp: sourceCandle.timestamp, interval });
+        const timestamp = getAlignedTime({ exchange, timestamp: sourceCandle.timestamp, interval });
         const { key: currentCandleKey, dayBegin } = await getCandleMetaProperties({
             instrumentId,
             interval,
@@ -278,46 +280,9 @@ async function downResCandle(sourceCandle: Candle, interval: CandleInterval): Pr
     }
 }
 
-async function oldProcessTick(tick: Tick): Promise<Candle[]> {
-    const allCandles: Candle[] = [];
-    const candle = await convertTickToCandle(tick, CandleInterval.MIN_01);
-    if (candle == undefined) return allCandles;
-    allCandles.push(candle);
-    // await Promise.all(
-    //     _intervals.map(async (interval) => {
-    //         const dcandle = await downResCandle(candle, interval);
-    //         if (dcandle == undefined) return;
-    //         allCandles.push(dcandle);
-    //     }),
-    // );
-    // for (const interval of _intervals) {
-    //     const dcandle = await downResCandle(candle, interval);
-    //     if (dcandle == undefined) continue;
-    //     allCandles.push(dcandle);
-    // }
-    return allCandles;
-}
-
-async function oldProcessTicks(ticks: Tick[]): Promise<Candle[]> {
-    const allCandles: Candle[] = [];
-    await Promise.all(
-        ticks.map(async (tick) => {
-            const candles = await oldProcessTick(tick);
-            candles.forEach((candle) => allCandles.push(candle));
-        }),
-    );
-    return allCandles;
-}
-
-async function convertTicksToCandles(ticks: Tick[]) {}
-
 async function processTicks(ticks: Tick[]): Promise<Candle[]> {
-    ExchangeService.getAllExchangeTimes();
-    ExchangeService.getAllExchangeTimes();
-    ExchangeService.getAllExchangeTimes();
-    const pipeline = await new TickPipeline(ticks);
-    await pipeline.execute();
-    return pipeline.fetchUpdatedCandles();
+    const pipeline = new TickPipeline(ticks);
+    return pipeline.execute();
 }
 
 const _tickMap: Record<string, Tick> = {};
@@ -352,7 +317,9 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
     const missingTicks: Tick[] = computeMissingTicks(ticks);
     const allCandles = await processTicks([...missingTicks, ...ticks]);
     const startWriteTime = Date.now();
-    await CacheRepository.writeCandles(allCandles);
+    for (const candleChunk of lodash.chunk(allCandles, 100)) {
+        await CacheRepository.writeCandles(candleChunk);
+    }
     const timeCode = allCandles.length > 0 ? allCandles[0].timeCode : 0;
     printStats('stats', {
         ticks: ticks.length,
@@ -414,6 +381,7 @@ async function debug(): Promise<void> {
 }
 
 async function testTickPipeline(): Promise<void> {
+    await CandleRepository.flush();
     await CacheRepository.flushCandles();
     const instruments = await InstrumentService.findTracked();
     const date = new Date();
@@ -445,7 +413,7 @@ async function testTickPipeline(): Promise<void> {
         if (validateTick(tick) === false) throw new Error(JSON.stringify(validateTick.errors, undefined, 2));
     }
     await bulkConvertTicksToCandles(ticks);
-    await bulkConvertTicksToCandles(ticks);
+    // await bulkConvertTicksToCandles(ticks);
 }
 
 export const CandleService = {
