@@ -1,4 +1,3 @@
-import { ExchangeService } from '../exchange/service';
 import { newValidator } from './validator';
 
 export class OrderItem {

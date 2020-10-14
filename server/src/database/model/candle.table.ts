@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
-import { ExchangeService } from '../../exchange/service';
 import { Candle } from '../../types/candle';
 
 @Table({ tableName: 'candle', timestamps: false })

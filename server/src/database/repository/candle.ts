@@ -1,7 +1,7 @@
 import { Op, Sequelize, WhereOptions } from 'sequelize';
 
 import { Log } from '../../infra';
-import { Candle, CandleInterval, INSTRUMENT_ID_SEPERATOR } from '../../types';
+import { Candle, CandleInterval } from '../../types';
 import { validateCandle } from '../../types/candle';
 import { CandleModel } from '../model';
 

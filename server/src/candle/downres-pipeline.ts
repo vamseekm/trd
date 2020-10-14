@@ -23,7 +23,6 @@ class CandleState {
 
 export class DownResPipeline {
     private candleStateList: CandleState[] = [];
-    private candleKeyList = [];
     private candleMap: Record<string, Candle> = {};
     constructor(private sourceCandleList: Candle[]) {}
 

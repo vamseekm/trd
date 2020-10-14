@@ -1,4 +1,3 @@
-import { POINT_CONVERSION_COMPRESSED } from 'constants';
 import lodash from 'lodash';
 import { DateTime } from 'luxon';
 import pLimit from 'p-limit';
@@ -29,11 +28,6 @@ async function download(): Promise<void> {
 }
 
 async function getOptionExpiryListToTrack(name: string): Promise<Date[]> {
-    const futureInstruments = await InstrumentRepository.fetchFnoInstruments({
-        name,
-        segment: 'NFO-FUT',
-        take: FUTURES_TO_TRACK,
-    });
     const instruments = await InstrumentRepository.fetchFnoInstruments({ name, segment: 'NFO-OPT' });
     const optionExpirySet = new Set<string>(instruments.map((instrument) => instrument.expiry.toISOString()));
     const expiryList = [...optionExpirySet].sort().slice(0, OPTION_EXPIRIES_TO_TRACK).sort();

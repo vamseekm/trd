@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import CliProgress from 'cli-progress';
-import { DateTime } from 'luxon';
 import { Log } from '../infra';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires

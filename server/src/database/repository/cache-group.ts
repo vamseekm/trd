@@ -1,12 +1,11 @@
 import lodash from 'lodash';
-import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
 
 import { RedisService } from '../../infra';
 const CACHE_PREFIX = 'cache:';
 export class CacheGroup {
     private _prefix: string;
-    constructor(private name: string, private allowNull: boolean = false) {
-        this._prefix = `cache:${name}`;
+    constructor(name: string, private allowNull: boolean = false) {
+        this._prefix = `${CACHE_PREFIX}:${name}`;
     }
 
     redisCacheKey(key: string): string {

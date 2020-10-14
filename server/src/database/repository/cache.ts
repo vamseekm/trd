@@ -37,9 +37,7 @@ async function cacheInstrument(instrument: Instrument | null): Promise<Instrumen
     return instrument;
 }
 
-const CANDLE_CACHE_EXPIRY_TIME = 8 * 3600 * 1000;
 // const candleCache = new LRUCache<string, Candle | undefined>({ max: 20000, maxAge: CANDLE_CACHE_EXPIRY_TIME });
-const missMap: Record<string, number> = {};
 const candleCache = new CacheGroup('candle', true);
 
 async function getCandles(keys: string[]): Promise<Candle[]> {
