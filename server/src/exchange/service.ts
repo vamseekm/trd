@@ -1,18 +1,12 @@
 import { Mutex } from 'async-mutex';
-import { timeStamp } from 'console';
 import { DateTime } from 'luxon';
 
-import { CacheGroup } from '../database/repository/cache-group';
 import { Config } from '../infra';
 import { IExchangeConfig } from '../types';
 import { IExchangeTImeProperties } from '../types/exchange';
 import { toDayAndTime } from '../util';
-import sp from 'synchronized-promise';
-import { MissingSubscriptionTopicsError } from 'type-graphql';
 
 let _cachedExchangeTimes: Record<string, IExchangeConfig>;
-const cacheLock = new Mutex();
-const exchangeConfigCahce = new CacheGroup('exchange');
 let missCount = 0;
 function getAllExchangeTimes(): Record<string, IExchangeConfig> {
     if (_cachedExchangeTimes != undefined) return _cachedExchangeTimes;
