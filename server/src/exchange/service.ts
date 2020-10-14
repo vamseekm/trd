@@ -46,7 +46,7 @@ function isValidTime({ date, exchange }: { date: Date; exchange: string }): bool
     const exchangeConfig = getAllExchangeTimes()[exchange];
     if (exchangeConfig == undefined) return true;
     const { time } = toDayAndTime(date);
-    return Number.parseInt(time, 10) > exchangeConfig.startTime && Number.parseInt(time, 10) < exchangeConfig.endTime;
+    return Number.parseInt(time, 10) >= exchangeConfig.startTime && Number.parseInt(time, 10) <= exchangeConfig.endTime;
 }
 
 function exchangeTimeProperties({
