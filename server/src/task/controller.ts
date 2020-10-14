@@ -3,7 +3,7 @@ import express from 'express';
 import { expressWrap } from '../api-server';
 import { TaskService } from './service';
 
-async function sync(request: express.Request, response: express.Response): Promise<void> {
+async function sync(_request: express.Request, response: express.Response): Promise<void> {
     await TaskService.cron();
     response.send('ok');
 }

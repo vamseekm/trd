@@ -62,7 +62,7 @@ async function startServer(): Promise<unknown> {
     await setupRoutes(app);
     app.use(handleError);
     const port = Config.get(HTTP_API_SERVER_PORT, 5000);
-    return new Promise((resolve, reject) => {
+    return new Promise((_resolve, reject) => {
         Log.info(`Starting server at 0.0.0.0:${port}`);
         app.listen(port, () => {
             displayRoutes(app);

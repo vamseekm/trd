@@ -6,7 +6,7 @@ import { expressWrap } from '../api-server';
 import { IController } from '../types/controller';
 import { BrokerService } from './service';
 
-async function login(request: express.Request, response: express.Response): Promise<void> {
+async function login(_request: express.Request, response: express.Response): Promise<void> {
     const loginUrl = await BrokerService.getLoginUrl();
     response.redirect(307, loginUrl);
 }
@@ -17,7 +17,7 @@ async function redirect(request: express.Request, response: express.Response): P
     response.send('Generated access token.');
 }
 
-async function profile(request: express.Request, response: express.Response): Promise<void> {
+async function profile(_request: express.Request, response: express.Response): Promise<void> {
     const profile = BrokerService.getProfile();
     response.send(profile);
 }

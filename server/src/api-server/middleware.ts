@@ -15,7 +15,7 @@ export function throwServerError(message?: string): void {
     throw new ErrorHandler(404, message || 'Server error');
 }
 
-export function handleError(error: ErrorHandler, request: Request, response: Response, next: NextFunction): void {
+export function handleError(error: ErrorHandler, _request: Request, response: Response, _next: NextFunction): void {
     let { statusCode, errorMessage } = error;
     statusCode = statusCode || 500;
     errorMessage = errorMessage || error.message || 'Unknown error';
