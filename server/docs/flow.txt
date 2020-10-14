@@ -4,6 +4,7 @@ Cron
 Init
 Instrument
 Tick
+    H. Compute missing ticks using redis as datasource.
 Candle
     H. Load candles into redis.
         H. Keep track of accurate time lines.

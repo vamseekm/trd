@@ -10,12 +10,13 @@ import { INSTRUMENT_ID_SEPERATOR } from '../types';
 import { validateCandle } from '../types/candle';
 import { IExchangeTImeProperties } from '../types/exchange';
 import { printStats, sleep, toDayAndTime } from '../util';
-import { TickPipeline } from './pipeline';
+import { TickPipeline } from './tick-pipeline';
 import { InstrumentRepository } from '../database/repository/instrument';
 import { validate } from 'graphql';
 import { validateTick } from '../types/tick';
 import { SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION } from 'constants';
 import lodash from 'lodash';
+import { DownResPipeline } from './downres-pipeline';
 
 function getCandleMetaProperties({
     instrumentId,
@@ -180,57 +181,7 @@ async function bulkDownloadHistorical(): Promise<void> {
         await sleep(300);
     }
 }
-let _active = 0;
-async function convertTickToCandle(tick: Tick, interval: CandleInterval) {
-    // Log.pretty(tick);
-    const candleConfig = { ...tick, interval };
-    const currentCandleTime = await getAlignedTime(candleConfig);
-    const { timeCode } = toDayAndTime(currentCandleTime);
-    const { key: currentCandleKey, dayBegin } = await getCandleMetaProperties({
-        ...candleConfig,
-        timestamp: currentCandleTime,
-    });
-    if (currentCandleKey == undefined) return;
-    const previousCandleTime = await getAlignedTime({ ...candleConfig, offset: -1 });
-    const { key: previousCandleKey } = await getCandleMetaProperties({
-        ...candleConfig,
-        timestamp: previousCandleTime,
-    });
-    Log.info(currentCandleKey);
-    console.time(currentCandleKey);
-    _active += 1;
-    const [previousCandle, currentCandle] = await Promise.all([
-        CacheRepository.getCandle(previousCandleKey),
-        CacheRepository.getCandle(currentCandleKey),
-    ]);
 
-    const { instrumentId, exchange } = tick;
-    const updatedCandle: Candle = {
-        instrumentId,
-        exchange,
-        interval,
-        timeCode,
-        key: currentCandleKey,
-        timestamp: currentCandleTime,
-        open: currentCandle?.open || tick.lastTradedPrice,
-        high: Math.max(currentCandle?.high || tick.lastTradedPrice, tick.lastTradedPrice),
-        low: Math.min(currentCandle?.low || tick.lastTradedPrice, tick.lastTradedPrice),
-        close: tick.lastTradedPrice,
-        volume: tick.totalVolume,
-        totalVolume: tick.totalVolume,
-        totalOpenInterest: tick.openInterest,
-        openInterest: tick.openInterest,
-    };
-    if (dayBegin === false && previousCandle != undefined) {
-        updatedCandle.volume = updatedCandle.totalVolume - previousCandle.totalVolume;
-        updatedCandle.openInterest = updatedCandle.totalOpenInterest - previousCandle.totalOpenInterest;
-    }
-    _active -= 1;
-    Log.info('End:', `${_active}`);
-    console.timeEnd(currentCandleKey);
-
-    return updatedCandle;
-}
 const _intervals = [
     CandleInterval.MIN_05,
     CandleInterval.MIN_10,
@@ -240,61 +191,12 @@ const _intervals = [
     // CandleInterval.DAY_01,
 ];
 
-async function xdownResCandle(sourceCandle: Candle, interval: CandleInterval): Promise<Candle | undefined> {
-    const startTime = new Date();
-    try {
-        const { exchange, instrumentId } = sourceCandle;
-        const timestamp = getAlignedTime({ exchange, timestamp: sourceCandle.timestamp, interval });
-        const { key: currentCandleKey, dayBegin } = await getCandleMetaProperties({
-            instrumentId,
-            interval,
-            timestamp,
-        });
-        const { timeCode } = toDayAndTime(timestamp);
-        const { key: previousCandleKey } = await getCandleMetaProperties({
-            instrumentId,
-            interval,
-            timestamp: await getAlignedTime({ exchange, timestamp: sourceCandle.timestamp, interval, offset: -1 }),
-        });
-
-        const [currentCandle, previousCandle] = await Promise.all([
-            CacheRepository.getCandle(currentCandleKey),
-            CacheRepository.getCandle(previousCandleKey),
-        ]);
-        const atBegin = timeCode === sourceCandle.timeCode;
-        const updatedCandle: Candle = {
-            key: currentCandleKey,
-            exchange,
-            instrumentId,
-            timeCode,
-            interval,
-            timestamp,
-            open: atBegin ? sourceCandle.open : currentCandle?.open || sourceCandle.open,
-            high: Math.max(sourceCandle.high, currentCandle?.high || sourceCandle.high),
-            low: Math.min(sourceCandle.low, currentCandle?.low || sourceCandle.low),
-            close: sourceCandle.close,
-            volume: sourceCandle.totalVolume,
-            openInterest: sourceCandle.totalOpenInterest,
-            totalVolume: sourceCandle.totalVolume,
-            totalOpenInterest: sourceCandle.totalOpenInterest,
-        };
-        if (dayBegin === false && previousCandle != undefined) {
-            updatedCandle.volume = updatedCandle.totalVolume - previousCandle.totalVolume;
-            updatedCandle.openInterest = updatedCandle.totalVolume - previousCandle.totalVolume;
-        }
-        if (currentCandle == undefined) return updatedCandle;
-        const keys = Object.keys(updatedCandle);
-        for (const key of keys) {
-            if (key === 'timestamp') continue;
-            if ((currentCandle as any)[key] !== (updatedCandle as any)[key]) return updatedCandle;
-        }
-    } finally {
-    }
-}
-
 async function processTicks(ticks: Tick[]): Promise<Candle[]> {
-    const pipeline = new TickPipeline(ticks);
-    return pipeline.execute();
+    const tickPipeline = new TickPipeline(ticks);
+    const sourceCandles = await tickPipeline.execute();
+    const downResPipeline = new DownResPipeline(sourceCandles);
+    const downResCandles = await downResPipeline.execute();
+    return [...sourceCandles, ...downResCandles];
 }
 
 const _tickMap: Record<string, Tick> = {};
@@ -317,11 +219,6 @@ function computeMissingTicks(ticks: Tick[]): Tick[] {
     return missingTicks;
 }
 async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
-    // await CacheRepository.flushCandles();
-    // const candles = await processTicks(ticks);
-    // await CacheRepository.writeCandles(candles);
-    // console.log('Writing ', candles.length, ' candles.');
-    // return candles;
     const startTime = Date.now();
     for (const tick of ticks) {
         _tickMap[tick.instrumentId] = tick;
@@ -345,11 +242,11 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
     return allCandles;
 }
 
-async function parseCandleKey({
+function parseCandleKey({
     key,
 }: {
     key: string;
-}): Promise<{ key: string; exchange: string; tradingSymbol: string; interval: string; time: string }> {
+}): { key: string; exchange: string; tradingSymbol: string; interval: string; time: string } {
     const [exchange, tradingSymbol, interval, time] = key.split(INSTRUMENT_ID_SEPERATOR);
     return { key, exchange, tradingSymbol, interval, time };
 }
