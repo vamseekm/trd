@@ -88,7 +88,7 @@ export function printStats(name: string, stats: any) {
     const tokens: string[] = [];
     tokens.push(name.padStart(20));
     for (const key of keys) {
-        tokens.push(` ${key.padStart(10, ' ')}: `);
+        tokens.push(` ${key}: `);
         tokens.push(`${stats[key]}`.padStart(6, ' '));
     }
     Log.info(tokens.join(''));

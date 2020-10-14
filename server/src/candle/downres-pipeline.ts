@@ -71,6 +71,7 @@ export class DownResPipeline {
                 if (candleState.previousCandleKey) candleKeys.push(candleState.previousCandleKey);
             }
         }
+        if (candleKeys.length === 0) return;
         const candleResults = await CacheRepository.getCandles(candleKeys);
         for (const candle of candleResults) {
             if (candle != undefined) this.candleMap[candle.key] = candle;

@@ -12,9 +12,7 @@ import { IExchangeTImeProperties } from '../types/exchange';
 import { printStats, sleep, toDayAndTime } from '../util';
 import { TickPipeline } from './tick-pipeline';
 import { InstrumentRepository } from '../database/repository/instrument';
-import { validate } from 'graphql';
 import { validateTick } from '../types/tick';
-import { SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION } from 'constants';
 import lodash from 'lodash';
 import { DownResPipeline } from './downres-pipeline';
 
@@ -182,15 +180,6 @@ async function bulkDownloadHistorical(): Promise<void> {
     }
 }
 
-const _intervals = [
-    CandleInterval.MIN_05,
-    CandleInterval.MIN_10,
-    CandleInterval.MIN_15,
-    CandleInterval.MIN_30,
-    CandleInterval.MIN_60,
-    // CandleInterval.DAY_01,
-];
-
 async function processTicks(ticks: Tick[]): Promise<Candle[]> {
     const tickPipeline = new TickPipeline(ticks);
     const sourceCandles = await tickPipeline.execute();
@@ -230,13 +219,17 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
         await CacheRepository.writeCandles(candleChunk);
     }
     const timeCode = allCandles.length > 0 ? allCandles[0].timeCode : 0;
+    const writeTime = Date.now() - startWriteTime;
+    const totalTime = Date.now() - startTime;
+    const cpuTime = totalTime - writeTime;
     printStats('stats', {
         ticks: ticks.length,
         mapSize: Object.keys(_tickMap).length,
-        cacheMiss: missingTicks.length,
+        tickMiss: missingTicks.length,
         candles: allCandles.length,
-        flushTime: Date.now() - startWriteTime,
-        totalTime: Date.now() - startTime,
+        writeTime,
+        cpuTime,
+        totalTime,
         timeCode,
     });
     return allCandles;
@@ -252,20 +245,25 @@ function parseCandleKey({
 }
 
 function printDiff(name: string, v1: number, v2: number) {
-    console.log(name, `${v1.toFixed(2)}`.padStart(10, ' '), `${v2.toFixed(2)}`.padStart(10, ` `), v1 - v2);
+    console.log(
+        name.padStart(3, ' '),
+        `${v1.toFixed(2)}`.padStart(10, ' '),
+        `${v2.toFixed(2)}`.padStart(10, ` `),
+        v1 - v2,
+    );
 }
 
 async function candleDiff(brokerCandle: Candle, databaseCandle: Candle) {
     printDiff('T', brokerCandle.timeCode, databaseCandle.timeCode);
-    printDiff('O', brokerCandle.open, brokerCandle.open);
-    printDiff('H', brokerCandle.high, brokerCandle.high);
-    printDiff('L', brokerCandle.low, brokerCandle.low);
-    printDiff('C', brokerCandle.close, brokerCandle.close);
-    printDiff('V', brokerCandle.volume, brokerCandle.volume);
+    printDiff('O', brokerCandle.open, databaseCandle.open);
+    printDiff('H', brokerCandle.high, databaseCandle.high);
+    printDiff('L', brokerCandle.low, databaseCandle.low);
+    printDiff('C', brokerCandle.close, databaseCandle.close);
+    printDiff('V', brokerCandle.volume, databaseCandle.volume);
 }
 
 async function verifyCandles(): Promise<void> {
-    const from = DateTime.local(2020, 10, 13, 0, 0, 0).toJSDate();
+    const from = DateTime.local(2020, 10, 14, 0, 0, 0).toJSDate();
     const to = DateTime.fromJSDate(from).plus({ day: 1 }).toJSDate();
     const searchOptions = {
         id: 'NFO:NIFTY20OCTFUT',
