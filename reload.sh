@@ -1,1 +1,1 @@
-pm2 startOrReload ecosystem.config.js --only $@
+npx nodemon -w server/src -e ts -x "pm2 startOrReload ecosystem.config.js --only $@ && pm2 log $@ || exit 0"

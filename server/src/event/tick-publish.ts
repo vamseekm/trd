@@ -12,12 +12,10 @@ export async function startTickListener(): Promise<void> {
     await BrokerService.ticker(
         tokens,
         async (ticks: any) => {
-            const now = Date.now();
             const payload = JSON.stringify({ ticks, received_on: new Date().getTime() });
             channel.publish(BridgeService.EXCHANGE_TICKER, BridgeService.MessageType.rawTick, Buffer.from(payload), {
                 persistent: true,
             });
-            // process.stdout.write(`${Date.now() - now} `);
             if (ticks) {
                 stats.totalTicks += ticks.length;
                 stats.totalSize += JSON.stringify(ticks).length;

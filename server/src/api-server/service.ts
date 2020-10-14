@@ -22,7 +22,7 @@ function expressApp() {
             },
         }),
     );
-    return app;
+    return (_app = app);
 }
 
 const publicRouter = express.Router();
@@ -33,8 +33,7 @@ async function mountRoutes(ctrl: IController, prefix: string): Promise<void> {
     privateRouter.use(prefix, await ctrl.privateRoutes());
 }
 
-async function setupRoutes(): Promise<void> {
-    const app = expressApp();
+async function setupRoutes(app: express.Application): Promise<void> {
     await mountRoutes(BrokerController, '/broker');
     await mountRoutes(TaskController, '/task');
     app.get('/health', (_request, response) => response.send('ok'));
@@ -59,8 +58,8 @@ async function setupRoutes(): Promise<void> {
 
 async function startServer(): Promise<unknown> {
     // await setupGraphQL();
-    await setupRoutes();
     const app = expressApp();
+    await setupRoutes(app);
     app.use(handleError);
     const port = Config.get(HTTP_API_SERVER_PORT, 5000);
     return new Promise((resolve, reject) => {
