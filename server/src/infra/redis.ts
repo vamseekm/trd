@@ -28,10 +28,6 @@ function proxyCommand(name: string, ...arguments_: any[]): Promise<any> {
     });
 }
 
-function collectArguments(name: string, ...arguments_: any[]): Promise<any> {
-    return proxyCommand(name, arguments_);
-}
-
 const keys: (pattern: string) => Promise<string[]> = proxyCommand.bind(null, 'keys');
 const del = proxyCommand.bind(null, 'del');
 const set = proxyCommand.bind(null, 'set');

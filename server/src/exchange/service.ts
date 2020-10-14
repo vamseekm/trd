@@ -1,4 +1,3 @@
-import { Mutex } from 'async-mutex';
 import { DateTime } from 'luxon';
 
 import { Config } from '../infra';

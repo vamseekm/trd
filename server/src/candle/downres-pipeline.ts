@@ -64,14 +64,14 @@ export class DownResPipeline {
     }
 
     async fetchCandles() {
-        const keys: string[] = [];
+        const candleKeys: string[] = [];
         for (const candleState of this.candleStateList) {
             if (candleState.currentCandleKey) {
-                keys.push(candleState.currentCandleKey);
-                if (candleState.previousCandleKey) keys.push(candleState.previousCandleKey);
+                candleKeys.push(candleState.currentCandleKey);
+                if (candleState.previousCandleKey) candleKeys.push(candleState.previousCandleKey);
             }
         }
-        const candleResults = await CacheRepository.getCandles(this.candleKeyList);
+        const candleResults = await CacheRepository.getCandles(candleKeys);
         for (const candle of candleResults) {
             if (candle != undefined) this.candleMap[candle.key] = candle;
         }
