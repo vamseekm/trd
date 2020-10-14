@@ -1,9 +1,6 @@
 import { Candle, CandleInterval } from '../types';
-import { Interval } from 'luxon';
-import { CandleRepository } from '../database/repository/candle';
 import { CandleService } from './service';
 import { CacheRepository } from '../database';
-import { timeStamp } from 'console';
 import { toDayAndTime } from '../util';
 
 const _intervals = [
@@ -12,7 +9,6 @@ const _intervals = [
     CandleInterval.MIN_15,
     CandleInterval.MIN_30,
     CandleInterval.MIN_60,
-    // CandleInterval.DAY_01,
 ];
 
 class CandleState {
