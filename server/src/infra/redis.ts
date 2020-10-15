@@ -33,6 +33,7 @@ const del = proxyCommand.bind(null, 'del');
 const set = proxyCommand.bind(null, 'set');
 const get = proxyCommand.bind(null, 'get');
 const mget = proxyCommand.bind(null, 'mget');
+const zadd = proxyCommand.bind(null, 'zadd');
 
 export const RedisService = {
     get,
@@ -40,4 +41,5 @@ export const RedisService = {
     set,
     del,
     keys,
+    zadd,
 };

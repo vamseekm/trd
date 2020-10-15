@@ -1,16 +1,14 @@
-Cron
-    L. Clean docker cache.
-    L. Clean ticks.
 Init
 Instrument
 Tick
     H. Compute missing ticks using redis as datasource.
 Candle
-    H. Load candles into redis.
-        H. Keep track of accurate time lines.
-    H. Pipeline downres candles.
-    H. Verify missing candles.
-    L. Sync last 1 week worth of candle data.
+    H. Sync historical candles.
+        H. Sync last one week 1m candles.
+        H. 2 year 1d candles.
+    L. Load candles into redis.
+        L. Remove redundent fields.
+    L. Verify missing candles.
     L. Verify candle formation.
     L. Write pump.
 Indictator
@@ -32,3 +30,7 @@ Misc
     L. Cron to clean old candles/ticks.
     L. Cron to sync candles.
     L. Cron to auto login.
+ Cron
+    L. Clean docker cache.
+    L. Clean ticks.
+   

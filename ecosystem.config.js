@@ -49,5 +49,6 @@ module.exports = {
     },
 
     bashRun({ name: "gateway", args: "./bin/gateway.sh" }),
+    bashRun({ name: "redis-commander", args: "./bin/redis-commander.sh" }),
   ],
 };
