@@ -28,7 +28,7 @@
         "api-server:watch": "nodemon -w ./dist -e js -x \"npm run api-server || exit 0\"",
         "pkgminor": "npm run ncu -- --target minor -u",
         "ncu": "npx ncu",
-        "test": "jest",
+        "test": "NODE_ENV=dev jest",
         "test:watch": "npm run test -- --watchAll"
     },
     "author": "",

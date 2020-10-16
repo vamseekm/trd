@@ -293,7 +293,7 @@ async function debug(): Promise<void> {
     console.log(
         ExchangeService.isValidTime({
             exchange: 'NSE',
-            date: DateTime.local().set({ hour: 15, minute: 29, second: 59 }).toJSDate(),
+            date: DateTime.local().set({ hour: 9, minute: 14, second: 59 }).toJSDate(),
         }),
     );
     return;
