@@ -40,7 +40,7 @@ async function cacheInstrument(instrument: Instrument | null): Promise<Instrumen
 }
 
 // const candleCache = new LRUCache<string, Candle | undefined>({ max: 20000, maxAge: CANDLE_CACHE_EXPIRY_TIME });
-const candleCache = new CacheGroup('candle', true);
+const candleCache = new CacheGroup('C', true);
 
 async function getCandles(keys: string[]): Promise<Candle[]> {
     const candles = await candleCache.getMulti({ keys }, CandleRepository.getCandle);
@@ -74,26 +74,29 @@ function candleTimeKeyValue(key: string): { sortedSetKey: string; score: string;
     if (tokens.length != 4) throw new Error(`Invalid candle key format: ${key}`);
     const sortedSetKeySuffix = tokens.slice(0, 3).join(INSTRUMENT_ID_SEPERATOR);
     const value = tokens[3];
-    return { sortedSetKey: `tc:${sortedSetKeySuffix}`, score: value, value };
+    return { sortedSetKey: `CT:${sortedSetKeySuffix}`, score: value, value };
 }
 
-async function writeCandleTime(candle?: Candle): Promise<any> {
+async function cacheSetCandleTime(candle?: Candle): Promise<any> {
     if (candle == undefined) return;
     const { key } = candle;
     const { sortedSetKey, score, value } = candleTimeKeyValue(key);
     return RedisService.zadd([sortedSetKey, score, value]);
 }
 
-async function setCandle(key: string, candle?: Candle) {
-    return Promise.all([writeCandleTime(candle), candleCache.set({ key, value: candle })]);
+async function cacheSetCandle(key: string, candle?: Candle) {
+    return candleCache.set({ key, value: candle });
 }
-
+async function cacheWriteCandles(candles: Candle[]): Promise<Candle[]> {
+    if (candles.length === 0) return candles;
+    await Promise.all(candles.map((candle) => cacheSetCandle(candle.key, candle)));
+    await Promise.all(candles.map((candle) => cacheSetCandleTime(candle)));
+    return candles;
+}
 async function writeCandles(candles: Candle[]): Promise<Candle[]> {
     if (candles.length === 0) return candles;
-    const candleSavePromises: any = candles.map(async (candle) => {
-        return setCandle(candle.key, candle);
-    });
-    await Promise.all([...candleSavePromises, CandleRepository.upsertCandles(candles)]);
+    await cacheWriteCandles(candles);
+    await CandleRepository.upsertCandles(candles);
     return candles;
 }
 
@@ -102,17 +105,17 @@ async function deleteCandle({ key }: { key: string }): Promise<any> {
     return CandleModel.destroy({ where: { key } });
 }
 
-async function flushCandles(): Promise<any> {
+async function flushCandleCache(): Promise<any> {
     candleCache.flush();
 }
 
-export const CacheRepository = {
+export const CandleCacheRepository = {
     getInstrumentByToken,
     getInstrumentById,
-    setCandle,
+    setCandle: cacheSetCandle,
     getCandle,
     getCandles,
     writeCandles,
     deleteCandle,
-    flushCandles,
+    flushCandleCache,
 };

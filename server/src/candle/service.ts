@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon';
 
 import { BrokerService } from '../broker';
-import { CacheRepository, CandleRepository } from '../database';
+import { CandleCacheRepository, CandleRepository } from '../database';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
 import { InstrumentService } from '../instrument';
@@ -132,7 +132,7 @@ async function downloadCandles({
     return processedCandles;
 }
 async function getPreviousCandle(candle: Candle): Promise<Candle | undefined> {
-    const instrument = await CacheRepository.getInstrumentById(candle.instrumentId);
+    const instrument = await CandleCacheRepository.getInstrumentById(candle.instrumentId);
     if (instrument == undefined) return;
     const { exchange, instrumentId, interval, timestamp } = candle;
     const previousCandleTime = await getAlignedTime({
@@ -146,7 +146,7 @@ async function getPreviousCandle(candle: Candle): Promise<Candle | undefined> {
         interval: interval as CandleInterval,
         timestamp: previousCandleTime,
     });
-    return CacheRepository.getCandle(previousCandleKey);
+    return CandleCacheRepository.getCandle(previousCandleKey);
 }
 
 async function writeHistoricalCandle(inputCandle: Candle): Promise<Candle[]> {
@@ -159,7 +159,7 @@ async function writeHistoricalCandle(inputCandle: Candle): Promise<Candle[]> {
         inputCandle.totalVolume += previousCandle.totalVolume + inputCandle.volume;
         inputCandle.totalOpenInterest += previousCandle.totalOpenInterest + inputCandle.openInterest;
     }
-    return CacheRepository.writeCandles([inputCandle]);
+    return CandleCacheRepository.writeCandles([inputCandle]);
 }
 
 async function downloadHistorical(instrument: Instrument): Promise<void> {
@@ -171,7 +171,7 @@ async function downloadHistorical(instrument: Instrument): Promise<void> {
     for (const candle of candles) await writeHistoricalCandle(candle);
 }
 
-async function bulkDownloadHistorical(): Promise<void> {
+async function downloadAllHistorical(): Promise<void> {
     Log.info('Syncing candles...');
     const instruments = await InstrumentService.findTracked();
     for (const instrument of instruments) {
@@ -207,6 +207,7 @@ function computeMissingTicks(ticks: Tick[]): Tick[] {
     _lastChecked = new Date();
     return missingTicks;
 }
+
 async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
     const startTime = Date.now();
     for (const tick of ticks) {
@@ -216,7 +217,7 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
     const allCandles = await processTicks([...missingTicks, ...ticks]);
     const startWriteTime = Date.now();
     for (const candleChunk of lodash.chunk(allCandles, 100)) {
-        await CacheRepository.writeCandles(candleChunk);
+        await CandleCacheRepository.writeCandles(candleChunk);
     }
     const timeCode = allCandles.length > 0 ? allCandles[0].timeCode : 0;
     const writeTime = Date.now() - startWriteTime;
@@ -289,13 +290,21 @@ async function verifyCandles(): Promise<void> {
 }
 
 async function debug(): Promise<void> {
+    console.log(
+        ExchangeService.isValidTime({
+            exchange: 'NSE',
+            date: DateTime.local().set({ hour: 15, minute: 29, second: 59 }).toJSDate(),
+        }),
+    );
+    return;
     await verifyCandles();
     await sleep(5000);
 }
 
 async function testTickPipeline(): Promise<void> {
+    return;
     await CandleRepository.flush();
-    await CacheRepository.flushCandles();
+    await CandleCacheRepository.flushCandleCache();
     const instruments = await InstrumentService.findTracked();
     const date = new Date();
     date.setHours(9);
@@ -330,7 +339,7 @@ async function testTickPipeline(): Promise<void> {
 }
 
 export const CandleService = {
-    downloadHistorical: bulkDownloadHistorical,
+    downloadAllHistorical,
     bulkConvertTicksToCandles,
     debug,
     parseCandleKey,

@@ -45,8 +45,8 @@ function getExchangeTime(exchange: string): IExchangeConfig {
 function isValidTime({ date, exchange }: { date: Date; exchange: string }): boolean {
     const exchangeConfig = getAllExchangeTimes()[exchange];
     if (exchangeConfig == undefined) return true;
-    const { time } = toDayAndTime(date);
-    return Number.parseInt(time, 10) >= exchangeConfig.startTime && Number.parseInt(time, 10) <= exchangeConfig.endTime;
+    const { dayTimeInMs } = toDayAndTime(date);
+    return dayTimeInMs >= exchangeConfig.dayStartOffset && dayTimeInMs <= exchangeConfig.dayEndOffset;
 }
 
 function exchangeTimeProperties({

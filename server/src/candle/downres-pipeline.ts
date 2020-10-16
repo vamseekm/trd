@@ -1,6 +1,6 @@
 import { Candle, CandleInterval } from '../types';
 import { CandleService } from './service';
-import { CacheRepository } from '../database';
+import { CandleCacheRepository } from '../database';
 import { toDayAndTime } from '../util';
 
 const _intervals = [
@@ -71,7 +71,7 @@ export class DownResPipeline {
             }
         }
         if (candleKeys.length === 0) return;
-        const candleResults = await CacheRepository.getCandles(candleKeys);
+        const candleResults = await CandleCacheRepository.getCandles(candleKeys);
         for (const candle of candleResults) {
             if (candle != undefined) this.candleMap[candle.key] = candle;
         }

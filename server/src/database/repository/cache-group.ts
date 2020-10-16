@@ -1,11 +1,10 @@
 import lodash from 'lodash';
 
 import { RedisService } from '../../infra';
-const CACHE_PREFIX = 'cache:';
 export class CacheGroup {
     private _prefix: string;
     constructor(name: string, private allowNull: boolean = false) {
-        this._prefix = `${CACHE_PREFIX}:${name}`;
+        this._prefix = `${name}CG`;
     }
 
     redisCacheKey(key: string): string {

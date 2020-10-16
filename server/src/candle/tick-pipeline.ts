@@ -2,7 +2,7 @@ import { Candle, Tick } from '../types';
 import { CandleService } from './service';
 import { CandleInterval } from '../types/candle';
 import { toDayAndTime } from '../util';
-import { CacheRepository } from '../database/repository/cache';
+import { CandleCacheRepository } from '../database/repository/cache';
 
 class TickState {
     instrumentId: string;
@@ -62,7 +62,7 @@ export class TickPipeline {
                 if (previousCandleKey) this.candleKeyList.push(previousCandleKey);
             }
         }
-        const candleResults = await CacheRepository.getCandles(this.candleKeyList);
+        const candleResults = await CandleCacheRepository.getCandles(this.candleKeyList);
         for (const candle of candleResults) {
             if (candle != undefined) this.candleMap[candle.key] = candle;
         }
