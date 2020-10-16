@@ -166,7 +166,7 @@ async function updateLTPTracked(): Promise<void> {
 
 async function updateMeta(): Promise<void> {
     const instruments = await InstrumentRepository.findByOutdatedMeta();
-    const limiter = pLimit(4);
+    const limiter = pLimit(2);
     const total = instruments.length;
     Log.info(`Found ${total} outdated meta instruments.`);
     let count = 0;

@@ -30,7 +30,8 @@ module.exports = {
     serverRun({ name: "api-server", args: "--API::startServer" }),
     serverRun({
       name: "tick-processor",
-      args: "--Event::startTickRawConsumer --Event::startTickStoreConsumer",
+      args:
+        "--Event::startTickRawConsumer --Event::startTickStoreConsumer --Event::startTickProcessConsumer",
       // args: "--Event::startTickRawConsumer --Event::startTickProcessConsumer",
     }),
 

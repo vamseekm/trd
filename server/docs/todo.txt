@@ -1,0 +1,34 @@
+Init
+Instrument
+Tick
+    L. Use redis store for computing missing ticks.
+Candle
+    H. Download historical candles.
+        H. Transform broker candles to db candles and populate totalVolume.
+        H. last 5 trading sessions 1m candles.
+        H. last 2 year 1d candles.
+    H. Load candles into redis.
+    L. Remove redundent fields from memory candles.
+    L. Verify missing candles.
+    L. Verify candle formation.
+    L. Write pump.
+Indictator
+    H. Calculate standard indicators.
+Stretagies
+    H. Cli alerts.
+    L. Web alerts.
+    L. Audiable alerts.
+    L. Slack bot alerts.
+OrderPlacement
+    H. Cli placement
+    H. Trail SL.
+    L. Place orders through slack.
+QoL
+    L. Auto restart on config change.
+    L. Cron to clean old candles/ticks.
+    L. Cron to sync candles.
+    L. Cron to auto login.
+ Cron
+    L. Clean docker cache.
+    L. Clean ticks.
+   
