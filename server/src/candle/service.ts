@@ -306,6 +306,10 @@ async function verifyCandles(): Promise<void> {
     }
 }
 
+async function loadCandles(): Promise<void> {
+    Log.info('Loading candles...');
+}
+
 async function debug(): Promise<void> {
     console.log('Debug');
 }
@@ -317,5 +321,6 @@ export const CandleService = {
     getAlignedTime,
     getCandleMetaProperties,
     syncHistorical,
+    loadCandles,
     verifyCandles,
 };
