@@ -16,8 +16,8 @@ export async function xtoDayAndTime(date: Date): Promise<{ day: string; time: st
         timeCode: Number.parseInt(`${day}${time}`, 10),
     };
 }
-function padNumber(num: number, times: number = 2): string {
-    return `${num}`.padStart(times, '0');
+function padNumber(value: number, times = 2): string {
+    return `${value}`.padStart(times, '0');
 }
 export function toDayAndTime(date: Date): { day: string; time: string; timeCode: number; dayTimeInMs: number } {
     const adjustedTime = new Date(date.getTime() + 5 * 60 * 60 * 1000 + 30 * 60 * 1000);

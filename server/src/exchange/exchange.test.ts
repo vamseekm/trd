@@ -1,6 +1,7 @@
-import { ExchangeService } from './service';
 import { DateTime } from 'luxon';
+
 import { CandleInterval } from '../types';
+import { ExchangeService } from './service';
 
 test('checkLimits', async () => {
     expect(

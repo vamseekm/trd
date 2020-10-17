@@ -1,13 +1,13 @@
 import LRUCache from 'lru-cache';
 
+import { RedisService } from '../../infra/redis';
 import { Candle, Instrument } from '../../types';
 import { validateCandle } from '../../types/candle';
+import { INSTRUMENT_ID_SEPERATOR } from '../../types/instrument';
 import { CandleModel } from '../model/candle.table';
+import { CacheGroup } from './cache-group';
 import { CandleRepository } from './candle';
 import { InstrumentRepository } from './instrument';
-import { CacheGroup } from './cache-group';
-import { INSTRUMENT_ID_SEPERATOR } from '../../types/instrument';
-import { RedisService } from '../../infra/redis';
 
 const INSTRUMENT_CACHE_EXPIRY = 24 * 3600 * 1000;
 const INSTRUMENT_COUNT = 5000;
@@ -49,8 +49,8 @@ async function getCandles(keys: string[]): Promise<Candle[]> {
         if (typeof candle.timestamp === 'string') {
             candle.timestamp = new Date(candle.timestamp);
         }
-        candle.volume = Number.parseInt(candle.volume as any);
-        if (validateCandle(candle) === false) throw new Error(JSON.stringify(validateCandle.errors, null, 2));
+        candle.volume = Number.parseInt(candle.volume);
+        if (validateCandle(candle) === false) throw new Error(JSON.stringify(validateCandle.errors, undefined, 2));
     }
     return candles;
 }
@@ -65,7 +65,7 @@ async function getCandle(key: string | undefined): Promise<Candle | undefined> {
         candle.timestamp = new Date(candle.timestamp);
     }
     candle.volume = Number.parseInt(candle.volume as any);
-    if (validateCandle(candle) === false) throw new Error(JSON.stringify(validateCandle.errors, null, 2));
+    if (validateCandle(candle) === false) throw new Error(JSON.stringify(validateCandle.errors, undefined, 2));
     return candle;
 }
 
@@ -84,7 +84,7 @@ async function cacheSetCandleTime(candle?: Candle): Promise<any> {
     return RedisService.zadd([sortedSetKey, score, value]);
 }
 
-async function cacheSetCandle(key: string, candle?: Candle) {
+async function cacheSetCandle(key: string, candle?: Candle): Promise<any> {
     return candleCache.set({ key, value: candle });
 }
 async function cacheWriteCandles(candles: Candle[]): Promise<Candle[]> {
@@ -101,12 +101,12 @@ async function writeCandles(candles: Candle[]): Promise<Candle[]> {
 }
 
 async function deleteCandle({ key }: { key: string }): Promise<any> {
-    candleCache.del(key);
+    await candleCache.del(key);
     return CandleModel.destroy({ where: { key } });
 }
 
 async function flushCandleCache(): Promise<any> {
-    candleCache.flush();
+    return candleCache.flush();
 }
 
 export const CandleCacheRepository = {

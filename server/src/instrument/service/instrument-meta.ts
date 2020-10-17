@@ -50,7 +50,6 @@ async function downloadSymbolMeta({
     } catch (error) {
         Log.error(error);
     }
-    return undefined;
 }
 
 export const InstrumentMetaService = {

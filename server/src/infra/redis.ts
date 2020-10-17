@@ -28,12 +28,12 @@ function proxyCommand(name: string, ...arguments_: any[]): Promise<any> {
     });
 }
 
-const keys: (pattern: string) => Promise<string[]> = proxyCommand.bind(null, 'keys');
-const del = proxyCommand.bind(null, 'del');
-const set = proxyCommand.bind(null, 'set');
-const get = proxyCommand.bind(null, 'get');
-const mget = proxyCommand.bind(null, 'mget');
-const zadd = proxyCommand.bind(null, 'zadd');
+const keys: (pattern: string) => Promise<string[]> = proxyCommand.bind(undefined, 'keys');
+const del = proxyCommand.bind(undefined, 'del');
+const set = proxyCommand.bind(undefined, 'set');
+const get = proxyCommand.bind(undefined, 'get');
+const mget = proxyCommand.bind(undefined, 'mget');
+const zadd = proxyCommand.bind(undefined, 'zadd');
 
 export const RedisService = {
     get,

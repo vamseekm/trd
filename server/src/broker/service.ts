@@ -2,10 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DateTime } from 'luxon';
 
+import { CandleCacheRepository } from '../database/repository/cache';
 import { CacheGroup } from '../database/repository/cache-group';
 import { Config, Log } from '../infra';
 import { PrefService } from '../pref';
-import { CandleCacheRepository } from '../database/repository/cache';
 import {
     BrokerQuoteLtp,
     CandleInterval,
@@ -17,8 +17,8 @@ import {
     KITE_API_KEY,
     KITE_API_SECRET,
 } from '../types';
-import { maskString } from '../util';
 import { validateInstrument } from '../types/instrument';
+import { maskString } from '../util';
 
 const { KiteConnect, KiteTicker } = require('kiteconnect');
 
@@ -119,6 +119,7 @@ async function getInstrumentsByExchange(exchange: string): Promise<Instrument[]>
     return results;
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 async function ticker(instrumentTokenList: string[], tickHandler: any, orderUpdateHandler?: any): Promise<any> {
     const api_key = Config.get(KITE_API_KEY);
     const access_token = await PrefService.get(KITE_ACCESS_TOKEN);

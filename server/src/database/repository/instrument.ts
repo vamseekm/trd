@@ -61,9 +61,9 @@ async function trackInstruments(idList: string[], track: boolean): Promise<any> 
 
 async function exchangeList(): Promise<string[]> {
     return InstrumentModel.aggregate('exchange', 'distinct');
-    // return InstrumentModel.distinct('exchange').exec();
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 async function upsertInstruments(exchange: string, inputInstruments: Instrument[]): Promise<UpsertResults> {
     if (inputInstruments.length === 0) return { insert: 0, update: 0, remove: 0 };
     const fieldsToCompare = Object.keys(inputInstruments[0]);
@@ -86,7 +86,7 @@ async function upsertInstruments(exchange: string, inputInstruments: Instrument[
         if (!input.set.has(id)) removedIds.add(id);
     });
     const updateInstruments: Instrument[] = [];
-    let _diff: any = null;
+    let _diff: any;
     commonIds.forEach((commonId) => {
         const diff = diffObject(input.map.get(commonId), database.map.get(commonId));
         if (diff == undefined) return;

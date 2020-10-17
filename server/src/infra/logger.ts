@@ -40,8 +40,8 @@ const logger = winston.createLogger({
 });
 
 const error = logger.error.bind(logger);
-const info = (...args: string[]) => {
-    logger.info(args.join(' '));
+const info = (...arguments_: string[]): void => {
+    logger.info(arguments_.join(' '));
 };
 const json = (label: string, ...rest: any[]): void => {
     if (rest && rest.length > 0) {

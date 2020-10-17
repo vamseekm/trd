@@ -1,7 +1,7 @@
-import { Candle, CandleInterval } from '../types';
-import { CandleService } from './service';
 import { CandleCacheRepository } from '../database';
+import { Candle, CandleInterval } from '../types';
 import { toDayAndTime } from '../util';
+import { CandleService } from './service';
 
 const _intervals = [
     CandleInterval.MIN_05,
@@ -21,12 +21,12 @@ class CandleState {
     updatedCandle?: Candle;
 }
 
-export class DownResPipeline {
+export class DownResolutionPipeline {
     private candleStateList: CandleState[] = [];
     private candleMap: Record<string, Candle> = {};
     constructor(private sourceCandleList: Candle[]) {}
 
-    prepareCandles() {
+    prepareCandles(): void {
         for (const sourceCandle of this.sourceCandleList) {
             this.candleMap[sourceCandle.key] = sourceCandle;
             const { instrumentId, exchange } = sourceCandle;
@@ -62,7 +62,7 @@ export class DownResPipeline {
         }
     }
 
-    async fetchCandles() {
+    async fetchCandles(): Promise<void> {
         const candleKeys: string[] = [];
         for (const candleState of this.candleStateList) {
             if (candleState.currentCandleKey) {
@@ -77,7 +77,8 @@ export class DownResPipeline {
         }
     }
 
-    computeDownResCandle(candleState: CandleState) {
+    // eslint-disable-next-line sonarjs/cognitive-complexity
+    computeDownResCandle(candleState: CandleState): void {
         const { sourceCandleKey, currentCandleKey, previousCandleKey } = candleState;
         if (sourceCandleKey == undefined) return;
         const sourceCandle = this.candleMap[sourceCandleKey];
@@ -140,11 +141,11 @@ export class DownResPipeline {
         return Object.values(uniqueCandles);
     }
 
-    computeDownResCandles() {
+    computeDownResCandles(): void {
         this.candleStateList.forEach((candleState) => this.computeDownResCandle(candleState));
     }
 
-    async execute() {
+    async execute(): Promise<Candle[]> {
         this.prepareCandles();
         await this.fetchCandles();
         this.computeDownResCandles();

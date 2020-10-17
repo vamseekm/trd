@@ -2,9 +2,9 @@ import { DateTime } from 'luxon';
 
 import { Config } from '../infra';
 import { IExchangeConfig } from '../types';
+import { CandleInterval } from '../types/candle';
 import { IExchangeTimeProperties } from '../types/exchange';
 import { toDayAndTime } from '../util';
-import { CandleInterval } from '../types/candle';
 
 let _cachedExchangeTimes: Record<string, IExchangeConfig>;
 let missCount = 0;

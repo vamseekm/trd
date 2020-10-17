@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import CliProgress from 'cli-progress';
+
 import { Log } from '../infra';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -82,7 +83,7 @@ export function toSetAndMap<T, K extends keyof T>(items: T[], key: K): { set: Se
     }
     return { set, map };
 }
-export function printStats(name: string, stats: any) {
+export function printStats(name: string, stats: Record<string, any>): void {
     const keys = Object.keys(stats);
     const tokens: string[] = [];
     tokens.push(name.padStart(20));
@@ -93,10 +94,10 @@ export function printStats(name: string, stats: any) {
     Log.info(tokens.join(''));
 }
 
-export function maskString(str: string) {
-    return str.slice(0, 3) + str.slice(3, str.length - 3).replace(/./g, '*') + str.slice(str.length - 3, str.length);
+export function maskString(string: string): string {
+    return string.slice(0, 3) + string.slice(3, -3).replace(/./g, '*') + string.slice(-3, string.length);
 }
 
-export function assertNotUndefined(name: string, value: any) {
+export function assertNotUndefined<T>(name: string, value: T): void {
     if (value == undefined) throw new Error(`${name} can't be undefined`);
 }

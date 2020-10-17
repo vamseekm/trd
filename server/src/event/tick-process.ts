@@ -20,7 +20,7 @@ export async function startTickProcessConsumer(): Promise<void> {
                     totalBuyQuantity: tick.totalBuyQuantity || 0,
                     totalVolume: tick.totalVolume || 0,
                 };
-                if (validateTick(newTick) === false) throw new Error(JSON.stringify(validateTick.errors, null, 2));
+                if (validateTick(newTick) === false) throw new Error(JSON.stringify(validateTick.errors, undefined, 2));
                 validatedTicks.push(newTick);
             }
             if (validatedTicks.length === 0) return 0;

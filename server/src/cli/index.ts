@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import 'reflect-metadata';
 
+import { Settings } from 'luxon';
 import minimist from 'minimist';
 import { exit } from 'process';
 
 import { APIService } from '../api-server';
+import { BridgeService } from '../bridge/service';
 import { CandleService } from '../candle';
 import { DatabaseService } from '../database';
 import { EventService } from '../event';
@@ -13,8 +15,6 @@ import { InstrumentService } from '../instrument';
 import { TaskService } from '../task';
 import { TickService } from '../tick';
 import { waitForever } from '../util';
-import { BridgeService } from '../bridge/service';
-import { Settings } from 'luxon';
 
 Settings.defaultZoneName = 'Asia/Calcutta';
 
@@ -58,7 +58,6 @@ async function run(): Promise<void> {
     if (actions.length > 0) await Promise.all(actions.map((a) => a()));
     if (argv['force-exit']) {
         Log.info('force exiting ...');
-        // eslint-disable-next-line unicorn/no-process-exit
         process.exit(0);
     }
 }

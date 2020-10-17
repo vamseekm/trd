@@ -12,7 +12,6 @@
         "forceConsistentCasingInFileNames": true /* Disallow inconsistently-cased references to the same file. */,
         "sourceMap": true,
         "noUnusedLocals": true,
-        "noImplicitReturns": true,
         "noUnusedParameters": true
     },
     "exclude": ["*/**/*.js"]

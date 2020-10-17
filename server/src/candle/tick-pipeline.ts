@@ -1,8 +1,8 @@
+import { CandleCacheRepository } from '../database/repository/cache';
 import { Candle, Tick } from '../types';
-import { CandleService } from './service';
 import { CandleInterval } from '../types/candle';
 import { toDayAndTime } from '../util';
-import { CandleCacheRepository } from '../database/repository/cache';
+import { CandleService } from './service';
 
 class TickState {
     instrumentId: string;
@@ -29,7 +29,7 @@ export class TickPipeline {
         }
     }
 
-    prepareTicks() {
+    prepareTicks(): void {
         for (const instrumentId of this.instrumentIdList) {
             const tickState = this.tickStateMap[instrumentId];
             const candleConfig = { ...tickState.tick, interval: CandleInterval.MIN_01 };
@@ -54,7 +54,7 @@ export class TickPipeline {
         }
     }
 
-    async fetchCandles() {
+    async fetchCandles(): Promise<void> {
         for (const instrumentId of this.instrumentIdList) {
             const { currentCandleKey, previousCandleKey } = this.tickStateMap[instrumentId];
             if (currentCandleKey) {
@@ -68,6 +68,7 @@ export class TickPipeline {
         }
     }
 
+    // eslint-disable-next-line sonarjs/cognitive-complexity
     computeUpdatedCandle(instrumentId: string): void {
         const { tick, timeCode, currentCandleKey, previousCandleKey, currentCandleTime, dayBegin } = this.tickStateMap[
             instrumentId

@@ -68,7 +68,7 @@ async function removeCandle({ key }: { key: string }): Promise<any> {
     return CandleModel.destroy({ where: { key } });
 }
 
-async function flush() {
+async function flush(): Promise<void> {
     return CandleModel.truncate();
 }
 
