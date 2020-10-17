@@ -2,8 +2,9 @@ import { DateTime } from 'luxon';
 
 import { Config } from '../infra';
 import { IExchangeConfig } from '../types';
-import { IExchangeTImeProperties } from '../types/exchange';
+import { IExchangeTimeProperties } from '../types/exchange';
 import { toDayAndTime } from '../util';
+import { CandleInterval } from '../types/candle';
 
 let _cachedExchangeTimes: Record<string, IExchangeConfig>;
 let missCount = 0;
@@ -42,27 +43,43 @@ function getExchangeTime(exchange: string): IExchangeConfig {
     return exchangeConfig;
 }
 
-function isValidTime({ date, exchange }: { date: Date; exchange: string }): boolean {
+function isValidTime({
+    date,
+    exchange,
+    interval = CandleInterval.MIN_01,
+}: {
+    date: Date;
+    exchange: string;
+    interval?: CandleInterval;
+}): boolean {
     const exchangeConfig = getAllExchangeTimes()[exchange];
     if (exchangeConfig == undefined) return true;
-    const { dayTimeInMs } = toDayAndTime(date);
-    return dayTimeInMs >= exchangeConfig.dayStartOffset && dayTimeInMs <= exchangeConfig.dayEndOffset;
+    const { dayTimeInMs, time } = toDayAndTime(date);
+    return (
+        (dayTimeInMs >= exchangeConfig.dayStartOffset && dayTimeInMs <= exchangeConfig.dayEndOffset) ||
+        (interval === CandleInterval.DAY_01 && Number.parseInt(time) === 0)
+    );
 }
 
 function exchangeTimeProperties({
     timestamp,
     exchange,
+    interval,
 }: {
     timestamp: Date;
     exchange: string;
-}): IExchangeTImeProperties {
+    interval: CandleInterval;
+}): IExchangeTimeProperties {
     const exchangeConfig = getAllExchangeTimes()[exchange];
     if (exchangeConfig == undefined) throw new Error(`Didn't find exchange config for ${exchange}`);
     const { time } = toDayAndTime(timestamp);
+    const dayBegin =
+        Number.parseInt(time, 10) === exchangeConfig.startTime ||
+        (Number.parseInt(time, 10) === 0 && interval == CandleInterval.DAY_01);
+
     return {
-        valid:
-            Number.parseInt(time, 10) > exchangeConfig.startTime && Number.parseInt(time, 10) < exchangeConfig.endTime,
-        dayBegin: Number.parseInt(time) === exchangeConfig.startTime,
+        valid: isValidTime({ date: timestamp, exchange, interval }),
+        dayBegin,
     };
 }
 

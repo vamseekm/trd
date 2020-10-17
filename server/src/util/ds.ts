@@ -96,3 +96,7 @@ export function printStats(name: string, stats: any) {
 export function maskString(str: string) {
     return str.slice(0, 3) + str.slice(3, str.length - 3).replace(/./g, '*') + str.slice(str.length - 3, str.length);
 }
+
+export function assertNotUndefined(name: string, value: any) {
+    if (value == undefined) throw new Error(`${name} can't be undefined`);
+}

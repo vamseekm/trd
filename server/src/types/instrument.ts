@@ -31,6 +31,7 @@ export class Instrument implements Partial<IMetaInfo> {
     freeFloatPercent?: number;
     metaLastUpdated?: Date;
     rank?: number;
+    historicalLastSynced?: Date;
 }
 
 const InstrumentSchema = {

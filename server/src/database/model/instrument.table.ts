@@ -78,4 +78,8 @@ export class InstrumentModel extends Model<InstrumentModel> implements Instrumen
 
     @Column({ defaultValue: 0, allowNull: false, type: DataType.DOUBLE })
     totalMarketCap?: number;
+
+    @Index
+    @Column
+    historicalLastSynced?: Date;
 }

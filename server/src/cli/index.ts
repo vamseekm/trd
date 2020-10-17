@@ -14,6 +14,9 @@ import { TaskService } from '../task';
 import { TickService } from '../tick';
 import { waitForever } from '../util';
 import { BridgeService } from '../bridge/service';
+import { Settings } from 'luxon';
+
+Settings.defaultZoneName = 'Asia/Calcutta';
 
 async function run(): Promise<void> {
     await BridgeService.init();

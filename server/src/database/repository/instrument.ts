@@ -237,6 +237,36 @@ async function findByOutdatedMeta(): Promise<Instrument[]> {
     });
 }
 
+async function findHistoricalNotSynced(lastDate: Date): Promise<Instrument[]> {
+    return InstrumentModel.findAll({
+        where: {
+            [Op.and]: [
+                {
+                    exchange: {
+                        [Op.in]: ['NSE', 'NFO'],
+                    },
+                },
+                {
+                    track: true,
+                },
+                {
+                    [Op.or]: [
+                        {
+                            historicalLastSynced: null,
+                        },
+                        {
+                            historicalLastSynced: {
+                                [Op.lt]: lastDate,
+                            },
+                        },
+                    ],
+                },
+            ],
+        },
+        raw: true,
+    });
+}
+
 async function findWithMetaLastUpdated(): Promise<Instrument[]> {
     return InstrumentModel.findAll({
         where: {
@@ -266,5 +296,6 @@ export const InstrumentRepository = {
     findById,
     findByInstrumentToken,
     findByOutdatedMeta,
+    findHistoricalNotSynced,
     findWithMetaLastUpdated,
 };

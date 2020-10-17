@@ -5,18 +5,17 @@ import { CandleModel, InstrumentModel, PrefModel, TickModel } from './model';
 
 let _seq: Sequelize;
 
-async function connect(): Promise<void> {
-    if (_seq != undefined) return;
-    const databaseConfig = Config.get('postgres');
-    _seq = new Sequelize({
-        ...databaseConfig,
+function connect(): Sequelize {
+    if (_seq != undefined) return _seq;
+    return (_seq = new Sequelize({
+        ...Config.get('postgres'),
         logging: false,
         models: [PrefModel, InstrumentModel, TickModel, CandleModel],
-    });
+    }));
 }
 
-async function syncSchema(): Promise<void> {
-    if (_seq != undefined) await _seq.sync({ alter: true });
+async function syncSchema(): Promise<Sequelize> {
+    return connect().sync({ alter: true });
 }
 
 export const DatabaseService = {
