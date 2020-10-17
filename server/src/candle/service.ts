@@ -152,7 +152,7 @@ async function syncInstrumentHistorical({ instrument, from, to }: { instrument: 
         instrument,
         interval: CandleInterval.MIN_01,
         from,
-        to,
+        to: DateTime.fromJSDate(to).endOf('day').toJSDate(),
     });
     await CandleRepository.upsertCandles(oneMinuteCandles);
     await InstrumentRepository.updateInstrument({ id: instrument.id, historicalLastSynced: to });
