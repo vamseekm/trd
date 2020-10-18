@@ -1,5 +1,3 @@
-import lodash from 'lodash';
-
 import { RedisService } from '../../infra';
 export class CacheGroup {
     private _prefix: string;
@@ -12,12 +10,7 @@ export class CacheGroup {
     }
 
     async flush(): Promise<number> {
-        const keys = await RedisService.keys(this.redisCacheKey('*'));
-        if (keys.length === 0) return 0;
-        for (const chunk of lodash.chunk(keys, 1000)) {
-            await RedisService.del(...chunk);
-        }
-        return keys.length;
+        return RedisService.delWithPrefix(this.redisCacheKey('*'));
     }
 
     async getMulti(

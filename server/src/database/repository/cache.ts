@@ -69,12 +69,14 @@ async function getCandle(key: string | undefined): Promise<Candle | undefined> {
     return candle;
 }
 
+const CANDLE_TIME_PREFIX = 'CT';
+
 function candleTimeKeyValue(key: string): { sortedSetKey: string; score: string; value: string } {
     const tokens = key.split(INSTRUMENT_ID_SEPERATOR);
     if (tokens.length != 4) throw new Error(`Invalid candle key format: ${key}`);
     const sortedSetKeySuffix = tokens.slice(0, 3).join(INSTRUMENT_ID_SEPERATOR);
     const value = tokens[3];
-    return { sortedSetKey: `CT:${sortedSetKeySuffix}`, score: value, value };
+    return { sortedSetKey: `${CANDLE_TIME_PREFIX}:${sortedSetKeySuffix}`, score: value, value };
 }
 
 async function cacheSetCandleTime(candle?: Candle): Promise<any> {
@@ -105,8 +107,12 @@ async function deleteCandle({ key }: { key: string }): Promise<any> {
     return CandleModel.destroy({ where: { key } });
 }
 
+async function clearCandleTime(): Promise<number> {
+    return RedisService.delWithPrefix(`${CANDLE_TIME_PREFIX}:*`);
+}
+
 async function flushCandleCache(): Promise<any> {
-    return candleCache.flush();
+    return Promise.all([clearCandleTime(), candleCache.flush()]);
 }
 
 export const CandleCacheRepository = {

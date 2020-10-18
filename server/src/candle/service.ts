@@ -299,8 +299,6 @@ async function verifyCandles(): Promise<void> {
     );
 
     console.log('total candles:', candles.length, databaseCandles.length);
-    // console.log(brokerCandles.slice(-1).pop());
-    // console.log(databaseCandles.slice(-1).pop());
     for (const [i, candle] of candles.entries()) {
         candleDiff(candle, databaseCandles[i]);
     }
@@ -308,6 +306,7 @@ async function verifyCandles(): Promise<void> {
 
 async function loadCandles(): Promise<void> {
     Log.info('Loading candles...');
+    await CandleCacheRepository.flushCandleCache();
 }
 
 async function debug(): Promise<void> {

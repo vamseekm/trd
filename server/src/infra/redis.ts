@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-useless-constructor */
+import lodash from 'lodash';
 import redis from 'redis';
 
 import { Config } from './config';
@@ -34,6 +35,14 @@ const set = proxyCommand.bind(undefined, 'set');
 const get = proxyCommand.bind(undefined, 'get');
 const mget = proxyCommand.bind(undefined, 'mget');
 const zadd = proxyCommand.bind(undefined, 'zadd');
+const delWithPrefix = async (prefix: string): Promise<number> => {
+    const keys = await RedisService.keys(prefix);
+    if (keys.length === 0) return 0;
+    for (const chunk of lodash.chunk(keys, 1000)) {
+        await RedisService.del(...chunk);
+    }
+    return keys.length;
+};
 
 export const RedisService = {
     get,
@@ -42,4 +51,5 @@ export const RedisService = {
     del,
     keys,
     zadd,
+    delWithPrefix,
 };
