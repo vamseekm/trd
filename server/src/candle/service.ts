@@ -310,7 +310,17 @@ async function loadCandles(): Promise<void> {
 }
 
 async function debug(): Promise<void> {
-    console.log('Debug');
+    const candle = await CandleRepository.getCandle('NFO:BANKNIFTY20O2221300CE:D01:2008210000');
+    if (candle != undefined) await CandleCacheRepository.setCandle(candle.key, candle);
+    const cachedCandle = await CandleCacheRepository.getCandle('NFO:BANKNIFTY20O2221300CE:D01:2008210000');
+    if (cachedCandle != undefined && candle != undefined) {
+        console.log(candle, cachedCandle);
+        const keys = new Set([...Object.keys(candle), ...Object.keys(cachedCandle)]);
+        for (const key of keys) {
+            console.log((candle as any)[key] === (cachedCandle as any)[key], key);
+            console.log((candle as any)[key], (cachedCandle as any)[key]);
+        }
+    }
 }
 
 export const CandleService = {

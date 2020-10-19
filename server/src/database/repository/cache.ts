@@ -1,5 +1,6 @@
 import LRUCache from 'lru-cache';
 
+import { CandleService } from '../../candle/service';
 import { RedisService } from '../../infra/redis';
 import { Candle, Instrument } from '../../types';
 import { validateCandle } from '../../types/candle';
@@ -44,12 +45,18 @@ const candleCache = new CacheGroup('C', true);
 
 async function getCandles(keys: string[]): Promise<Candle[]> {
     const candles = await candleCache.getMulti({ keys }, CandleRepository.getCandle);
-    for (const candle of candles) {
+    for (const [i, candle] of candles.entries()) {
         if (candle == undefined) continue;
         if (typeof candle.timestamp === 'string') {
             candle.timestamp = new Date(candle.timestamp);
         }
         candle.volume = Number.parseInt(candle.volume);
+        const { exchange, tradingSymbol, timeCode, interval } = CandleService.parseCandleKey(keys[i]);
+        candle.key = keys[i];
+        candle.exchange = exchange;
+        candle.instrumentId = `${exchange}${INSTRUMENT_ID_SEPERATOR}${tradingSymbol}`;
+        candle.interval = interval;
+        candle.timeCode = Number.parseInt(timeCode, 10);
         if (validateCandle(candle) === false) throw new Error(JSON.stringify(validateCandle.errors, undefined, 2));
     }
     return candles;
@@ -57,16 +64,7 @@ async function getCandles(keys: string[]): Promise<Candle[]> {
 
 async function getCandle(key: string | undefined): Promise<Candle | undefined> {
     if (key == undefined) return;
-    const candle: Candle | undefined = await candleCache.get({ key }, async () => {
-        return CandleRepository.getCandle(key);
-    });
-    if (candle == undefined) return candle;
-    if (typeof candle.timestamp === 'string') {
-        candle.timestamp = new Date(candle.timestamp);
-    }
-    candle.volume = Number.parseInt(candle.volume as any);
-    if (validateCandle(candle) === false) throw new Error(JSON.stringify(validateCandle.errors, undefined, 2));
-    return candle;
+    return (await getCandles([key]))[0];
 }
 
 const CANDLE_TIME_PREFIX = 'CT';
@@ -87,7 +85,16 @@ async function cacheSetCandleTime(candle?: Candle): Promise<any> {
 }
 
 async function cacheSetCandle(key: string, candle?: Candle): Promise<any> {
-    return candleCache.set({ key, value: candle });
+    const cachedValue: any = Object.assign({}, candle);
+    if (cachedValue != undefined) {
+        delete cachedValue.instrumentId;
+        delete cachedValue.exchange;
+        delete cachedValue.interval;
+        delete cachedValue.timeCode;
+        delete cachedValue.key;
+    }
+    console.log(cachedValue);
+    return candleCache.set({ key, value: cachedValue });
 }
 async function cacheWriteCandles(candles: Candle[]): Promise<Candle[]> {
     if (candles.length === 0) return candles;

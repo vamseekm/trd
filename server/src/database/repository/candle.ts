@@ -22,7 +22,12 @@ async function upsertCandles(inputCandleList: Candle[]): Promise<any> {
 }
 
 async function getCandle(key: string): Promise<Candle | null> {
-    return CandleModel.findOne({ where: { key }, raw: true });
+    const candle = await CandleModel.findOne({ where: { key }, raw: true });
+    if (candle != undefined) {
+        const [validatedCandle] = await validate([candle]);
+        return validatedCandle;
+    }
+    return null;
 }
 
 async function findBy({
@@ -45,19 +50,16 @@ async function findBy({
     return validate(await CandleModel.findAll({ where, order: Sequelize.col('key'), raw: true }));
 }
 
-async function validate(inputCandles: Candle[]): Promise<Candle[]> {
+function validate(inputCandles: Candle[]): Candle[] {
     try {
-        return await Promise.all(
-            inputCandles.map((inputCandle) => {
-                const newCandle = {
-                    ...inputCandle,
-                    volume: Number.parseInt(inputCandle.volume as any, 10),
-                };
-                if (validateCandle(newCandle) === false)
-                    throw new Error(JSON.stringify(validateCandle.errors, null, 2));
-                return newCandle;
-            }),
-        );
+        return inputCandles.map((inputCandle) => {
+            const newCandle = {
+                ...inputCandle,
+                volume: Number.parseInt(inputCandle.volume as any, 10),
+            };
+            if (validateCandle(newCandle) === false) throw new Error(JSON.stringify(validateCandle.errors, null, 2));
+            return newCandle;
+        });
     } catch (error) {
         Log.error(error);
         throw error;
