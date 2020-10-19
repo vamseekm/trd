@@ -3,12 +3,9 @@ Instrument
 Tick
     L. Use redis store for computing missing ticks.
 Candle
-    H. Download historical candles.
-        H. Transform broker candles to db candles and populate totalVolume.
-        H. last 5 trading sessions 1m candles.
-        H. last 2 year 1d candles.
     H. Load candles into redis.
-    L. Remove redundent fields from memory candles.
+        H. Use downres pipeline to recalculate db candles and store in both db and memory.
+    L. Clean candles.
     L. Verify missing candles.
     L. Verify candle formation.
     L. Write pump.
@@ -31,4 +28,5 @@ QoL
  Cron
     L. Clean docker cache.
     L. Clean ticks.
+    L. Load candles into memory.
    
