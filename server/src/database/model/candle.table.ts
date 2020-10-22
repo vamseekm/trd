@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, Index, Model, Table } from 'sequelize-typescript';
 
 import { Candle } from '../../types/candle';
 
@@ -21,6 +21,7 @@ export class CandleModel extends Model<CandleModel> implements Candle {
     timeCode!: number;
 
     @Column({ allowNull: false })
+    @Index
     timestamp!: Date;
 
     @Column({ type: DataType.DOUBLE, allowNull: false })

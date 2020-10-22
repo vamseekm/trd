@@ -93,7 +93,6 @@ async function cacheSetCandle(key: string, candle?: Candle): Promise<any> {
         delete cachedValue.timeCode;
         delete cachedValue.key;
     }
-    console.log(cachedValue);
     return candleCache.set({ key, value: cachedValue });
 }
 async function cacheWriteCandles(candles: Candle[]): Promise<Candle[]> {

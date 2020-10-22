@@ -74,6 +74,19 @@ async function flush(): Promise<void> {
     return CandleModel.truncate();
 }
 
+async function getTradingDaysForInterval(interval: CandleInterval): Promise<Date[]> {
+    return (
+        await CandleModel.findAll({
+            attributes: [[Sequelize.fn('distinct', Sequelize.cast(Sequelize.col('timestamp'), 'date')), 'date']],
+            where: {
+                interval,
+            },
+            order: [[Sequelize.cast(Sequelize.col('timestamp'), 'date'), 'ASC']],
+            raw: true,
+        })
+    ).map(({ date }: any) => date as Date);
+}
+
 export const CandleRepository = {
     upsertCandles,
     getCandle,
@@ -81,4 +94,5 @@ export const CandleRepository = {
     removeCandle,
     flush,
     validate,
+    getTradingDaysForInterval,
 };

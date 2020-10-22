@@ -304,11 +304,6 @@ async function verifyCandles(): Promise<void> {
     }
 }
 
-async function loadCandles(): Promise<void> {
-    Log.info('Loading candles...');
-    await CandleCacheRepository.flushCandleCache();
-}
-
 async function debug(): Promise<void> {
     const candle = await CandleRepository.getCandle('NFO:BANKNIFTY20O2221300CE:D01:2008210000');
     if (candle != undefined) await CandleCacheRepository.setCandle(candle.key, candle);
@@ -321,6 +316,19 @@ async function debug(): Promise<void> {
             console.log((candle as any)[key], (cachedCandle as any)[key]);
         }
     }
+}
+
+async function loadCandles(): Promise<void> {
+    Log.info('Loading candles...');
+    await CandleCacheRepository.flushCandleCache();
+    const tradingDays = await CandleRepository.getTradingDaysForInterval(CandleInterval.MIN_01);
+    console.log(tradingDays);
+    // get unique day for 1 candles from db.
+    // Fetch unique timeCodes for within time range from db.
+    // read 1m candles by unique time code from db.
+    // write 1m candles to redis.
+    // execute downres pipeline.
+    // write downres candles to redis & db.
 }
 
 export const CandleService = {
