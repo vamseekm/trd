@@ -87,6 +87,18 @@ async function getTradingDaysForInterval(interval: CandleInterval): Promise<Date
     ).map(({ date }: any) => date as Date);
 }
 
+async function getTimeCodesForInterval(interval: CandleInterval): Promise<number[]> {
+    return (
+        await CandleModel.findAll({
+            attributes: [[Sequelize.fn('distinct', Sequelize.col('timeCode')), 'timeCode']],
+            where: {
+                interval,
+            },
+            order: [[Sequelize.col('timeCode'), 'ASC']],
+        })
+    ).map((row) => row.timeCode);
+}
+
 export const CandleRepository = {
     upsertCandles,
     getCandle,
@@ -95,4 +107,5 @@ export const CandleRepository = {
     flush,
     validate,
     getTradingDaysForInterval,
+    getTimeCodesForInterval,
 };

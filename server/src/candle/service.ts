@@ -320,11 +320,9 @@ async function debug(): Promise<void> {
 
 async function loadCandles(): Promise<void> {
     Log.info('Loading candles...');
-    await CandleCacheRepository.flushCandleCache();
-    const tradingDays = await CandleRepository.getTradingDaysForInterval(CandleInterval.MIN_01);
-    console.log(tradingDays);
-    // get unique day for 1 candles from db.
-    // Fetch unique timeCodes for within time range from db.
+    const timeCodes = await CandleRepository.getTimeCodesForInterval(CandleInterval.MIN_01);
+    console.log(timeCodes.slice(0, 100), timeCodes.length);
+    // Fetch unique timeCodes for 1m candles.
     // read 1m candles by unique time code from db.
     // write 1m candles to redis.
     // execute downres pipeline.

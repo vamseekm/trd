@@ -18,6 +18,7 @@ export class CandleModel extends Model<CandleModel> implements Candle {
     interval!: string;
 
     @Column
+    @Index
     timeCode!: number;
 
     @Column({ allowNull: false })
