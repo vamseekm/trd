@@ -11,7 +11,16 @@ async function connection(): Promise<Connection> {
         return _connection;
     }
     Log.info(`Connecting to Rabbit...`);
-    _connection = await amqplib.connect(Config.get('RABBIT_URL'));
+    const conn = await amqplib.connect(Config.get('RABBIT_URL'));
+    conn.on('error', (err) => {
+        Log.error(err);
+    });
+    conn.on('close', () => {
+        Log.info('Rabbit: closed');
+        Log.info('Rabbit: Exiting process...');
+        setTimeout(() => process.exit(0), 1000);
+    });
+    _connection = conn;
     return _connection;
 }
 
