@@ -7,7 +7,7 @@ import { IMetaInfo, INSTRUMENT_ID_SEPERATOR } from '../../types';
 
 const nseCache = new CacheGroup('nseindia.com');
 async function getNSECookie(): Promise<string> {
-    return nseCache.get({ key: 'cookie', expiry: 10 * 1000 }, async () => {
+    return nseCache.get({ key: 'cookie' }, async () => {
         const response = await axios('https://www.nseindia.com');
         return response.headers['set-cookie'];
     });

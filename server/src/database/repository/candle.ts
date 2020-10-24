@@ -30,6 +30,11 @@ async function getCandle(key: string): Promise<Candle | null> {
     return null;
 }
 
+async function getCandles(keys: string[]): Promise<Candle[]> {
+    const candles = await CandleModel.findAll({ where: { key: { [Op.in]: keys } }, raw: true });
+    return validate(candles);
+}
+
 async function findBy({
     id,
     interval,
@@ -115,6 +120,7 @@ async function getTimeCodesForInterval({
 export const CandleRepository = {
     upsertCandles,
     getCandle,
+    getCandles,
     findBy,
     removeCandle,
     flush,

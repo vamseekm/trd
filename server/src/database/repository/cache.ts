@@ -44,7 +44,7 @@ async function cacheInstrument(instrument: Instrument | null): Promise<Instrumen
 const candleCache = new CacheGroup('C', true);
 
 async function getCandles(keys: string[]): Promise<Candle[]> {
-    const candles = await candleCache.getMulti({ keys }, CandleRepository.getCandle);
+    const candles = await candleCache.getMulti({ keys }, CandleRepository.getCandles);
     for (const [i, candle] of candles.entries()) {
         if (candle == undefined) continue;
         if (typeof candle.timestamp === 'string') {
@@ -55,9 +55,13 @@ async function getCandles(keys: string[]): Promise<Candle[]> {
         candle.key = keys[i];
         candle.exchange = exchange;
         candle.instrumentId = `${exchange}${INSTRUMENT_ID_SEPERATOR}${tradingSymbol}`;
+        candle.openInterest = candle.openInterest || 0;
         candle.interval = interval;
         candle.timeCode = Number.parseInt(timeCode, 10);
-        if (validateCandle(candle) === false) throw new Error(JSON.stringify(validateCandle.errors, undefined, 2));
+        if (validateCandle(candle) === false) {
+            console.log(candle);
+            throw new Error(JSON.stringify(validateCandle.errors, undefined, 2));
+        }
     }
     return candles;
 }
@@ -85,24 +89,34 @@ async function cacheSetCandleTime(candle?: Candle): Promise<any> {
 }
 
 async function cacheSetCandle(key: string, candle?: Candle): Promise<any> {
-    const cachedValue: any = Object.assign({}, candle);
-    if (cachedValue != undefined) {
-        delete cachedValue.instrumentId;
-        delete cachedValue.exchange;
-        delete cachedValue.interval;
-        delete cachedValue.timeCode;
-        delete cachedValue.key;
+    return candleCache.set({ key, value: compactCandle(candle) });
+}
+
+function compactCandle(candle?: Candle): any {
+    const smallCandle: any = Object.assign({}, candle);
+    if (smallCandle != undefined) {
+        delete smallCandle.instrumentId;
+        delete smallCandle.exchange;
+        delete smallCandle.interval;
+        delete smallCandle.timeCode;
+        delete smallCandle.key;
     }
-    return candleCache.set({ key, value: cachedValue });
+    return smallCandle;
 }
 
 async function cacheSetCandles(candles: Candle[]): Promise<any> {
-    return Promise.all(candles.map((candle) => cacheSetCandle(candle.key, candle)));
+    const smallCandles = candles.map((candle) => {
+        return {
+            key: candle.key,
+            value: compactCandle(candle),
+        };
+    });
+    return candleCache.setMulti(smallCandles);
 }
 
 async function cacheWriteCandles(candles: Candle[]): Promise<Candle[]> {
     if (candles.length === 0) return candles;
-    await Promise.all(candles.map((candle) => cacheSetCandle(candle.key, candle)));
+    await cacheSetCandles(candles);
     await Promise.all(candles.map((candle) => cacheSetCandleTime(candle)));
     return candles;
 }

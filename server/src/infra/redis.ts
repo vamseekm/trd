@@ -34,6 +34,7 @@ const del = proxyCommand.bind(undefined, 'del');
 const set = proxyCommand.bind(undefined, 'set');
 const get = proxyCommand.bind(undefined, 'get');
 const mget = proxyCommand.bind(undefined, 'mget');
+const mset = proxyCommand.bind(undefined, 'mset');
 const zadd = proxyCommand.bind(undefined, 'zadd');
 const delWithPrefix = async (prefix: string): Promise<number> => {
     const keys = await RedisService.keys(prefix);
@@ -48,6 +49,7 @@ export const RedisService = {
     get,
     mget,
     set,
+    mset,
     del,
     keys,
     zadd,

@@ -54,7 +54,7 @@ async function generateAccessToken(requestToken: string): Promise<string> {
 
 const brokerCache = new CacheGroup('broker');
 async function getProfile(): Promise<IBrokerProfile> {
-    return brokerCache.get({ key: 'Broker.getProfile', expiry: 8 * 3600 * 1000 }, async () => {
+    return brokerCache.get({ key: 'Broker.getProfile' }, async () => {
         const kite = await kiteInstance();
         const profile = await kite.getProfile();
         return {
@@ -84,7 +84,7 @@ async function getLTP(inputIdList: string[]): Promise<BrokerQuoteLtp[]> {
 }
 const brokerInstrumentCahce = new CacheGroup('bk_ins');
 async function getInstrumentsByExchange(exchange: string): Promise<Instrument[]> {
-    const instruments: any = await brokerInstrumentCahce.get({ key: exchange, expiry: 2 * 3600 * 1000 }, async () => {
+    const instruments: any = await brokerInstrumentCahce.get({ key: exchange }, async () => {
         const kite = await kiteInstance();
         return kite.getInstruments(exchange);
     });

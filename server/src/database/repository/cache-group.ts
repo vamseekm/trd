@@ -1,4 +1,9 @@
 import { RedisService } from '../../infra';
+import { Candle } from '../../types';
+interface KVPair {
+    key: string;
+    value: any;
+}
 export class CacheGroup {
     private _prefix: string;
     constructor(name: string, private allowNull: boolean = false) {
@@ -13,30 +18,45 @@ export class CacheGroup {
         return RedisService.delWithPrefix(this.redisCacheKey('*'));
     }
 
-    async getMulti(
-        { keys, expiry = 24 * 60 * 60 * 1000 }: { keys: string[]; expiry?: number },
-        callback: (args: any) => Promise<any>,
-    ): Promise<any> {
+    async getMulti({ keys }: { keys: string[] }, callback: (args: any) => Promise<any>): Promise<any> {
         // keys = ['NFO:BANKNIFTY20O1521800CE:M01:2010121011', 'NFO:BANKNIFTY20O1524000PE:M01:2010121011'];
         const cachedKeys = keys.map((key) => this.redisCacheKey(key));
         const items = await RedisService.mget(...cachedKeys);
-        return Promise.all(
-            items.map(async (item: any, index: number) => {
-                if (item != undefined) {
-                    const { value } = JSON.parse(item);
-                    return value;
-                } else {
-                    const missedValue = await callback(keys[index]);
-                    return this.set({ key: keys[index], value: missedValue, expiry });
+        const missingKeys: string[] = [];
+        for (const [i, key] of cachedKeys.entries()) {
+            if (items[i] == undefined) {
+                missingKeys.push(key);
+            } else {
+                const { value } = JSON.parse(items[i]);
+                items[i] = value;
+            }
+        }
+        const dbCandles: Candle[] = await callback(missingKeys);
+        if (dbCandles.length > 0) {
+            const dbCandleMap: Map<string, Candle> = new Map();
+            for (const candle of dbCandles) {
+                dbCandleMap.set(candle.key, candle);
+            }
+            for (const [i, key] of cachedKeys.entries()) {
+                if (items[i] == undefined) {
+                    items[i] = dbCandleMap.get(key);
                 }
-            }),
-        );
+            }
+            await this.setMulti(
+                dbCandles.map(
+                    (candle): KVPair => {
+                        return {
+                            key: candle.key,
+                            value: candle,
+                        };
+                    },
+                ),
+            );
+        }
+        return items;
     }
 
-    async get(
-        { key, expiry = 24 * 60 * 60 * 1000 }: { key: string; expiry?: number },
-        callback: () => Promise<any>,
-    ): Promise<any> {
+    async get({ key }: { key: string }, callback: () => Promise<any>): Promise<any> {
         const redisArguments: string[] = [this.redisCacheKey(key)];
         const item = await RedisService.get(...redisArguments);
         if (item != undefined) {
@@ -45,22 +65,23 @@ export class CacheGroup {
             if (isnull === true && this.allowNull) return undefined;
         }
         const value = await callback();
-        return this.set({ key, expiry, value });
+        return this.set({ key, value });
     }
 
-    async set({ key, expiry = 24 * 3600 * 1000, value }: { key: string; expiry?: number; value: any }): Promise<any> {
-        if (value == undefined && this.allowNull === false) return;
-        // console.log('set', key, value);
-        const redisArguments: string[] = [this.redisCacheKey(key)];
-        redisArguments.push(JSON.stringify({ value, isnull: value == undefined }));
-        if (expiry) {
-            redisArguments.push('PX', `${expiry}`);
+    async set(item: KVPair): Promise<any> {
+        return this.setMulti([item]);
+    }
+
+    async setMulti(originalItems: KVPair[]): Promise<any> {
+        const redisArguments: string[] = [];
+        for (const originalItem of originalItems) {
+            if (this.allowNull === false && originalItem.value == undefined) continue;
+            const { key, value } = originalItem;
+            redisArguments.push(this.redisCacheKey(key));
+            redisArguments.push(JSON.stringify({ value, isnull: value == undefined }));
         }
-        // console.log(redisArguments);
-        // console.log(new Error().stack);
-        // console.log(redisArguments);
-        await RedisService.set(...redisArguments);
-        return value;
+        if (redisArguments.length > 0) await RedisService.mset(...redisArguments);
+        return originalItems.map((item) => item.value);
     }
 
     async del(key: string): Promise<any> {
