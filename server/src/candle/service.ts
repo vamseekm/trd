@@ -1,4 +1,3 @@
-import lodash from 'lodash';
 import { DateTime, Duration } from 'luxon';
 
 import { BrokerService } from '../broker';
@@ -185,12 +184,12 @@ async function getLastTradingDays(days: number): Promise<{ from: Date; to: Date 
     return { from, to };
 }
 
-async function processTicks(ticks: Tick[]): Promise<Candle[]> {
+async function processTicks(ticks: Tick[]): Promise<{ sourceCandles: Candle[]; downResCandles: Candle[] }> {
     const tickPipeline = new TickPipeline(ticks);
     const sourceCandles = await tickPipeline.execute();
     const downResPipeline = new DownResolutionPipeline(sourceCandles);
     const downResCandles = await downResPipeline.execute();
-    return [...sourceCandles, ...downResCandles];
+    return { sourceCandles, downResCandles };
 }
 
 const _tickMap: Record<string, Tick> = {};
@@ -219,12 +218,13 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
         _tickMap[tick.instrumentId] = tick;
     }
     const missingTicks: Tick[] = computeMissingTicks(ticks);
-    const allCandles = await processTicks([...missingTicks, ...ticks]);
+    const { sourceCandles, downResCandles } = await processTicks([...missingTicks, ...ticks]);
     const startWriteTime = Date.now();
-    for (const candleChunk of lodash.chunk(allCandles, 100)) {
-        await CandleCacheRepository.writeCandles(candleChunk);
-    }
-    const timeCode = allCandles.length > 0 ? allCandles[0].timeCode : 0;
+    await Promise.all([
+        CandleCacheRepository.writeCandles(sourceCandles),
+        CandleCacheRepository.cacheSetCandles(downResCandles),
+    ]);
+    const timeCode = sourceCandles.length > 0 ? sourceCandles[0].timeCode : 0;
     const writeTime = Date.now() - startWriteTime;
     const totalTime = Date.now() - startTime;
     const cpuTime = totalTime - writeTime;
@@ -232,13 +232,13 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
         ticks: ticks.length,
         mapSize: Object.keys(_tickMap).length,
         tickMiss: missingTicks.length,
-        candles: allCandles.length,
+        candles: sourceCandles.length,
         writeTime,
         cpuTime,
         totalTime,
         timeCode,
     });
-    return allCandles;
+    return sourceCandles;
 }
 
 function parseCandleKey(
@@ -306,7 +306,7 @@ async function verifyCandles(): Promise<void> {
 
 async function debug(): Promise<void> {
     const candle = await CandleRepository.getCandle('NFO:BANKNIFTY20O2221300CE:D01:2008210000');
-    if (candle != undefined) await CandleCacheRepository.setCandle(candle.key, candle);
+    if (candle != undefined) await CandleCacheRepository.cacheSetCandle(candle.key, candle);
     const cachedCandle = await CandleCacheRepository.getCandle('NFO:BANKNIFTY20O2221300CE:D01:2008210000');
     if (cachedCandle != undefined && candle != undefined) {
         console.log(candle, cachedCandle);
@@ -317,16 +317,32 @@ async function debug(): Promise<void> {
         }
     }
 }
-
+const TRADING_DAYS_IN_MEMORY = 5;
 async function loadCandles(): Promise<void> {
     Log.info('Loading candles...');
-    const timeCodes = await CandleRepository.getTimeCodesForInterval(CandleInterval.MIN_01);
-    console.log(timeCodes.slice(0, 100), timeCodes.length);
-    // Fetch unique timeCodes for 1m candles.
-    // read 1m candles by unique time code from db.
-    // write 1m candles to redis.
-    // execute downres pipeline.
-    // write downres candles to redis & db.
+    // await CandleCacheRepository.flushCandleCache();
+    const interval = CandleInterval.MIN_01;
+    const tradingDays = (await CandleRepository.getTradingDaysForInterval(interval)).slice(-1 * TRADING_DAYS_IN_MEMORY);
+    Log.json(
+        '\tTrading days: ',
+        tradingDays.map((day) => day.toLocaleDateString()),
+    );
+    const from = tradingDays[0];
+    const to = new Date();
+    const timeCodes = await CandleRepository.getTimeCodesForInterval({ from, to, interval });
+    Log.info(`\tFound ${timeCodes.length} time codes.`);
+    for (const [_i, timeCode] of timeCodes.entries()) {
+        const _startTime = Date.now();
+        const sourceCandles = await CandleRepository.findBy({
+            timeCode,
+            interval,
+        });
+        await CandleCacheRepository.cacheSetCandles(sourceCandles);
+        const downResPipeline = new DownResolutionPipeline(sourceCandles);
+        const downResCandles = await downResPipeline.execute();
+        await CandleCacheRepository.cacheSetCandles(downResCandles);
+        Log.info(`\tProcessed ${timeCode} wrote ${downResCandles.length} candles in ${Date.now() - _startTime} ms`);
+    }
 }
 
 export const CandleService = {

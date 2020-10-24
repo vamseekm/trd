@@ -95,6 +95,11 @@ async function cacheSetCandle(key: string, candle?: Candle): Promise<any> {
     }
     return candleCache.set({ key, value: cachedValue });
 }
+
+async function cacheSetCandles(candles: Candle[]): Promise<any> {
+    return Promise.all(candles.map((candle) => cacheSetCandle(candle.key, candle)));
+}
+
 async function cacheWriteCandles(candles: Candle[]): Promise<Candle[]> {
     if (candles.length === 0) return candles;
     await Promise.all(candles.map((candle) => cacheSetCandle(candle.key, candle)));
@@ -124,7 +129,8 @@ async function flushCandleCache(): Promise<any> {
 export const CandleCacheRepository = {
     getInstrumentByToken,
     getInstrumentById,
-    setCandle: cacheSetCandle,
+    cacheSetCandle,
+    cacheSetCandles,
     getCandle,
     getCandles,
     writeCandles,

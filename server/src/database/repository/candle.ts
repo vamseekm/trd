@@ -1,7 +1,7 @@
 import { Op, Sequelize, WhereOptions } from 'sequelize';
 
 import { Log } from '../../infra';
-import { Candle, CandleInterval } from '../../types';
+import { Candle, CandleInterval, INSTRUMENT_ID_SEPERATOR } from '../../types';
 import { validateCandle } from '../../types/candle';
 import { CandleModel } from '../model';
 
@@ -35,18 +35,21 @@ async function findBy({
     interval,
     from,
     to,
+    timeCode,
 }: {
-    id: string;
+    id?: string;
     interval?: CandleInterval;
     from?: Date;
     to?: Date;
+    timeCode?: number;
 }): Promise<Candle[]> {
-    // const keyTokens: string[] = [id, interval || '%'];
-    // const keyPrefix = `${keyTokens.join(INSTRUMENT_ID_SEPERATOR)}:%`;
-    const prefix = [id, interval].filter((token) => token != undefined).join(':');
-    const keyPrefix = `${prefix}:%`;
-    let where: WhereOptions = { key: { [Op.like]: keyPrefix } };
+    let where: WhereOptions = {};
     if (from && to) where = { ...where, timestamp: { [Op.gte]: from, [Op.lte]: to } };
+    if (interval) where = { ...where, interval };
+    if (id) where = { ...where, id };
+    if (id && interval) where = { ...where, key: { [Op.like]: `${id}${INSTRUMENT_ID_SEPERATOR}${interval}%` } };
+    if (timeCode) where = { ...where, timeCode };
+    if (Object.keys(where).length === 0) throw new Error('Please specify atleast one where condition.');
     return validate(await CandleModel.findAll({ where, order: Sequelize.col('key'), raw: true }));
 }
 
@@ -77,22 +80,32 @@ async function flush(): Promise<void> {
 async function getTradingDaysForInterval(interval: CandleInterval): Promise<Date[]> {
     return (
         await CandleModel.findAll({
-            attributes: [[Sequelize.fn('distinct', Sequelize.cast(Sequelize.col('timestamp'), 'date')), 'date']],
+            attributes: [[Sequelize.fn('min', Sequelize.col('timestamp')), 'date']],
             where: {
                 interval,
             },
-            order: [[Sequelize.cast(Sequelize.col('timestamp'), 'date'), 'ASC']],
+            group: [Sequelize.fn('date_trunc', 'day', Sequelize.col('timestamp'))],
+            order: [[Sequelize.fn('date_trunc', 'day', Sequelize.col('timestamp')), 'ASC']],
             raw: true,
         })
     ).map(({ date }: any) => date as Date);
 }
 
-async function getTimeCodesForInterval(interval: CandleInterval): Promise<number[]> {
+async function getTimeCodesForInterval({
+    interval,
+    from,
+    to,
+}: {
+    interval: CandleInterval;
+    from: Date;
+    to: Date;
+}): Promise<number[]> {
     return (
         await CandleModel.findAll({
             attributes: [[Sequelize.fn('distinct', Sequelize.col('timeCode')), 'timeCode']],
             where: {
                 interval,
+                timestamp: { [Op.gte]: from, [Op.lte]: to },
             },
             order: [[Sequelize.col('timeCode'), 'ASC']],
         })

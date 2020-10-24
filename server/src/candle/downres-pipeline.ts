@@ -9,6 +9,7 @@ const _intervals = [
     CandleInterval.MIN_15,
     CandleInterval.MIN_30,
     CandleInterval.MIN_60,
+    CandleInterval.DAY_01,
 ];
 
 class CandleState {

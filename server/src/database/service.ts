@@ -15,7 +15,10 @@ function connect(): Sequelize {
 }
 
 async function syncSchema(): Promise<Sequelize> {
-    return connect().sync({ alter: true });
+    /*
+    await seq.query(`CREATE INDEX IF NOT EXISTS candle_timestamp_day ON candle (date_trunc('day', timestamp at TIME ZONE 'UTC'))`);
+    */
+    return await connect().sync({ alter: true });
 }
 
 export const DatabaseService = {

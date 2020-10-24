@@ -9,9 +9,11 @@ export class CandleModel extends Model<CandleModel> implements Candle {
     key!: string;
 
     @Column({ type: DataType.STRING(64) })
+    @Index
     instrumentId!: string;
 
     @Column({ type: DataType.STRING(8) })
+    @Index
     exchange!: string;
 
     @Column({ type: DataType.STRING(8) })

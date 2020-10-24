@@ -3,14 +3,17 @@ Instrument
 Tick
     L. Use redis store for computing missing ticks.
 Candle
-    H. Load candles into redis.
-        H. Use downres pipeline to recalculate db candles and store in both db and memory.
+    H. Load into memory.
+        H. Load 1m candles into memory.
+        H. Run 1m candles through downres pipeline and store them in memory and redis.
+        H. Write pump.
+        H. Run all candles through indicator pipeline and store them in memory.
     L. Clean candles.
     L. Verify missing candles.
     L. Verify candle formation.
-    L. Write pump.
 Indictator
-    H. Calculate standard indicators.
+    H. Make indicator pipeline.
+        H. Calculate individual indicators.
 Stretagies
     H. Cli alerts.
     L. Web alerts.
