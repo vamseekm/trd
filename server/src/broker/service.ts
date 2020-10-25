@@ -16,7 +16,7 @@ import {
     KITE_API_KEY,
     KITE_API_SECRET,
 } from '../types';
-import { validateInstrument } from '../types/instrument';
+import { validateInstrument } from '../types';
 import { maskString } from '../util';
 
 const { KiteConnect, KiteTicker } = require('kiteconnect');

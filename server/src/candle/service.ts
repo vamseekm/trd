@@ -347,6 +347,7 @@ async function loadCandles(): Promise<void> {
         const downResCandles = await downResPipeline.execute();
         await CandleCacheRepository.cacheSetCandles(downResCandles);
         Log.info(`\tProcessed ${timeCode} wrote ${downResCandles.length} candles in ${Date.now() - _startTime} ms`);
+        break;
     }
 }
 
