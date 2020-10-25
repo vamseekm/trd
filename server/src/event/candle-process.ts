@@ -1,6 +1,6 @@
 import { BridgeService } from '../bridge';
-import { CandleRepository } from '../database/repository/candle';
-import { IndicatorService } from '../indicator/service';
+import { CandleRepository } from '../database';
+import { IndicatorService } from '../indicator';
 import { Candle } from '../types';
 import { waitForever } from '../util';
 

@@ -1,16 +1,21 @@
 import { DateTime, Duration } from 'luxon';
 
 import { BrokerService } from '../broker';
-import { CandleCacheRepository, CandleRepository } from '../database';
-import { InstrumentRepository } from '../database/repository/instrument';
+import { CandleCacheRepository, CandleRepository, InstrumentRepository } from '../database';
 import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
-import { Candle, CandleDuration, CandleInterval, IBrokerCandle, Instrument, Tick } from '../types';
-import { INSTRUMENT_ID_SEPERATOR } from '../types';
-import { validateCandle } from '../types/candle';
-import { IExchangeTimeProperties } from '../types/exchange';
-import { printStats, sleep, toDayAndTime } from '../util';
-import { assertNotUndefined } from '../util/ds';
+import {
+    Candle,
+    CandleDuration,
+    CandleInterval,
+    IBrokerCandle,
+    IExchangeTimeProperties,
+    Instrument,
+    INSTRUMENT_ID_SEPERATOR,
+    Tick,
+    validateCandle,
+} from '../types';
+import { assertNotUndefined, printStats, sleep, toDayAndTime } from '../util';
 import { DownResolutionPipeline } from './downres-pipeline';
 import { TickPipeline } from './tick-pipeline';
 

@@ -2,8 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DateTime } from 'luxon';
 
-import { CandleCacheRepository } from '../database/repository/cache';
-import { CacheGroup } from '../database/repository/cache-group';
+import { CacheGroup, CandleCacheRepository } from '../database';
 import { Config, Log } from '../infra';
 import { PrefService } from '../pref';
 import {

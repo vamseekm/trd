@@ -1,11 +1,9 @@
 import LRUCache from 'lru-cache';
 
-import { CandleService } from '../../candle/service';
-import { RedisService } from '../../infra/redis';
-import { Candle, Instrument } from '../../types';
-import { validateCandle } from '../../types/candle';
-import { INSTRUMENT_ID_SEPERATOR } from '../../types/instrument';
-import { CandleModel } from '../model/candle.table';
+import { CandleService } from '../../candle';
+import { RedisService } from '../../infra';
+import { Candle, Instrument, INSTRUMENT_ID_SEPERATOR, validateCandle } from '../../types';
+import { CandleModel } from '../model';
 import { CacheGroup } from './cache-group';
 import { CandleRepository } from './candle';
 import { InstrumentRepository } from './instrument';

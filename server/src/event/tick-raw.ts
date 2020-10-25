@@ -1,5 +1,5 @@
 import { BridgeService } from '../bridge';
-import { formatTick } from '../tick/util';
+import { formatTick } from '../tick';
 import { waitForever } from '../util';
 
 export async function startTickRawConsumer(): Promise<void> {

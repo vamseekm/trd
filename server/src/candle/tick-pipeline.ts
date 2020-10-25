@@ -1,6 +1,5 @@
-import { CandleCacheRepository } from '../database/repository/cache';
-import { Candle, Tick } from '../types';
-import { CandleInterval } from '../types/candle';
+import { CandleCacheRepository } from '../database';
+import { Candle, CandleInterval, Tick } from '../types';
 import { toDayAndTime } from '../util';
 import { CandleService } from './service';
 

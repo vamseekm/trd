@@ -1,7 +1,7 @@
 import axios from 'axios';
 import lodash from 'lodash';
 
-import { CacheGroup } from '../../database/repository/cache-group';
+import { CacheGroup } from '../../database';
 import { Log } from '../../infra';
 import { IMetaInfo, INSTRUMENT_ID_SEPERATOR } from '../../types';
 

@@ -7,3 +7,4 @@
 /.vscode
 /**/*/*.0x
 /*.rdb
+server/dependencygraph.svg

@@ -14,5 +14,5 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true
     },
-    "exclude": ["*/**/*.js"]
+    "exclude": ["*/**/*.js", "node_modules/*"]
 }

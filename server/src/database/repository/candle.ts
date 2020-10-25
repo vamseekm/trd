@@ -1,8 +1,7 @@
 import { Op, Sequelize, WhereOptions } from 'sequelize';
 
 import { Log } from '../../infra';
-import { Candle, CandleInterval, INSTRUMENT_ID_SEPERATOR } from '../../types';
-import { validateCandle } from '../../types/candle';
+import { Candle, CandleInterval, INSTRUMENT_ID_SEPERATOR, validateCandle } from '../../types';
 import { CandleModel } from '../model';
 
 async function upsertCandles(inputCandleList: Candle[]): Promise<any> {

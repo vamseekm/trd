@@ -1,8 +1,7 @@
 import { Channel, ConsumeMessage } from 'amqplib';
 
 import { Rabbit } from '../infra';
-import { printStats } from '../util';
-import { hoursInMs } from '../util';
+import { hoursInMs, printStats } from '../util';
 
 const messageTtl = hoursInMs(24);
 const durable = true;

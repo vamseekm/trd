@@ -2,3 +2,5 @@
 /node_modules
 /.clinic
 /node_trace.*.log
+/docs
+.DS_Store

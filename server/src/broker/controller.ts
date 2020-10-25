@@ -3,7 +3,7 @@
 import express from 'express';
 
 import { expressWrap } from '../api-server';
-import { IController } from '../types/controller';
+import { IController } from '../types';
 import { BrokerService } from './service';
 
 async function login(_request: express.Request, response: express.Response): Promise<void> {

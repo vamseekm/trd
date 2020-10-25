@@ -29,7 +29,8 @@
         "pkgminor": "npm run ncu -- --target minor -u",
         "ncu": "npx ncu",
         "test": "NODE_ENV=dev jest",
-        "test:watch": "npm run test -- --watchAll"
+        "test:watch": "npm run test -- --watchAll",
+        "dot": "depcruise --include-only \"^src\" --output-type dot src | dot -T svg > dependencygraph.svg && open ./dependencygraph.svg"
     },
     "author": "",
     "license": "ISC",
@@ -50,6 +51,7 @@
         "config": "^3.3.2",
         "deasync": "^0.1.20",
         "deep-diff": "^1.0.2",
+        "dependency-cruiser": "^9.15.1",
         "diff-arrays-of-objects": "^1.1.7",
         "expose-gc": "^1.0.0",
         "express": "^4.17.1",
@@ -80,6 +82,7 @@
         "synchronized-promise": "^0.3.1",
         "tsc-watch": "^4.2.9",
         "type-graphql": "^1.0.0",
+        "typedoc": "^0.19.2",
         "wait-on": "^5.2.0",
         "winston": "^3.3.3"
     },
