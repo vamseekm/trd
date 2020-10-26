@@ -4,11 +4,8 @@ Tick
     L. Use redis store for computing missing ticks.
 Candle
     H. Load into memory.
-        H. Load 1m candles into memory.
-        H. Run 1m candles through downres pipeline and store them in memory and redis.
-        H. Write pump.
         H. Run all candles through indicator pipeline and store them in memory.
-    L. Clean candles.
+    L. Remove old candles.
     L. Verify missing candles.
     L. Verify candle formation.
 Indictator
