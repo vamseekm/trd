@@ -225,10 +225,9 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
     const missingTicks: Tick[] = computeMissingTicks(ticks);
     const { sourceCandles, downResCandles } = await processTicks([...missingTicks, ...ticks]);
     const startWriteTime = Date.now();
-    await Promise.all([
-        CandleCacheRepository.writeCandles(sourceCandles),
-        CandleCacheRepository.cacheSetCandles(downResCandles),
-    ]);
+    const allCandles = [...sourceCandles, ...downResCandles];
+    await CandleCacheRepository.writeCandles(allCandles);
+    await CandleCacheRepository.queueForDBWrites(allCandles);
     const timeCode = sourceCandles.length > 0 ? sourceCandles[0].timeCode : 0;
     const writeTime = Date.now() - startWriteTime;
     const totalTime = Date.now() - startTime;
@@ -311,7 +310,7 @@ async function verifyCandles(): Promise<void> {
 
 async function debug(): Promise<void> {
     const candle = await CandleRepository.getCandle('NFO:BANKNIFTY20O2221300CE:D01:2008210000');
-    if (candle != undefined) await CandleCacheRepository.cacheSetCandle(candle.key, candle);
+    if (candle != undefined) await CandleCacheRepository.writeCandles([candle]);
     const cachedCandle = await CandleCacheRepository.getCandle('NFO:BANKNIFTY20O2221300CE:D01:2008210000');
     if (cachedCandle != undefined && candle != undefined) {
         console.log(candle, cachedCandle);
@@ -342,13 +341,18 @@ async function loadCandles(): Promise<void> {
             timeCode,
             interval,
         });
-        await CandleCacheRepository.cacheSetCandles(sourceCandles);
+        // await CandleCacheRepository.cacheWriteCandles(sourceCandles);
         const downResPipeline = new DownResolutionPipeline(sourceCandles);
         const downResCandles = await downResPipeline.execute();
-        await CandleCacheRepository.cacheSetCandles(downResCandles);
-        Log.info(`\tProcessed ${timeCode} wrote ${downResCandles.length} candles in ${Date.now() - _startTime} ms`);
-        break;
+        const allCandles = [...sourceCandles, ...downResCandles];
+        await CandleCacheRepository.writeCandles(allCandles);
+        await CandleCacheRepository.queueForDBWrites(downResCandles);
+        Log.info(`\tProcessed ${timeCode} wrote ${allCandles.length} candles in ${Date.now() - _startTime} ms`);
     }
+}
+
+async function startWritePump(): Promise<any> {
+    return CandleCacheRepository.startWritePump();
 }
 
 export const CandleService = {
@@ -360,4 +364,5 @@ export const CandleService = {
     syncHistorical,
     loadCandles,
     verifyCandles,
+    startWritePump,
 };

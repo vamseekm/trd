@@ -1,16 +1,24 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import lodash from 'lodash';
 
-import { CacheGroup } from '../../database';
 import { Log } from '../../infra';
 import { IMetaInfo, INSTRUMENT_ID_SEPERATOR } from '../../types';
-
-const nseCache = new CacheGroup('nseindia.com');
+import LRUCache from 'lru-cache';
+let _client: AxiosInstance | undefined;
+function httpClient() {
+    if (_client != undefined) return _client;
+    const httpClient = axios.create();
+    httpClient.defaults.timeout = 2000;
+    return (_client = httpClient);
+}
+const nseCache = new LRUCache<string, string>({ maxAge: 10000 });
 async function getNSECookie(): Promise<string> {
-    return nseCache.get({ key: 'cookie' }, async () => {
-        const response = await axios('https://www.nseindia.com');
-        return response.headers['set-cookie'];
-    });
+    const value = nseCache.get('cookie');
+    if (value != undefined) return value;
+    const response = await httpClient()('https://www.nseindia.com');
+    const cookie = response.headers['set-cookie'];
+    nseCache.set('cookie', cookie);
+    return cookie;
 }
 
 async function downloadSymbolMeta({
@@ -23,7 +31,7 @@ async function downloadSymbolMeta({
     await getNSECookie();
     try {
         const url = `https://www.nseindia.com/api/quote-equity?symbol=${tradingSymbol}&section=trade_info`;
-        const response = await axios(url, {
+        const response = await httpClient()(url, {
             headers: {
                 Cookie: await getNSECookie(),
                 // Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',

@@ -18,7 +18,7 @@ export class CacheGroup {
         return RedisService.delWithPrefix(this.redisCacheKey('*'));
     }
 
-    async getMulti({ keys }: { keys: string[] }, callback: (args: any) => Promise<any>): Promise<any> {
+    async getMulti({ keys }: { keys: string[] }, callback?: (args: any) => Promise<any>): Promise<any> {
         // keys = ['NFO:BANKNIFTY20O1521800CE:M01:2010121011', 'NFO:BANKNIFTY20O1524000PE:M01:2010121011'];
         const cachedKeys = keys.map((key) => this.redisCacheKey(key));
         const items = await RedisService.mget(...cachedKeys);
@@ -31,27 +31,29 @@ export class CacheGroup {
                 items[i] = value;
             }
         }
-        const dbCandles: Candle[] = await callback(missingKeys);
-        if (dbCandles.length > 0) {
-            const dbCandleMap: Map<string, Candle> = new Map();
-            for (const candle of dbCandles) {
-                dbCandleMap.set(candle.key, candle);
-            }
-            for (const [i, key] of cachedKeys.entries()) {
-                if (items[i] == undefined) {
-                    items[i] = dbCandleMap.get(key);
+        if (callback != undefined) {
+            const dbCandles: Candle[] = await callback(missingKeys);
+            if (dbCandles.length > 0) {
+                const dbCandleMap: Map<string, Candle> = new Map();
+                for (const candle of dbCandles) {
+                    dbCandleMap.set(candle.key, candle);
                 }
+                for (const [i, key] of cachedKeys.entries()) {
+                    if (items[i] == undefined) {
+                        items[i] = dbCandleMap.get(key);
+                    }
+                }
+                await this.setMulti(
+                    dbCandles.map(
+                        (candle): KVPair => {
+                            return {
+                                key: candle.key,
+                                value: candle,
+                            };
+                        },
+                    ),
+                );
             }
-            await this.setMulti(
-                dbCandles.map(
-                    (candle): KVPair => {
-                        return {
-                            key: candle.key,
-                            value: candle,
-                        };
-                    },
-                ),
-            );
         }
         return items;
     }

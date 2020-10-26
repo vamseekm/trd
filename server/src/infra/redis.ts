@@ -36,6 +36,10 @@ const get = proxyCommand.bind(undefined, 'get');
 const mget = proxyCommand.bind(undefined, 'mget');
 const mset = proxyCommand.bind(undefined, 'mset');
 const zadd = proxyCommand.bind(undefined, 'zadd');
+const renameIfNotExists = proxyCommand.bind(undefined, 'renamenx');
+const sortedSetSize = proxyCommand.bind(undefined, 'zcard');
+const sortedSetGetByRange = proxyCommand.bind(undefined, 'zrange');
+const sortedSetRemove = proxyCommand.bind(undefined, 'zrem');
 const delWithPrefix = async (prefix: string): Promise<number> => {
     const keys = await RedisService.keys(prefix);
     if (keys.length === 0) return 0;
@@ -53,5 +57,9 @@ export const RedisService = {
     del,
     keys,
     zadd,
+    renameIfNotExists,
+    sortedSetSize,
+    sortedSetGetByRange,
+    sortedSetRemove,
     delWithPrefix,
 };

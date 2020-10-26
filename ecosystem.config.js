@@ -31,7 +31,7 @@ module.exports = {
     serverRun({
       name: "tick-processor",
       args:
-        "--Event::startTickRawConsumer --Event::startTickStoreConsumer --Event::startTickProcessConsumer",
+        "--Event::startTickRawConsumer --Event::startTickStoreConsumer --Event::startTickProcessConsumer --Candle::startWritePump",
       // args: "--Event::startTickRawConsumer --Event::startTickProcessConsumer",
     }),
 
