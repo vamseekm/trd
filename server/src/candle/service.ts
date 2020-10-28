@@ -16,6 +16,7 @@ import {
     validateCandle,
 } from '../types';
 import { assertNotUndefined, printStats, sleep, toDayAndTime } from '../util';
+import { CandleWritePump } from './candle-write-pump';
 import { DownResolutionPipeline } from './downres-pipeline';
 import { TickPipeline } from './tick-pipeline';
 
@@ -348,11 +349,12 @@ async function loadCandles(): Promise<void> {
         await CandleCacheRepository.writeCandles(allCandles);
         await CandleCacheRepository.queueForDBWrites(downResCandles);
         Log.info(`\tProcessed ${timeCode} wrote ${allCandles.length} candles in ${Date.now() - _startTime} ms`);
+        // break;
     }
 }
 
 async function startWritePump(): Promise<any> {
-    return CandleCacheRepository.startWritePump();
+    return CandleWritePump.start();
 }
 
 export const CandleService = {

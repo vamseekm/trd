@@ -1,9 +1,8 @@
 import LRUCache from 'lru-cache';
 
-import { CandleService } from '../../candle';
-import { Log, RedisService } from '../../infra';
+import { CandleService, CandleWritePump } from '../../candle';
+import { RedisService } from '../../infra';
 import { Candle, Instrument, INSTRUMENT_ID_SEPERATOR, validateCandle } from '../../types';
-import { sleep } from '../../util';
 import { CandleModel } from '../model';
 import { CacheGroup } from './cache-group';
 import { CandleRepository } from './candle';
@@ -17,6 +16,23 @@ const instrumentTokenCache = new LRUCache<string, string>({
     max: INSTRUMENT_COUNT,
     maxAge: INSTRUMENT_CACHE_EXPIRY,
 });
+
+const CANDLE_TIME_PREFIX = 'CT';
+
+function getCandleTimeRecord(key: string): { key: string; score: string; value: string } {
+    const tokens = key.split(INSTRUMENT_ID_SEPERATOR);
+    if (tokens.length != 4) throw new Error(`Invalid candle key format: ${key}`);
+    const sortedSetKeySuffix = tokens.slice(0, 3).join(INSTRUMENT_ID_SEPERATOR);
+    const value = tokens[3];
+    return { key: `${CANDLE_TIME_PREFIX}:${sortedSetKeySuffix}`, score: value, value };
+}
+
+async function setCandleRecords(candles: Candle[]): Promise<any> {
+    const items = candles.flatMap(({ key }) => {
+        return [getCandleTimeRecord(key), CandleWritePump.keyToCandleMutateRecord(key)];
+    });
+    return SortedSet.writeItems({ items });
+}
 
 async function getInstrumentByToken(instrumentToken: string): Promise<Instrument | undefined> {
     const id = instrumentTokenCache.get(instrumentToken);
@@ -74,31 +90,9 @@ async function getCandle(key: string | undefined): Promise<Candle | undefined> {
     return (await getCandles([key]))[0];
 }
 
-const CANDLE_TIME_PREFIX = 'CT';
-
-function getCandleTimeRecord(key: string): { key: string; score: string; value: string } {
-    const tokens = key.split(INSTRUMENT_ID_SEPERATOR);
-    if (tokens.length != 4) throw new Error(`Invalid candle key format: ${key}`);
-    const sortedSetKeySuffix = tokens.slice(0, 3).join(INSTRUMENT_ID_SEPERATOR);
-    const value = tokens[3];
-    return { key: `${CANDLE_TIME_PREFIX}:${sortedSetKeySuffix}`, score: value, value };
-}
-
-const QUEUE_CANDLE_DB_WRITE_KEY = 'QUEUE_WRITE_DB';
-function getCandleDBWriteTimeRecord(key: string): { key: string; score: string; value: string } {
-    return { key: `${QUEUE_CANDLE_DB_WRITE_KEY}`, score: `${Date.now()}`, value: key };
-}
-
-async function setCandleRecords(candles: Candle[]): Promise<any> {
-    const items = candles.flatMap(({ key }) => {
-        return [getCandleTimeRecord(key)];
-    });
-    return SortedSet.writeItems({ items });
-}
-
 async function queueForDBWrites(candles: Candle[]): Promise<any> {
     const items = candles.flatMap(({ key }) => {
-        return [getCandleDBWriteTimeRecord(key)];
+        return [CandleWritePump.keyToCandleMutateRecord(key)];
     });
     return SortedSet.writeItems({ items });
 }
@@ -140,79 +134,22 @@ async function deleteCandle({ key }: { key: string }): Promise<any> {
     await candleCache.del(key);
     return CandleModel.destroy({ where: { key } });
 }
-const CURRENT_QUEUE_CANDLE_DB_WRITE_KEY = `${QUEUE_CANDLE_DB_WRITE_KEY}:CURRENT`;
+
 async function clearCandleTimes(): Promise<any> {
-    return Promise.all([
-        RedisService.delWithPrefix(`${CANDLE_TIME_PREFIX}:*`),
-        RedisService.del(QUEUE_CANDLE_DB_WRITE_KEY),
-        RedisService.del(CURRENT_QUEUE_CANDLE_DB_WRITE_KEY),
-    ]);
+    return Promise.all([RedisService.delWithPrefix(`${CANDLE_TIME_PREFIX}:*`), CandleWritePump.clear()]);
 }
 
 async function flushCandleCache(): Promise<any> {
     return Promise.all([clearCandleTimes(), candleCache.flush()]);
 }
 
-async function startWritePump(): Promise<any> {
-    const nopFunc = async () => {
-        return [];
-    };
-    const BUFFER_SIZE = 5000;
-    let delay = 1000;
-    const stats: number[] = [0];
-    let iter = 0;
-    while (true) {
-        iter = (iter + 1) % 10;
-        const currentQueue = CURRENT_QUEUE_CANDLE_DB_WRITE_KEY;
-        try {
-            await RedisService.renameIfNotExists(QUEUE_CANDLE_DB_WRITE_KEY, currentQueue);
-        } catch {}
-        const iterTime = Date.now();
-        const currentQueueSize = Number.parseInt(await RedisService.sortedSetSize(currentQueue), 10);
-        const queueSize = Number.parseInt(await RedisService.sortedSetSize(QUEUE_CANDLE_DB_WRITE_KEY));
-        let totalSize = queueSize + currentQueueSize;
-        stats[iter] = stats[iter] || 0;
-        stats[iter] = totalSize;
-        const filteredStats = stats.filter((num) => !!num);
-        if (filteredStats.length === 0) filteredStats.push(0);
-        const avgTotalSize = filteredStats.reduce((a, b) => a + b, 0) / filteredStats.length;
-        const batchSize = Math.max(100, Math.floor(avgTotalSize * 0.1));
-
-        const keys = await RedisService.sortedSetGetByRange(currentQueue, 0, batchSize);
-        if (keys.length > 0) {
-            const candles = await getCandles(keys, nopFunc);
-            await CandleRepository.upsertCandles(candles);
-            await RedisService.sortedSetRemove(currentQueue, ...keys);
-        }
-        totalSize -= batchSize;
-        if (totalSize > BUFFER_SIZE) delay *= 0.9;
-        if (totalSize < BUFFER_SIZE) delay *= 2.0;
-        delay = Math.floor(delay);
-        delay = Math.min(1000, delay);
-        delay = Math.max(10, delay);
-        Log.info(
-            `\tWrote ${keys.length.toString().padStart(4, ' ')} candles in ${(Date.now() - iterTime)
-                .toString()
-                .padStart(4)} ms remaining ${currentQueueSize
-                .toString()
-                .padStart(5, ' ')}/${queueSize.toString().padStart(5, ' ')} delay: ${delay
-                .toString()
-                .padStart(4, ' ')} ms total: ${totalSize.toString().padStart(7, ' ')}`,
-        );
-        if (keys.length === 0) await RedisService.del(currentQueue);
-        // console.log(stats);
-        await sleep(delay);
-    }
-}
-
 export const CandleCacheRepository = {
     getInstrumentByToken,
     getInstrumentById,
     writeCandles,
-    queueForDBWrites,
     getCandle,
     getCandles,
     deleteCandle,
     flushCandleCache,
-    startWritePump,
+    queueForDBWrites,
 };
