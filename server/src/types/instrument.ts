@@ -42,7 +42,7 @@ const InstrumentSchema = {
         tradingSymbol: { type: 'string' },
         name: { type: 'string' },
         lastPrice: { type: 'number' },
-        expiry: { instanceOf: 'Date' },
+        expiry: { instanceof: 'Date' },
         strike: { type: 'number' },
         tickSize: { type: 'number' },
         lotSize: { type: 'number' },
@@ -54,7 +54,7 @@ const InstrumentSchema = {
         freeFloatMarketCap: { type: 'number' },
         totalMarketCap: { type: 'number' },
         freeFloatPercent: { type: 'number' },
-        metaLastUpdated: { instanceOf: 'Date' },
+        metaLastUpdated: { instanceof: 'Date' },
         rank: { type: 'number' },
     },
     required: [

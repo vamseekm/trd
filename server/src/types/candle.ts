@@ -1,5 +1,5 @@
-import Ajv from 'ajv';
-const ajv = new Ajv({ allErrors: true });
+import { newValidator } from './validator';
+const ajv = newValidator();
 
 export enum CandleInterval {
     MIN_01 = 'M01',

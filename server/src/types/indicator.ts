@@ -1,6 +1,5 @@
-import Ajv from 'ajv';
-const ajv = new Ajv({ allErrors: true });
-
+import { newValidator } from './validator';
+const ajv = newValidator();
 export class Indicator {
     key!: string;
     instrumentId!: string;
