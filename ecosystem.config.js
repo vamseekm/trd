@@ -29,6 +29,12 @@ module.exports = {
   apps: [
     serverRun({ name: "api-server", args: "--API::startServer" }),
     serverRun({
+      name: "cron-clean",
+      cron_restart: "1 */12 * * *",
+      args: "--Tick::clean",
+      autorestart: false,
+    }),
+    serverRun({
       name: "tick-processor",
       args:
         "--Event::startTickRawConsumer --Event::startTickStoreConsumer --Event::startTickProcessConsumer --Candle::startWritePump",
