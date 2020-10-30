@@ -21,7 +21,12 @@ async function syncSchema(): Promise<Sequelize> {
     return await connect().sync({ alter: true });
 }
 
+async function vaccume(tableName: string): Promise<void> {
+    await connect().query(`VACUUM FULL ${tableName}`);
+}
+
 export const DatabaseService = {
     connect,
     syncSchema,
+    vaccume,
 };
