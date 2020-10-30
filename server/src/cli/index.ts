@@ -8,6 +8,7 @@ import minimist from 'minimist';
 import { exit } from 'process';
 
 import { APIService } from '../api-server';
+import { BridgeService } from '../bridge';
 import { CandleService } from '../candle';
 import { DatabaseService } from '../database';
 import { EventService } from '../event';
@@ -16,7 +17,6 @@ import { InstrumentService } from '../instrument';
 import { TaskService } from '../task';
 import { TickService } from '../tick';
 import { waitForever } from '../util';
-import { BridgeService } from '../bridge';
 
 Settings.defaultZoneName = 'Asia/Calcutta';
 

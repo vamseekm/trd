@@ -1,9 +1,10 @@
 import axios, { AxiosInstance } from 'axios';
 import lodash from 'lodash';
+import LRUCache from 'lru-cache';
 
 import { Log } from '../../infra';
 import { IMetaInfo, INSTRUMENT_ID_SEPERATOR } from '../../types';
-import LRUCache from 'lru-cache';
+
 let _client: AxiosInstance | undefined;
 function httpClient() {
     if (_client != undefined) return _client;
