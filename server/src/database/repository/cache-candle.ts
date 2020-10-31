@@ -29,8 +29,8 @@ function getCandleTimeRecord(key: string): { key: string; score: string; value: 
 }
 
 async function setCandleRecords(candles: Candle[]): Promise<any> {
-    const items = candles.flatMap(({ key }) => {
-        return [getCandleTimeRecord(key), CandleWritePump.keyToCandleMutateRecord(key)];
+    const items = candles.map(({ key }) => {
+        return getCandleTimeRecord(key);
     });
     return SortedSet.writeItems({ items });
 }
@@ -93,7 +93,7 @@ async function getCandle(key: string | undefined): Promise<Candle | undefined> {
 
 async function queueForDBWrites(candles: Candle[]): Promise<any> {
     const items = candles.flatMap(({ key }) => {
-        return [CandleWritePump.keyToCandleMutateRecord(key)];
+        return [CandleUtil.getCandleMutateRecord(key)];
     });
     return SortedSet.writeItems({ items });
 }

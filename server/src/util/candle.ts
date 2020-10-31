@@ -1,7 +1,7 @@
 import { Duration } from 'luxon';
 
 import { ExchangeService } from '../exchange';
-import { CandleDuration, CandleInterval, ICandleProperties, INSTRUMENT_ID_SEPERATOR } from '../types';
+import { CandleConsts, CandleDuration, CandleInterval, ICandleProperties, INSTRUMENT_ID_SEPERATOR } from '../types';
 import { assertNotUndefined } from './ds';
 import { toDayAndTime } from './time';
 
@@ -42,7 +42,7 @@ function getCandleMetaProperties({
     const result = {
         key: `${instrumentId}${separator}${interval}${separator}${day}${time}`,
     };
-    Object.assign(result, ExchangeService.exchangeTimeProps({ exchange, timestamp, interval }));
+    Object.assign(result, ExchangeService.exchangeTimeProperties({ exchange, timestamp, interval }));
     return result as any;
 }
 
@@ -72,8 +72,13 @@ function getAlignedTime({
     }
 }
 
+function getCandleMutateRecord(key: string): { key: string; score: string; value: string } {
+    return { key: `${CandleConsts.QUEUE_CANDLE_DB_WRITE_KEY}`, score: `${Date.now()}`, value: key };
+}
+
 export const CandleUtil = {
     parseCandleKey,
     getCandleMetaProperties,
     getAlignedTime,
+    getCandleMutateRecord,
 };

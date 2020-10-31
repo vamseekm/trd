@@ -85,5 +85,5 @@ export const ExchangeService = {
     getAllExchangeTimes,
     getExchangeTime,
     isValidTime,
-    exchangeTimeProps: exchangeTimeProperties,
+    exchangeTimeProperties,
 };

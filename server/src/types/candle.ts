@@ -1,6 +1,5 @@
 import { IExchangeTimeProperties } from './exchange';
 import { newValidator } from './validator';
-const ajv = newValidator();
 
 export enum CandleInterval {
     MIN_01 = 'M01',
@@ -84,6 +83,14 @@ const CandleSchema = {
     additionalProperties: false,
 };
 
-export const validateCandle = ajv.compile(CandleSchema);
+export const validateCandle = newValidator().compile(CandleSchema);
 
 export type ICandleProperties = IExchangeTimeProperties & { key: string };
+
+const QUEUE_CANDLE_DB_WRITE_KEY = 'QUEUE_WRITE_DB';
+const CURRENT_QUEUE_CANDLE_DB_WRITE_KEY = `${QUEUE_CANDLE_DB_WRITE_KEY}:CURRENT`;
+
+export const CandleConsts = {
+    QUEUE_CANDLE_DB_WRITE_KEY,
+    CURRENT_QUEUE_CANDLE_DB_WRITE_KEY,
+};

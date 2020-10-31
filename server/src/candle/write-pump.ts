@@ -1,29 +1,23 @@
 import { CandleCacheRepository, CandleRepository } from '../database';
 import { Log, RedisService } from '../infra';
+import { CandleConsts } from '../types';
 import { RateLimiter, sleep } from '../util';
-
-const QUEUE_CANDLE_DB_WRITE_KEY = 'QUEUE_WRITE_DB';
-const CURRENT_QUEUE_CANDLE_DB_WRITE_KEY = `${QUEUE_CANDLE_DB_WRITE_KEY}:CURRENT`;
-
-function keyToCandleMutateRecord(key: string): { key: string; score: string; value: string } {
-    return { key: `${QUEUE_CANDLE_DB_WRITE_KEY}`, score: `${Date.now()}`, value: key };
-}
 
 async function start(): Promise<any> {
     const nopFunc = async () => {
         return [];
     };
     const limiter = new RateLimiter({ bufferSize: 5000, delay: 1000, maxDelay: 1000 });
-    const currentQueue = CURRENT_QUEUE_CANDLE_DB_WRITE_KEY;
+    const currentQueue = CandleConsts.CURRENT_QUEUE_CANDLE_DB_WRITE_KEY;
     // eslint-disable-next-line no-constant-condition
     while (true) {
         try {
-            await RedisService.renameIfNotExists(QUEUE_CANDLE_DB_WRITE_KEY, currentQueue);
+            await RedisService.renameIfNotExists(CandleConsts.QUEUE_CANDLE_DB_WRITE_KEY, currentQueue);
             // eslint-disable-next-line no-empty
         } catch {}
         const iterTime = Date.now();
         const currentQueueSize = Number.parseInt(await RedisService.sortedSetSize(currentQueue), 10);
-        const queueSize = Number.parseInt(await RedisService.sortedSetSize(QUEUE_CANDLE_DB_WRITE_KEY));
+        const queueSize = Number.parseInt(await RedisService.sortedSetSize(CandleConsts.QUEUE_CANDLE_DB_WRITE_KEY));
         let totalSize = queueSize + currentQueueSize;
         const { batchSize, delay } = limiter.computeDelayAndBatchSize(totalSize);
         const keys = await RedisService.sortedSetGetByRange(currentQueue, 0, batchSize);
@@ -50,13 +44,12 @@ async function start(): Promise<any> {
 
 async function clear(): Promise<any> {
     return Promise.all([
-        RedisService.del(QUEUE_CANDLE_DB_WRITE_KEY),
-        RedisService.del(CURRENT_QUEUE_CANDLE_DB_WRITE_KEY),
+        RedisService.del(CandleConsts.QUEUE_CANDLE_DB_WRITE_KEY),
+        RedisService.del(CandleConsts.CURRENT_QUEUE_CANDLE_DB_WRITE_KEY),
     ]);
 }
 
 export const CandleWritePump = {
     start,
     clear,
-    keyToCandleMutateRecord,
 };
