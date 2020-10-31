@@ -2,7 +2,7 @@ import LRUCache from 'lru-cache';
 
 import { CandleWritePump } from '../../candle';
 import { RedisService } from '../../infra';
-import { Candle, Instrument, INSTRUMENT_ID_SEPERATOR, validateCandle } from '../../types';
+import { Candle, CandleConsts, Instrument, INSTRUMENT_ID_SEPERATOR, validateCandle } from '../../types';
 import { CandleUtil } from '../../util';
 import { CandleModel } from '../model';
 import { CacheGroup } from './cache-group';
@@ -26,6 +26,10 @@ function getCandleTimeRecord(key: string): { key: string; score: string; value: 
     const sortedSetKeySuffix = tokens.slice(0, 3).join(INSTRUMENT_ID_SEPERATOR);
     const value = tokens[3];
     return { key: `${CANDLE_TIME_PREFIX}:${sortedSetKeySuffix}`, score: value, value };
+}
+
+function getCandleMutateRecord(key: string): { key: string; score: string; value: string } {
+    return { key: `${CandleConsts.QUEUE_CANDLE_DB_WRITE_KEY}`, score: `${Date.now()}`, value: key };
 }
 
 async function setCandleRecords(candles: Candle[]): Promise<any> {
@@ -93,7 +97,7 @@ async function getCandle(key: string | undefined): Promise<Candle | undefined> {
 
 async function queueForDBWrites(candles: Candle[]): Promise<any> {
     const items = candles.flatMap(({ key }) => {
-        return [CandleUtil.getCandleMutateRecord(key)];
+        return [getCandleMutateRecord(key)];
     });
     return SortedSet.writeItems({ items });
 }
