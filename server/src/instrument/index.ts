@@ -1,1 +1,1 @@
-export * from './service/instrument';
+export * from './service';

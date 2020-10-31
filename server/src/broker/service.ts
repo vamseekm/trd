@@ -5,7 +5,7 @@ import { DateTime } from 'luxon';
 import { Config, Log } from '../infrastructure';
 import { CacheGroup } from '../persistance';
 import { InstrumentCacheRepository } from '../persistance/repository/cache-instrument';
-import { PrefService } from '../pref';
+import { PrefRepository } from '../persistance/repository/pref';
 import {
     BrokerQuoteLtp,
     CandleInterval,
@@ -29,7 +29,7 @@ async function kiteInstance(): Promise<KiteConnectType> {
     if (_kite != undefined) return _kite;
     const apiKey = await Config.get(KITE_API_KEY);
     _kite = new KiteConnect({ api_key: apiKey });
-    const accessToken = await PrefService.get(KITE_ACCESS_TOKEN, '');
+    const accessToken = await PrefRepository.get(KITE_ACCESS_TOKEN, '');
     Log.info('Access token:', maskString(accessToken || ''));
     if (!accessToken || accessToken.length === 0) Log.error(`Access token not available.`);
     _kite.setAccessToken(accessToken);
@@ -44,7 +44,7 @@ async function generateAccessToken(requestToken: string): Promise<string> {
     try {
         const kite = await kiteInstance();
         const { access_token: accessToken } = await kite.generateSession(requestToken, Config.get(KITE_API_SECRET));
-        await PrefService.set(KITE_ACCESS_TOKEN, accessToken);
+        await PrefRepository.set(KITE_ACCESS_TOKEN, accessToken);
         console.log('Access token:', maskString(accessToken));
         return accessToken;
     } catch (error) {
@@ -122,7 +122,7 @@ async function getInstrumentsByExchange(exchange: string): Promise<Instrument[]>
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 async function ticker(instrumentTokenList: string[], tickHandler: any, orderUpdateHandler?: any): Promise<any> {
     const api_key = Config.get(KITE_API_KEY);
-    const access_token = await PrefService.get(KITE_ACCESS_TOKEN);
+    const access_token = await PrefRepository.get(KITE_ACCESS_TOKEN);
 
     return new Promise((resolve, reject) => {
         const ticker = new KiteTicker({

@@ -2,7 +2,7 @@ import { Duration } from 'luxon';
 
 import { ExchangeService } from '../exchange';
 import { CandleDuration, CandleInterval, ICandleProperties, InstrumentConsts } from '../types';
-import { assertNotUndefined } from './ds';
+import { assertNotUndefined } from './lib/algo-ds';
 import { toDayAndTime } from './time';
 
 function parseCandleKey(

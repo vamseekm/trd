@@ -1,5 +1,5 @@
-export * from './ds';
+export * from './lib/algo-ds';
 export * from './time';
 export * from './candle';
 export * from './tick';
-export * from './rate-limiter';
+export * from './lib/rate-limiter';
