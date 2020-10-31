@@ -7,7 +7,7 @@ import { exit } from 'process';
 
 import { APIService } from '../api';
 import { CandleService } from '../candle';
-import { BridgeService, EventService } from '../event-handler';
+import { BridgeService, EventService } from '../event';
 import { Log } from '../infrastructure';
 import { InstrumentService } from '../instrument';
 import { DatabaseService } from '../persistance';
