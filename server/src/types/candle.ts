@@ -1,3 +1,4 @@
+import { IExchangeTimeProperties } from './exchange';
 import { newValidator } from './validator';
 const ajv = newValidator();
 
@@ -84,3 +85,5 @@ const CandleSchema = {
 };
 
 export const validateCandle = ajv.compile(CandleSchema);
+
+export type ICandleProperties = IExchangeTimeProperties & { key: string };

@@ -5,9 +5,9 @@ import plimit from 'p-limit';
 import { CandleCacheRepository } from '../database';
 import { ExchangeService } from '../exchange';
 import { Tick } from '../types';
-import { toDayAndTime } from '../util';
+import { toDayAndTime } from '.';
 const _limit = plimit(2);
-export async function formatTick(tick: any): Promise<Tick | undefined> {
+async function formatTick(tick: any): Promise<Tick | undefined> {
     return _limit(async () => {
         const {
             instrument_token,
@@ -43,3 +43,7 @@ export async function formatTick(tick: any): Promise<Tick | undefined> {
         };
     });
 }
+
+export const TickUtil = {
+    formatTick,
+};

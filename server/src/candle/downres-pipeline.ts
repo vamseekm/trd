@@ -1,7 +1,6 @@
 import { CandleCacheRepository } from '../database';
 import { Candle, CandleInterval } from '../types';
-import { toDayAndTime } from '../util';
-import { CandleService } from './service';
+import { CandleUtil, toDayAndTime } from '../util';
 
 const _intervals = [
     CandleInterval.MIN_05,
@@ -32,19 +31,19 @@ export class DownResolutionPipeline {
             this.candleMap[sourceCandle.key] = sourceCandle;
             const { instrumentId, exchange } = sourceCandle;
             for (const interval of _intervals) {
-                const timestamp = CandleService.getAlignedTime({
+                const timestamp = CandleUtil.getAlignedTime({
                     ...sourceCandle,
                     interval,
                 });
-                const { key: currentCandleKey, dayBegin } = CandleService.getCandleMetaProperties({
+                const { key: currentCandleKey, dayBegin } = CandleUtil.getCandleMetaProperties({
                     instrumentId,
                     interval,
                     timestamp,
                 });
-                const { key: previousCandleKey } = CandleService.getCandleMetaProperties({
+                const { key: previousCandleKey } = CandleUtil.getCandleMetaProperties({
                     instrumentId,
                     interval,
-                    timestamp: CandleService.getAlignedTime({
+                    timestamp: CandleUtil.getAlignedTime({
                         exchange,
                         timestamp,
                         interval,

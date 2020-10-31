@@ -1,8 +1,9 @@
 import LRUCache from 'lru-cache';
 
-import { CandleService, CandleWritePump } from '../../candle';
+import { CandleWritePump } from '../../candle';
 import { RedisService } from '../../infra';
 import { Candle, Instrument, INSTRUMENT_ID_SEPERATOR, validateCandle } from '../../types';
+import { CandleUtil } from '../../util';
 import { CandleModel } from '../model';
 import { CacheGroup } from './cache-group';
 import { CandleRepository } from './candle';
@@ -70,7 +71,7 @@ async function getCandles(keys: string[], callback: GetCandlesType = CandleRepos
             candle.timestamp = new Date(candle.timestamp);
         }
         candle.volume = Number.parseInt(candle.volume);
-        const { exchange, tradingSymbol, timeCode, interval } = CandleService.parseCandleKey(keys[i]);
+        const { exchange, tradingSymbol, timeCode, interval } = CandleUtil.parseCandleKey(keys[i]);
         candle.key = keys[i];
         candle.exchange = exchange;
         candle.instrumentId = `${exchange}${INSTRUMENT_ID_SEPERATOR}${tradingSymbol}`;

@@ -1,7 +1,6 @@
 import { CandleCacheRepository } from '../database';
 import { Candle, CandleInterval, Tick } from '../types';
-import { toDayAndTime } from '../util';
-import { CandleService } from './service';
+import { CandleUtil, toDayAndTime } from '../util';
 
 class TickState {
     instrumentId: string;
@@ -32,9 +31,9 @@ export class TickPipeline {
         for (const instrumentId of this.instrumentIdList) {
             const tickState = this.tickStateMap[instrumentId];
             const candleConfig = { ...tickState.tick, interval: CandleInterval.MIN_01 };
-            const currentCandleTime = CandleService.getAlignedTime(candleConfig);
+            const currentCandleTime = CandleUtil.getAlignedTime(candleConfig);
             const { timeCode } = toDayAndTime(currentCandleTime);
-            const { key: currentCandleKey, dayBegin } = CandleService.getCandleMetaProperties({
+            const { key: currentCandleKey, dayBegin } = CandleUtil.getCandleMetaProperties({
                 ...candleConfig,
                 timestamp: currentCandleTime,
             });
@@ -44,8 +43,8 @@ export class TickPipeline {
             tickState.dayBegin = dayBegin;
             tickState.timeCode = timeCode;
             if (currentCandleKey == undefined) return;
-            const previousCandleTime = CandleService.getAlignedTime({ ...candleConfig, offset: -1 });
-            const { key: previousCandleKey } = CandleService.getCandleMetaProperties({
+            const previousCandleTime = CandleUtil.getAlignedTime({ ...candleConfig, offset: -1 });
+            const { key: previousCandleKey } = CandleUtil.getCandleMetaProperties({
                 ...candleConfig,
                 timestamp: previousCandleTime,
             });

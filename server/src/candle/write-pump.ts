@@ -1,11 +1,10 @@
-import { CandleRepository } from '../database';
-import { CandleCacheRepository } from '../database/repository/cache-candle';
+import { CandleCacheRepository, CandleRepository } from '../database';
 import { Log, RedisService } from '../infra';
-import { sleep } from '../util';
-import { RateLimiter } from '../util/rate-limiter';
+import { RateLimiter, sleep } from '../util';
 
 const QUEUE_CANDLE_DB_WRITE_KEY = 'QUEUE_WRITE_DB';
 const CURRENT_QUEUE_CANDLE_DB_WRITE_KEY = `${QUEUE_CANDLE_DB_WRITE_KEY}:CURRENT`;
+
 function keyToCandleMutateRecord(key: string): { key: string; score: string; value: string } {
     return { key: `${QUEUE_CANDLE_DB_WRITE_KEY}`, score: `${Date.now()}`, value: key };
 }

@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import 'reflect-metadata';
 
-require('expose-gc');
-
 import { Settings } from 'luxon';
 import minimist from 'minimist';
 import { exit } from 'process';

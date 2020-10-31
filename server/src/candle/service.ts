@@ -1,73 +1,13 @@
-import { DateTime, Duration } from 'luxon';
+import { DateTime } from 'luxon';
 
 import { BrokerService } from '../broker';
 import { CandleCacheRepository, CandleRepository, InstrumentRepository } from '../database';
-import { ExchangeService } from '../exchange';
 import { Log } from '../infra';
-import {
-    Candle,
-    CandleDuration,
-    CandleInterval,
-    IBrokerCandle,
-    IExchangeTimeProperties,
-    Instrument,
-    INSTRUMENT_ID_SEPERATOR,
-    Tick,
-    validateCandle,
-} from '../types';
-import { assertNotUndefined, printStats, sleep, toDayAndTime } from '../util';
-import { CandleWritePump } from './candle-write-pump';
+import { TickPipeline } from '../tick';
+import { Candle, CandleInterval, IBrokerCandle, ICandleProperties, Instrument, Tick, validateCandle } from '../types';
+import { CandleUtil, printStats, sleep, toDayAndTime } from '../util';
 import { DownResolutionPipeline } from './downres-pipeline';
-import { TickPipeline } from './tick-pipeline';
-
-type ICandleProperties = IExchangeTimeProperties & { key: string };
-
-function getCandleMetaProperties({
-    instrumentId,
-    interval,
-    timestamp,
-}: {
-    instrumentId: string;
-    interval: CandleInterval;
-    timestamp: Date;
-}): ICandleProperties {
-    const separator = INSTRUMENT_ID_SEPERATOR;
-    const [exchange] = instrumentId.split(separator);
-    const alignedTime = getAlignedTime({ exchange, interval, timestamp });
-    const { day, time } = toDayAndTime(alignedTime);
-    const result = {
-        key: `${instrumentId}${separator}${interval}${separator}${day}${time}`,
-    };
-    Object.assign(result, ExchangeService.exchangeTimeProps({ exchange, timestamp, interval }));
-    return result as any;
-}
-
-const _tzDiffInMs = Duration.fromObject({ hour: 5, minute: 30 }).as('millisecond');
-
-function getAlignedTime({
-    exchange,
-    timestamp,
-    interval,
-    offset = 0,
-}: {
-    exchange: string;
-    timestamp: Date;
-    interval: CandleInterval | string;
-    offset?: number;
-}): Date {
-    const exchangeConfig = ExchangeService.getExchangeTime(exchange);
-    const intervalInMs = CandleDuration[interval as CandleInterval] * 1000;
-    const dayIntervalInMs = CandleDuration[CandleInterval.DAY_01] * 1000;
-    if (intervalInMs >= dayIntervalInMs) {
-        const unixTime = timestamp.getTime();
-        return new Date(unixTime - ((unixTime + _tzDiffInMs) % dayIntervalInMs));
-    } else {
-        const unixTime = timestamp.getTime() - exchangeConfig.dayStartOffset;
-        const alignedTime =
-            unixTime - (unixTime % intervalInMs) + intervalInMs * offset + exchangeConfig.dayStartOffset;
-        return new Date(alignedTime);
-    }
-}
+import { CandleWritePump } from './write-pump';
 
 function mapBrokerCandleToNativeCandle(
     instrument: Instrument,
@@ -75,7 +15,7 @@ function mapBrokerCandleToNativeCandle(
     candle: IBrokerCandle,
 ): { candle: Candle | undefined; props: ICandleProperties } {
     const { id: instrumentId, exchange } = instrument;
-    const properties = getCandleMetaProperties({ instrumentId, interval, timestamp: candle.date });
+    const properties = CandleUtil.getCandleMetaProperties({ instrumentId, interval, timestamp: candle.date });
     const { timeCode } = toDayAndTime(candle.date);
     const { key } = properties;
     const nativeCandle = {
@@ -114,7 +54,7 @@ function mapBrokerCandlesToNaiveCandles(
             nativeCandle.totalOpenInterest = nativeCandle.openInterest;
         } else if (
             previousCandle != undefined &&
-            parseCandleKey(previousCandle.key).day === parseCandleKey(nativeCandle.key).day
+            CandleUtil.parseCandleKey(previousCandle.key).day === CandleUtil.parseCandleKey(nativeCandle.key).day
         ) {
             nativeCandle.totalVolume = nativeCandle.volume + previousCandle.totalVolume;
             nativeCandle.openInterest = nativeCandle.openInterest + previousCandle.totalOpenInterest;
@@ -246,27 +186,6 @@ async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
     return sourceCandles;
 }
 
-function parseCandleKey(
-    key: string,
-): {
-    key: string;
-    exchange: string;
-    tradingSymbol: string;
-    interval: string;
-    timeCode: string;
-    day: string;
-    time: string;
-} {
-    const [exchange, tradingSymbol, interval, timeCode] = key.split(INSTRUMENT_ID_SEPERATOR);
-    assertNotUndefined('exchange', exchange);
-    assertNotUndefined('tradingSymbol', tradingSymbol);
-    assertNotUndefined('interval', interval);
-    assertNotUndefined('timeCode', timeCode);
-    const day = timeCode.slice(0, 4);
-    const time = timeCode.slice(4);
-    return { key, exchange, tradingSymbol, interval, timeCode, day, time };
-}
-
 function printDiff(name: string, v1: number, v2: number) {
     console.log(
         name.padStart(3, ' '),
@@ -360,9 +279,6 @@ async function startWritePump(): Promise<any> {
 export const CandleService = {
     bulkConvertTicksToCandles,
     debug,
-    parseCandleKey,
-    getAlignedTime,
-    getCandleMetaProperties,
     syncHistorical,
     loadCandles,
     verifyCandles,
