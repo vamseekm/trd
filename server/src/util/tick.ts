@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import plimit from 'p-limit';
 
-import { CandleCacheRepository } from '../database';
+import { InstrumentCacheRepository } from '../database/repository/cache-instrument';
 import { ExchangeService } from '../exchange';
 import { Tick } from '../types';
 import { toDayAndTime } from '.';
@@ -21,7 +21,7 @@ async function formatTick(tick: any): Promise<Tick | undefined> {
             depth,
         } = tick;
         const timestampDate = new Date(timestamp);
-        const instrument = await CandleCacheRepository.getInstrumentByToken(`${instrument_token}`);
+        const instrument = await InstrumentCacheRepository.getInstrumentByToken(`${instrument_token}`);
         if (instrument == undefined) throw new Error(`No instrument found with instrumentToken: ${instrument_token}`);
         const { id, exchange, tradingSymbol } = instrument;
         if (!(await ExchangeService.isValidTime({ exchange, date: timestampDate }))) return;

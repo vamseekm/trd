@@ -2,7 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DateTime } from 'luxon';
 
-import { CacheGroup, CandleCacheRepository } from '../database';
+import { CacheGroup } from '../database';
+import { InstrumentCacheRepository } from '../database/repository/cache-instrument';
 import { Config, Log } from '../infra';
 import { PrefService } from '../pref';
 import {
@@ -11,7 +12,7 @@ import {
     IBrokerCandle,
     IBrokerProfile,
     Instrument,
-    INSTRUMENT_ID_SEPERATOR,
+    InstrumentConsts,
     KITE_ACCESS_TOKEN,
     KITE_API_KEY,
     KITE_API_SECRET,
@@ -94,7 +95,7 @@ async function getInstrumentsByExchange(exchange: string): Promise<Instrument[]>
             continue;
         }
         const instrument = {
-            id: `${exchange}${INSTRUMENT_ID_SEPERATOR}${inputInstrument.tradingsymbol}`,
+            id: `${exchange}${InstrumentConsts.ID_SEPERATOR}${inputInstrument.tradingsymbol}`,
             instrumentToken: inputInstrument.instrument_token,
             exchangeToken: inputInstrument.exchange_token,
             tradingSymbol: inputInstrument.tradingsymbol,
@@ -183,7 +184,7 @@ async function getHistorical({
     const kiteInterval = kiteIntervalMap[interval];
     const fromString = await kiteDateFormat(from);
     const toString = await kiteDateFormat(to);
-    const instrument = await CandleCacheRepository.getInstrumentById(id);
+    const instrument = await InstrumentCacheRepository.getInstrumentById(id);
     if (!instrument) throw new Error(`Can't find instrument: ${id}`);
     // console.log({ token: instrument.instrumentToken, kiteInterval, fromString, toString });
     return kite.getHistoricalData(instrument.instrumentToken, kiteInterval, fromString, toString);

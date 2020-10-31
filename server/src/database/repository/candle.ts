@@ -1,7 +1,7 @@
 import { Op, Sequelize, WhereOptions } from 'sequelize';
 
 import { Log } from '../../infra';
-import { Candle, CandleInterval, INSTRUMENT_ID_SEPERATOR, validateCandle } from '../../types';
+import { Candle, CandleInterval, InstrumentConsts, validateCandle } from '../../types';
 import { CandleModel } from '../model';
 
 async function upsertCandles(inputCandleList: Candle[]): Promise<any> {
@@ -51,7 +51,7 @@ async function findBy({
     if (from && to) where = { ...where, timestamp: { [Op.gte]: from, [Op.lte]: to } };
     if (interval) where = { ...where, interval };
     if (id) where = { ...where, id };
-    if (id && interval) where = { ...where, key: { [Op.like]: `${id}${INSTRUMENT_ID_SEPERATOR}${interval}%` } };
+    if (id && interval) where = { ...where, key: { [Op.like]: `${id}${InstrumentConsts.ID_SEPERATOR}${interval}%` } };
     if (timeCode) where = { ...where, timeCode };
     if (Object.keys(where).length === 0) throw new Error('Please specify atleast one where condition.');
     return validate(await CandleModel.findAll({ where, order: Sequelize.col('key'), raw: true }));

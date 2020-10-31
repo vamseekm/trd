@@ -5,7 +5,7 @@ import pLimit from 'p-limit';
 import { BrokerService } from '../../broker';
 import { InstrumentRepository } from '../../database';
 import { Log } from '../../infra';
-import { BrokerQuoteLtp, Instrument, INSTRUMENT_ID_SEPERATOR } from '../../types';
+import { BrokerQuoteLtp, Instrument, InstrumentConsts } from '../../types';
 import { sleep } from '../../util';
 import { InstrumentMetaService } from './instrument-meta';
 
@@ -127,7 +127,7 @@ async function updateLTP(insrumentList: Instrument[]): Promise<void> {
     for (const [i, chunk] of chunks.entries()) {
         Log.info(`Fetching LTP of chunk: ${i + 1}/${chunks.length}`);
         const ltpList: BrokerQuoteLtp[] = (await BrokerService.getLTP(chunk)).map((item) => {
-            return { ...item, id: item.id.replace(':', INSTRUMENT_ID_SEPERATOR) };
+            return { ...item, id: item.id.replace(':', InstrumentConsts.ID_SEPERATOR) };
         });
         await InstrumentRepository.updateInstruments(
             ltpList.map((ltp: Partial<Instrument>) => {

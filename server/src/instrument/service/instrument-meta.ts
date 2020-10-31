@@ -3,7 +3,7 @@ import lodash from 'lodash';
 import LRUCache from 'lru-cache';
 
 import { Log } from '../../infra';
-import { IMetaInfo, INSTRUMENT_ID_SEPERATOR } from '../../types';
+import { IMetaInfo, InstrumentConsts } from '../../types';
 
 let _client: AxiosInstance | undefined;
 function httpClient() {
@@ -48,7 +48,7 @@ async function downloadSymbolMeta({
         const totalMarketCap = lodash.get(response, 'data.marketDeptOrderBook.tradeInfo.totalMarketCap', 0) || 0;
         const freeFloatMarketCap = lodash.get(response, 'data.marketDeptOrderBook.tradeInfo.ffmc', 0) || 0;
         const freeFloatPercent = totalMarketCap && freeFloatMarketCap ? (freeFloatMarketCap * 100) / totalMarketCap : 0;
-        const id = `${exchange}${INSTRUMENT_ID_SEPERATOR}${tradingSymbol}`;
+        const id = `${exchange}${InstrumentConsts.ID_SEPERATOR}${tradingSymbol}`;
         return {
             id,
             freeFloatMarketCap,

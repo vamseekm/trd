@@ -1,7 +1,7 @@
 import { Duration } from 'luxon';
 
 import { ExchangeService } from '../exchange';
-import { CandleDuration, CandleInterval, ICandleProperties, INSTRUMENT_ID_SEPERATOR } from '../types';
+import { CandleDuration, CandleInterval, ICandleProperties, InstrumentConsts } from '../types';
 import { assertNotUndefined } from './ds';
 import { toDayAndTime } from './time';
 
@@ -16,7 +16,7 @@ function parseCandleKey(
     day: string;
     time: string;
 } {
-    const [exchange, tradingSymbol, interval, timeCode] = key.split(INSTRUMENT_ID_SEPERATOR);
+    const [exchange, tradingSymbol, interval, timeCode] = key.split(InstrumentConsts.ID_SEPERATOR);
     assertNotUndefined('exchange', exchange);
     assertNotUndefined('tradingSymbol', tradingSymbol);
     assertNotUndefined('interval', interval);
@@ -35,7 +35,7 @@ function getCandleMetaProperties({
     interval: CandleInterval;
     timestamp: Date;
 }): ICandleProperties {
-    const separator = INSTRUMENT_ID_SEPERATOR;
+    const separator = InstrumentConsts.ID_SEPERATOR;
     const [exchange] = instrumentId.split(separator);
     const alignedTime = getAlignedTime({ exchange, interval, timestamp });
     const { day, time } = toDayAndTime(alignedTime);

@@ -75,5 +75,6 @@ const InstrumentSchema = {
 };
 
 export const validateInstrument = newValidator().compile(InstrumentSchema);
-
-export const INSTRUMENT_ID_SEPERATOR = ':';
+export const InstrumentConsts = {
+    ID_SEPERATOR: ':',
+};

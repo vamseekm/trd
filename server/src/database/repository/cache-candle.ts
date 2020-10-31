@@ -1,29 +1,18 @@
-import LRUCache from 'lru-cache';
-
 import { CandleWritePump } from '../../candle';
 import { RedisService } from '../../infra';
-import { Candle, CandleConsts, Instrument, INSTRUMENT_ID_SEPERATOR, validateCandle } from '../../types';
+import { Candle, CandleConsts, InstrumentConsts, validateCandle } from '../../types';
 import { CandleUtil } from '../../util';
 import { CandleModel } from '../model';
 import { CacheGroup } from './cache-group';
 import { CandleRepository } from './candle';
-import { InstrumentRepository } from './instrument';
 import { SortedSet } from './sorted-set';
-
-const INSTRUMENT_CACHE_EXPIRY = 24 * 3600 * 1000;
-const INSTRUMENT_COUNT = 5000;
-// const instrumentTokenCache = new CacheGroup('ins_token');
-const instrumentTokenCache = new LRUCache<string, string>({
-    max: INSTRUMENT_COUNT,
-    maxAge: INSTRUMENT_CACHE_EXPIRY,
-});
 
 const CANDLE_TIME_PREFIX = 'CT';
 
 function getCandleTimeRecord(key: string): { key: string; score: string; value: string } {
-    const tokens = key.split(INSTRUMENT_ID_SEPERATOR);
+    const tokens = key.split(InstrumentConsts.ID_SEPERATOR);
     if (tokens.length != 4) throw new Error(`Invalid candle key format: ${key}`);
-    const sortedSetKeySuffix = tokens.slice(0, 3).join(INSTRUMENT_ID_SEPERATOR);
+    const sortedSetKeySuffix = tokens.slice(0, 3).join(InstrumentConsts.ID_SEPERATOR);
     const value = tokens[3];
     return { key: `${CANDLE_TIME_PREFIX}:${sortedSetKeySuffix}`, score: value, value };
 }
@@ -37,29 +26,6 @@ async function setCandleRecords(candles: Candle[]): Promise<any> {
         return getCandleTimeRecord(key);
     });
     return SortedSet.writeItems({ items });
-}
-
-async function getInstrumentByToken(instrumentToken: string): Promise<Instrument | undefined> {
-    const id = instrumentTokenCache.get(instrumentToken);
-    if (id != undefined) return getInstrumentById(id);
-    const instrument = await InstrumentRepository.findByInstrumentToken(instrumentToken);
-    if (instrument == undefined) return;
-    return cacheInstrument(instrument);
-}
-
-const instrumentIdCache = new LRUCache<string, Instrument>({ max: INSTRUMENT_COUNT, maxAge: INSTRUMENT_CACHE_EXPIRY });
-async function getInstrumentById(id: string): Promise<Instrument | undefined> {
-    if (instrumentIdCache.has(id)) return instrumentIdCache.get(id);
-    const instrument = await InstrumentRepository.findById(id);
-    if (instrument == undefined) return;
-    return cacheInstrument(instrument);
-}
-
-async function cacheInstrument(instrument: Instrument | null): Promise<Instrument | undefined> {
-    if (instrument == undefined) return;
-    instrumentTokenCache.set(instrument.instrumentToken, instrument.id);
-    instrumentIdCache.set(instrument.id, instrument);
-    return instrument;
 }
 
 // const candleCache = new LRUCache<string, Candle | undefined>({ max: 20000, maxAge: CANDLE_CACHE_EXPIRY_TIME });
@@ -78,7 +44,7 @@ async function getCandles(keys: string[], callback: GetCandlesType = CandleRepos
         const { exchange, tradingSymbol, timeCode, interval } = CandleUtil.parseCandleKey(keys[i]);
         candle.key = keys[i];
         candle.exchange = exchange;
-        candle.instrumentId = `${exchange}${INSTRUMENT_ID_SEPERATOR}${tradingSymbol}`;
+        candle.instrumentId = `${exchange}${InstrumentConsts.ID_SEPERATOR}${tradingSymbol}`;
         candle.openInterest = candle.openInterest || 0;
         candle.interval = interval;
         candle.timeCode = Number.parseInt(timeCode, 10);
@@ -149,8 +115,6 @@ async function flushCandleCache(): Promise<any> {
 }
 
 export const CandleCacheRepository = {
-    getInstrumentByToken,
-    getInstrumentById,
     writeCandles,
     getCandle,
     getCandles,
