@@ -1,4 +1,4 @@
-import { RedisService } from '../../infra';
+import { RedisService } from '../../infrastructure';
 interface ISortedSetItem {
     key: string;
     score: string;

@@ -1,5 +1,5 @@
-import { CandleCacheRepository, CandleRepository } from '../database';
-import { Log, RedisService } from '../infra';
+import { Log, RedisService } from '../infrastructure';
+import { CandleCacheRepository, CandleRepository } from '../persistance';
 import { CandleConsts } from '../types';
 import { RateLimiter, sleep } from '../util';
 

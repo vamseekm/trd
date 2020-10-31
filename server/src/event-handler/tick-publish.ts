@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BridgeService } from '../bridge';
 import { BrokerService } from '../broker';
-import { Log, Rabbit } from '../infra';
+import { Log, Rabbit } from '../infrastructure';
 import { InstrumentService } from '../instrument';
+import { BridgeService } from './bridge';
 
 export async function startTickListener(): Promise<void> {
     const instruments = await InstrumentService.findTracked();

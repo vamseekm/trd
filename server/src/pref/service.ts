@@ -1,4 +1,4 @@
-import { PrefRepository } from '../database';
+import { PrefRepository } from '../persistance';
 
 async function get(key: string, defaultValue?: string): Promise<string | undefined> {
     return PrefRepository.get(key, defaultValue);

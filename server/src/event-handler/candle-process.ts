@@ -1,8 +1,8 @@
-import { BridgeService } from '../bridge';
-import { CandleRepository } from '../database';
 import { IndicatorService } from '../indicator';
+import { CandleRepository } from '../persistance';
 import { Candle } from '../types';
 import { waitForever } from '../util';
+import { BridgeService } from './bridge';
 
 export async function startCandleProcessConsumer(): Promise<void> {
     await BridgeService.consumeQueue(

@@ -1,8 +1,8 @@
 import { DateTime } from 'luxon';
 
 import { BrokerService } from '../broker';
-import { CandleCacheRepository, CandleRepository, InstrumentRepository } from '../database';
-import { Log } from '../infra';
+import { Log } from '../infrastructure';
+import { CandleCacheRepository, CandleRepository, InstrumentRepository } from '../persistance';
 import { TickPipeline } from '../tick';
 import { Candle, CandleInterval, IBrokerCandle, ICandleProperties, Instrument, Tick, validateCandle } from '../types';
 import { CandleUtil, printStats, sleep, toDayAndTime } from '../util';

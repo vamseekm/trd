@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import CliProgress from 'cli-progress';
 
-import { Log } from '../infra';
+import { Log } from '../infrastructure';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const diff = require('diff-arrays-of-objects');

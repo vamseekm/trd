@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon';
 
-import { Config } from '../infra';
+import { Config } from '../infrastructure';
 import { CandleInterval, IExchangeConfig, IExchangeTimeProperties } from '../types';
 import { toDayAndTime } from '../util';
 

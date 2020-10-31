@@ -1,6 +1,6 @@
 import { Op, Sequelize, WhereOptions } from 'sequelize';
 
-import { Log } from '../../infra';
+import { Log } from '../../infrastructure';
 import { Candle, CandleInterval, InstrumentConsts, validateCandle } from '../../types';
 import { CandleModel } from '../model';
 

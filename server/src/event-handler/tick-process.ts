@@ -1,7 +1,7 @@
-import { BridgeService } from '../bridge';
 import { CandleService } from '../candle';
 import { Tick, validateTick } from '../types';
 import { waitForever } from '../util';
+import { BridgeService } from './bridge';
 
 export async function startTickProcessConsumer(): Promise<void> {
     await BridgeService.consumeQueue(

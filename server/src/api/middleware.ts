@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { Log } from '../infra';
+import { Log } from '../infrastructure';
 export class ErrorHandler extends Error {
     constructor(public statusCode: number, public errorMessage: string) {
         super();

@@ -1,5 +1,5 @@
-import { BridgeService } from '../bridge';
 import { TickUtil, waitForever } from '../util';
+import { BridgeService } from './bridge';
 
 export async function startTickRawConsumer(): Promise<void> {
     await BridgeService.consumeQueue(

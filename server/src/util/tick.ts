@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import plimit from 'p-limit';
 
-import { InstrumentCacheRepository } from '../database/repository/cache-instrument';
 import { ExchangeService } from '../exchange';
+import { InstrumentCacheRepository } from '../persistance/repository/cache-instrument';
 import { Tick } from '../types';
 import { toDayAndTime } from '.';
 const _limit = plimit(2);

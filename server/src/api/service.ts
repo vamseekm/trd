@@ -3,7 +3,7 @@ import displayRoutes from 'express-routemap';
 import morgan from 'morgan';
 
 import { BrokerController } from '../broker';
-import { Config, Log } from '../infra';
+import { Config, Log } from '../infrastructure';
 import { TaskController } from '../task';
 import { HTTP_API_SERVER_PORT, IController } from '../types';
 import { handleError } from './middleware';

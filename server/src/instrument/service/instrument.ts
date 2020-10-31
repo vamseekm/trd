@@ -3,8 +3,8 @@ import { DateTime } from 'luxon';
 import pLimit from 'p-limit';
 
 import { BrokerService } from '../../broker';
-import { InstrumentRepository } from '../../database';
-import { Log } from '../../infra';
+import { Log } from '../../infrastructure';
+import { InstrumentRepository } from '../../persistance';
 import { BrokerQuoteLtp, Instrument, InstrumentConsts } from '../../types';
 import { sleep } from '../../util';
 import { InstrumentMetaService } from './instrument-meta';

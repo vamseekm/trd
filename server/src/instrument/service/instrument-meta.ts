@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import lodash from 'lodash';
 import LRUCache from 'lru-cache';
 
-import { Log } from '../../infra';
+import { Log } from '../../infrastructure';
 import { IMetaInfo, InstrumentConsts } from '../../types';
 
 let _client: AxiosInstance | undefined;

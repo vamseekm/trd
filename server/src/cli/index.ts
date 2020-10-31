@@ -6,12 +6,11 @@ import minimist from 'minimist';
 import { exit } from 'process';
 
 import { APIService } from '../api';
-import { BridgeService } from '../bridge';
 import { CandleService } from '../candle';
-import { DatabaseService } from '../database';
-import { EventService } from '../event';
-import { Log } from '../infra';
+import { BridgeService, EventService } from '../event-handler';
+import { Log } from '../infrastructure';
 import { InstrumentService } from '../instrument';
+import { DatabaseService } from '../persistance';
 import { TaskService } from '../task';
 import { TickService } from '../tick';
 import { waitForever } from '../util';

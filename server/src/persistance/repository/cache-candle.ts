@@ -1,5 +1,5 @@
 import { CandleWritePump } from '../../candle';
-import { RedisService } from '../../infra';
+import { RedisService } from '../../infrastructure';
 import { Candle, CandleConsts, InstrumentConsts, validateCandle } from '../../types';
 import { CandleUtil } from '../../util';
 import { CandleModel } from '../model';

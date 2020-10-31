@@ -1,5 +1,5 @@
 /* eslint-disable sonarjs/cognitive-complexity */
-import { RedisService } from '../../infra';
+import { RedisService } from '../../infrastructure';
 import { Candle } from '../../types';
 interface KVPair {
     key: string;

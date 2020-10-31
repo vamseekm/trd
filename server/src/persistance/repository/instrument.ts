@@ -5,7 +5,7 @@ import lodash from 'lodash';
 import { DateTime } from 'luxon';
 import { FindOptions, Op, Sequelize, WhereAttributeHash } from 'sequelize';
 
-import { Log } from '../../infra';
+import { Log } from '../../infrastructure';
 import { Instrument, UpsertResults } from '../../types';
 import { toSetAndMap } from '../../util';
 import { InstrumentModel } from '../model';

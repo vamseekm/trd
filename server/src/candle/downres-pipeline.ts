@@ -1,4 +1,4 @@
-import { CandleCacheRepository } from '../database';
+import { CandleCacheRepository } from '../persistance';
 import { Candle, CandleInterval } from '../types';
 import { CandleUtil, toDayAndTime } from '../util';
 

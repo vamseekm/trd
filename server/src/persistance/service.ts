@@ -1,6 +1,6 @@
 import { Sequelize } from 'sequelize-typescript';
 
-import { Config } from '../infra';
+import { Config } from '../infrastructure';
 import { CandleModel, InstrumentModel, PrefModel, TickModel } from './model';
 
 let _seq: Sequelize;

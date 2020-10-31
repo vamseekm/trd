@@ -1,7 +1,7 @@
-import { BridgeService } from '../bridge';
-import { TickRepository } from '../database';
-import { Log } from '../infra';
+import { Log } from '../infrastructure';
+import { TickRepository } from '../persistance';
 import { Tick } from '../types';
+import { BridgeService } from './bridge';
 
 export async function startTickStoreConsumer(): Promise<void> {
     await BridgeService.consumeQueue(
