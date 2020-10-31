@@ -2,7 +2,7 @@
 /* eslint-disable no-useless-constructor */
 import express from 'express';
 
-import { expressWrap } from '../api-server';
+import { expressWrap } from '../api';
 import { IController } from '../types';
 import { BrokerService } from './service';
 

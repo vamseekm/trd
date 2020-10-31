@@ -5,7 +5,7 @@ import { Settings } from 'luxon';
 import minimist from 'minimist';
 import { exit } from 'process';
 
-import { APIService } from '../api-server';
+import { APIService } from '../api';
 import { BridgeService } from '../bridge';
 import { CandleService } from '../candle';
 import { DatabaseService } from '../database';
