@@ -4,35 +4,26 @@ import { CandleCacheRepository } from '../persistance';
 import { Candle, CandleInterval, Tick } from '../types';
 import { CandleUtil, toDayAndTime } from '../util';
 
-class TickState {
+interface TickState {
+    tick: Tick;
     instrumentId: string;
-    dayBegin?: boolean;
-    timeCode?: number;
-    currentCandleTime?: Date;
-    currentCandleKey?: string;
-    previousCandleKey?: string;
+    dayBegin: boolean;
+    timeCode: number;
+    currentCandleTime: Date;
+    currentCandleKey: string;
+    previousCandleKey: string;
     updatedCandle?: Candle;
-    constructor(public tick: Tick) {
-        this.instrumentId = tick.instrumentId;
-    }
 }
 
 export class TickPipeline {
-    private tickStateMap: Record<string, TickState> = {};
-    private candleKeyList: string[] = [];
+    private tickStateList: TickState[] = [];
     private candleMap: Record<string, Candle> = {};
-    private instrumentIdList: string[] = [];
-    constructor(_ticks: Tick[]) {
-        for (const tick of _ticks) {
-            this.tickStateMap[tick.instrumentId] = new TickState(tick);
-            this.instrumentIdList.push(tick.instrumentId);
-        }
-    }
+    constructor(public _ticks: Tick[]) {}
 
     prepareTicks(): void {
-        for (const instrumentId of this.instrumentIdList) {
-            const tickState = this.tickStateMap[instrumentId];
-            const candleConfig = { ...tickState.tick, interval: CandleInterval.MIN_01 };
+        for (const tick of this._ticks) {
+            const { instrumentId } = tick;
+            const candleConfig = { ...tick, interval: CandleInterval.MIN_01 };
             const currentCandleTime = CandleUtil.getAlignedTime(candleConfig);
             const { timeCode } = toDayAndTime(currentCandleTime);
             const { key: currentCandleKey, dayBegin } = CandleUtil.getCandleMetaProperties({
@@ -40,46 +31,49 @@ export class TickPipeline {
                 timestamp: currentCandleTime,
             });
             if (currentCandleKey == undefined) continue;
-            tickState.currentCandleTime = currentCandleTime;
-            tickState.currentCandleKey = currentCandleKey;
-            tickState.dayBegin = dayBegin;
-            tickState.timeCode = timeCode;
-            if (currentCandleKey == undefined) return;
+
             const previousCandleTime = CandleUtil.getAlignedTime({ ...candleConfig, offset: -1 });
             const { key: previousCandleKey } = CandleUtil.getCandleMetaProperties({
                 ...candleConfig,
                 timestamp: previousCandleTime,
             });
-            tickState.previousCandleKey = previousCandleKey;
+
+            const tickState = {
+                tick,
+                instrumentId,
+                currentCandleTime,
+                currentCandleKey,
+                dayBegin,
+                timeCode,
+                previousCandleKey,
+            };
+            this.tickStateList.push(tickState);
         }
     }
 
     async fetchCandles(): Promise<void> {
-        for (const instrumentId of this.instrumentIdList) {
-            const { currentCandleKey, previousCandleKey } = this.tickStateMap[instrumentId];
-            if (currentCandleKey) {
-                this.candleKeyList.push(currentCandleKey);
-                if (previousCandleKey) this.candleKeyList.push(previousCandleKey);
-            }
-        }
-        const candleResults = await CandleCacheRepository.getCandles(this.candleKeyList);
-        for (const candle of candleResults) {
-            if (candle != undefined) this.candleMap[candle.key] = candle;
-        }
+        const candleKeys: string[] = this.tickStateList
+            .flatMap((tickState) => [tickState.currentCandleKey, tickState.previousCandleKey])
+            .filter(isPresent);
+        const candleResults = await CandleCacheRepository.getCandles(candleKeys);
+        candleResults.filter(isPresent).forEach((candle) => {
+            this.candleMap[candle.key] = candle;
+        });
     }
 
-    // eslint-disable-next-line sonarjs/cognitive-complexity
-    computeUpdatedCandle(instrumentId: string): void {
-        const { tick, timeCode, currentCandleKey, previousCandleKey, currentCandleTime, dayBegin } = this.tickStateMap[
-            instrumentId
-        ];
+    computeUpdatedCandle(tickState: TickState): void {
+        const {
+            instrumentId,
+            tick,
+            timeCode,
+            currentCandleKey,
+            previousCandleKey,
+            currentCandleTime,
+            dayBegin,
+        } = tickState;
         const { exchange } = tick;
-        if (timeCode == undefined) throw new Error("timeCode can't be undefined");
-        if (currentCandleKey == undefined) throw new Error("timeCode can't be undefined");
-        if (currentCandleTime == undefined) throw new Error("currentCandleTime can't be undefined");
-        if (dayBegin == undefined) throw new Error("dayBegin can't be undefined");
         const currentCandle = this.candleMap[currentCandleKey];
-        const previousCandle = previousCandleKey != undefined ? this.candleMap[previousCandleKey] : undefined;
+        const previousCandle = this.candleMap[previousCandleKey];
         const updatedCandle: Candle = {
             instrumentId,
             exchange,
@@ -101,28 +95,28 @@ export class TickPipeline {
             updatedCandle.openInterest = updatedCandle.totalOpenInterest - previousCandle.totalOpenInterest;
         }
         if (currentCandle == undefined) {
-            this.tickStateMap[instrumentId].updatedCandle = updatedCandle;
+            tickState.updatedCandle = updatedCandle;
             return;
         }
         const keys = Object.keys(updatedCandle);
         for (const key of keys) {
             if (key === 'timestamp') continue;
             if ((currentCandle as any)[key] !== (updatedCandle as any)[key]) {
-                this.tickStateMap[instrumentId].updatedCandle = updatedCandle;
+                tickState.updatedCandle = updatedCandle;
                 return;
             }
         }
     }
 
     computeUpdatedCandles(): void {
-        for (const instrumentId of this.instrumentIdList) {
-            this.computeUpdatedCandle(instrumentId);
+        for (const tickState of this.tickStateList) {
+            this.computeUpdatedCandle(tickState);
         }
     }
 
     async fetchUpdatedCandles(): Promise<Candle[]> {
-        const results = this.instrumentIdList
-            .map((instrumentId) => this.tickStateMap[instrumentId]?.updatedCandle)
+        const results = this.tickStateList
+            .map((tickState) => tickState.updatedCandle)
             .filter(isPresent)
             .reduce((candleMap: Record<string, Candle>, candle) => {
                 candleMap[candle.key] = candle;

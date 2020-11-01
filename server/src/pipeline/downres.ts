@@ -13,13 +13,13 @@ const _intervals = [
     CandleInterval.DAY_01,
 ];
 
-class CandleState {
-    interval?: CandleInterval;
-    timestamp?: Date;
-    sourceCandleKey?: string;
-    currentCandleKey?: string;
-    previousCandleKey?: string;
-    dayBegin?: boolean;
+interface CandleState {
+    interval: CandleInterval;
+    timestamp: Date;
+    sourceCandleKey: string;
+    currentCandleKey: string;
+    previousCandleKey: string;
+    dayBegin: boolean;
     updatedCandle?: Candle;
 }
 
@@ -77,17 +77,10 @@ export class DownResolutionPipeline {
 
     // eslint-disable-next-line sonarjs/cognitive-complexity
     computeDownResCandle(candleState: CandleState): void {
-        const { sourceCandleKey, currentCandleKey, previousCandleKey } = candleState;
-        if (sourceCandleKey == undefined) return;
+        const { sourceCandleKey, currentCandleKey, previousCandleKey, timestamp, interval, dayBegin } = candleState;
         const sourceCandle = this.candleMap[sourceCandleKey];
         if (sourceCandle == undefined) return;
         const { exchange, instrumentId } = sourceCandle;
-        if (sourceCandle == undefined) return;
-        const { timestamp, interval, dayBegin } = candleState;
-        if (currentCandleKey == undefined) throw new Error("currentCandleKey can't be null");
-        if (previousCandleKey == undefined) throw new Error("previousCandleKey can't be null");
-        if (timestamp == undefined) throw new Error("timestamp can't be undefined");
-        if (interval == undefined) throw new Error("interval can't be undefined");
         const { timeCode } = toDayAndTime(timestamp);
         const atBegin = timeCode === sourceCandle.timeCode;
         const currentCandle = this.candleMap[currentCandleKey];
