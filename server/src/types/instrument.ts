@@ -1,14 +1,14 @@
 import { newValidator } from './validator';
 export interface IMetaInfo {
     id: string;
-    freeFloatMarketCap: number;
-    totalMarketCap: number;
-    freeFloatPercent: number;
-    metaLastUpdated: Date;
+    freeFloatMarketCap?: number;
+    totalMarketCap?: number;
+    freeFloatPercent?: number;
+    metaLastUpdated?: Date;
     rank?: number;
 }
 
-export interface Instrument extends Partial<IMetaInfo> {
+export interface Instrument extends IMetaInfo {
     id: string;
     instrumentToken: string;
     exchangeToken: string;
@@ -26,11 +26,6 @@ export interface Instrument extends Partial<IMetaInfo> {
     live?: boolean;
     track?: boolean;
 
-    freeFloatMarketCap?: number;
-    totalMarketCap?: number;
-    freeFloatPercent?: number;
-    metaLastUpdated?: Date;
-    rank?: number;
     historicalLastSynced?: Date;
 }
 
