@@ -1,3 +1,5 @@
+import { isPresent } from 'ts-is-present';
+
 import { CandleCacheRepository } from '../persistance';
 import { Candle, CandleInterval, Tick } from '../types';
 import { CandleUtil, toDayAndTime } from '../util';
@@ -119,18 +121,14 @@ export class TickPipeline {
     }
 
     async fetchUpdatedCandles(): Promise<Candle[]> {
-        const updatedCandles: Candle[] = [];
-        for (const instrumentId of this.instrumentIdList) {
-            const { updatedCandle } = this.tickStateMap[instrumentId];
-            if (updatedCandle != undefined) {
-                updatedCandles.push(updatedCandle);
-            }
-        }
-        const uniqueCandles: Record<string, Candle> = {};
-        for (const candle of updatedCandles) {
-            uniqueCandles[candle.key] = candle;
-        }
-        return Object.values(uniqueCandles);
+        const results = this.instrumentIdList
+            .map((instrumentId) => this.tickStateMap[instrumentId]?.updatedCandle)
+            .filter(isPresent)
+            .reduce((candleMap: Record<string, Candle>, candle) => {
+                candleMap[candle.key] = candle;
+                return candleMap;
+            }, {});
+        return Object.values(results);
     }
 
     async execute(): Promise<Candle[]> {

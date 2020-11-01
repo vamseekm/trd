@@ -1,3 +1,5 @@
+import { isPresent } from 'ts-is-present';
+
 import { Log, RedisService } from '../infrastructure';
 import { CandleCacheRepository, CandleRepository } from '../persistance';
 import { CandleConsts } from '../types';
@@ -22,7 +24,7 @@ async function start(): Promise<any> {
         const { batchSize, delay } = limiter.computeDelayAndBatchSize(totalSize);
         const keys = await RedisService.sortedSetGetByRange(currentQueue, 0, batchSize);
         if (keys.length > 0) {
-            const candles = await CandleCacheRepository.getCandles(keys, nopFunc);
+            const candles = (await CandleCacheRepository.getCandles(keys, nopFunc)).filter(isPresent);
             await CandleRepository.upsertCandles(candles);
             await RedisService.sortedSetRemove(currentQueue, ...keys);
             totalSize -= keys.length;

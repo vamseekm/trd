@@ -184,7 +184,7 @@ async function debug(): Promise<void> {
         }
     }
 }
-const TRADING_DAYS_IN_MEMORY = 5;
+const TRADING_DAYS_IN_MEMORY = 1;
 async function loadCandles(): Promise<void> {
     Log.info('Loading candles...');
     await CandleCacheRepository.flushCandleCache();
@@ -211,7 +211,6 @@ async function loadCandles(): Promise<void> {
         await CandleCacheRepository.writeCandles(allCandles);
         await CandleCacheRepository.queueForDBWrites(downResCandles);
         Log.info(`\tProcessed ${timeCode} wrote ${allCandles.length} candles in ${Date.now() - _startTime} ms`);
-        break;
     }
 }
 

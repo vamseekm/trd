@@ -1,3 +1,5 @@
+import { isPresent } from 'ts-is-present';
+
 import { CandleCacheRepository } from '../persistance';
 import { Candle, CandleInterval } from '../types';
 import { CandleUtil, toDayAndTime } from '../util';
@@ -63,18 +65,14 @@ export class DownResolutionPipeline {
     }
 
     async fetchCandles(): Promise<void> {
-        const candleKeys: string[] = [];
-        for (const candleState of this.candleStateList) {
-            if (candleState.currentCandleKey) {
-                candleKeys.push(candleState.currentCandleKey);
-                if (candleState.previousCandleKey) candleKeys.push(candleState.previousCandleKey);
-            }
-        }
+        const candleKeys: string[] = this.candleStateList
+            .flatMap((candleState) => [candleState.currentCandleKey, candleState.previousCandleKey])
+            .filter(isPresent);
         if (candleKeys.length === 0) return;
         const candleResults = await CandleCacheRepository.getCandles(candleKeys);
-        for (const candle of candleResults) {
-            if (candle != undefined) this.candleMap[candle.key] = candle;
-        }
+        candleResults.filter(isPresent).forEach((candle) => {
+            this.candleMap[candle.key] = candle;
+        });
     }
 
     // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -129,16 +127,14 @@ export class DownResolutionPipeline {
     }
 
     async fetchUpdatedCandles(): Promise<Candle[]> {
-        const updatedCandles: Candle[] = [];
-        for (const candleState of this.candleStateList) {
-            const { updatedCandle } = candleState;
-            if (updatedCandle != undefined) updatedCandles.push(updatedCandle);
-        }
-        const uniqueCandles: Record<string, Candle> = {};
-        for (const candle of updatedCandles) {
-            uniqueCandles[candle.key] = candle;
-        }
-        return Object.values(uniqueCandles);
+        const results = this.candleStateList
+            .map((candleState) => candleState.updatedCandle)
+            .filter(isPresent)
+            .reduce((candleMap: Record<string, Candle>, candle) => {
+                candleMap[candle.key] = candle;
+                return candleMap;
+            }, {});
+        return Object.values(results);
     }
 
     computeDownResCandles(): void {

@@ -33,7 +33,10 @@ const candleCache = new CacheGroup('C', true);
 
 type GetCandlesType = typeof CandleRepository.getCandles;
 
-async function getCandles(keys: string[], callback: GetCandlesType = CandleRepository.getCandles): Promise<Candle[]> {
+async function getCandles(
+    keys: string[],
+    callback: GetCandlesType = CandleRepository.getCandles,
+): Promise<(Candle | undefined)[]> {
     const candles = await candleCache.getMulti({ keys }, callback);
     for (const [i, candle] of candles.entries()) {
         if (candle == undefined) continue;
