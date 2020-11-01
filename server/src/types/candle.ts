@@ -30,21 +30,21 @@ export interface IBrokerCandle {
     volume: number;
 }
 
-export class Candle {
-    key!: string;
-    exchange!: string;
-    instrumentId!: string;
-    interval!: string;
-    timeCode!: number;
-    timestamp!: Date;
-    open!: number;
-    high!: number;
-    low!: number;
-    close!: number;
-    volume!: number;
-    openInterest!: number;
-    totalVolume!: number;
-    totalOpenInterest!: number;
+export interface Candle {
+    key: string;
+    exchange: string;
+    instrumentId: string;
+    interval: string;
+    timeCode: number;
+    timestamp: Date;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
+    openInterest: number;
+    totalVolume: number;
+    totalOpenInterest: number;
 }
 
 const CandleSchema = {
