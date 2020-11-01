@@ -26,7 +26,5 @@ QoL
     L. Cron to sync candles.
     L. Cron to auto login.
  Cron
-    L. Clean docker cache.
-    L. Clean ticks.
     L. Load candles into memory.
    
