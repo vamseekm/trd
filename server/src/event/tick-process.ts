@@ -1,4 +1,4 @@
-import { CandleService } from '../candle';
+import { PipelineService } from '../pipeline';
 import { Tick, validateTick } from '../types';
 import { waitForever } from '../util';
 import { BridgeService } from './bridge';
@@ -24,7 +24,7 @@ export async function startTickProcessConsumer(): Promise<void> {
                 validatedTicks.push(newTick);
             }
             if (validatedTicks.length === 0) return 0;
-            const candles = await CandleService.bulkConvertTicksToCandles(validatedTicks);
+            const candles = await PipelineService.processTicks(validatedTicks);
             channel.publish(
                 BridgeService.EXCHANGE_TICKER,
                 BridgeService.MessageType.candle,

@@ -3,10 +3,9 @@ import { DateTime } from 'luxon';
 import { BrokerService } from '../broker';
 import { Log } from '../infrastructure';
 import { CandleCacheRepository, CandleRepository, InstrumentRepository } from '../persistance';
-import { TickPipeline } from '../tick';
-import { Candle, CandleInterval, IBrokerCandle, ICandleProperties, Instrument, Tick, validateCandle } from '../types';
-import { CandleUtil, printStats, sleep, toDayAndTime } from '../util';
-import { DownResolutionPipeline } from './downres-pipeline';
+import { DownResolutionPipeline } from '../pipeline/downres';
+import { Candle, CandleInterval, IBrokerCandle, ICandleProperties, Instrument, validateCandle } from '../types';
+import { CandleUtil, sleep, toDayAndTime } from '../util';
 import { CandleWritePump } from './write-pump';
 
 function mapBrokerCandleToNativeCandle(
@@ -130,62 +129,6 @@ async function getLastTradingDays(days: number): Promise<{ from: Date; to: Date 
     return { from, to };
 }
 
-async function processTicks(ticks: Tick[]): Promise<{ sourceCandles: Candle[]; downResCandles: Candle[] }> {
-    const tickPipeline = new TickPipeline(ticks);
-    const sourceCandles = await tickPipeline.execute();
-    const downResPipeline = new DownResolutionPipeline(sourceCandles);
-    const downResCandles = await downResPipeline.execute();
-    return { sourceCandles, downResCandles };
-}
-
-const _tickMap: Record<string, Tick> = {};
-let _lastChecked: Date | undefined;
-
-function computeMissingTicks(ticks: Tick[]): Tick[] {
-    if (ticks.length === 0) return [];
-    if (_lastChecked != undefined && ticks[0].timestamp.getTime() - _lastChecked.getTime() < 10000) return [];
-    const tickKeys = Object.keys(_tickMap);
-    const missingTicks: Tick[] = [];
-    for (const key of tickKeys) {
-        const age = ticks[0].timestamp.getTime() - _tickMap[key].timestamp.getTime();
-        if (age > 10000) {
-            const renewedTick = { ..._tickMap[key], timestamp: new Date(), lastTradeTimestamp: new Date() };
-            _tickMap[key] = renewedTick;
-            missingTicks.push(renewedTick);
-        }
-    }
-    _lastChecked = new Date();
-    return missingTicks;
-}
-
-async function bulkConvertTicksToCandles(ticks: Tick[]): Promise<Candle[]> {
-    const startTime = Date.now();
-    for (const tick of ticks) {
-        _tickMap[tick.instrumentId] = tick;
-    }
-    const missingTicks: Tick[] = computeMissingTicks(ticks);
-    const { sourceCandles, downResCandles } = await processTicks([...missingTicks, ...ticks]);
-    const startWriteTime = Date.now();
-    const allCandles = [...sourceCandles, ...downResCandles];
-    await CandleCacheRepository.writeCandles(allCandles);
-    await CandleCacheRepository.queueForDBWrites(allCandles);
-    const timeCode = sourceCandles.length > 0 ? sourceCandles[0].timeCode : 0;
-    const writeTime = Date.now() - startWriteTime;
-    const totalTime = Date.now() - startTime;
-    const cpuTime = totalTime - writeTime;
-    printStats('stats', {
-        ticks: ticks.length,
-        mapSize: Object.keys(_tickMap).length,
-        tickMiss: missingTicks.length,
-        candles: sourceCandles.length,
-        writeTime,
-        cpuTime,
-        totalTime,
-        timeCode,
-    });
-    return sourceCandles;
-}
-
 function printDiff(name: string, v1: number, v2: number) {
     console.log(
         name.padStart(3, ' '),
@@ -244,7 +187,7 @@ async function debug(): Promise<void> {
 const TRADING_DAYS_IN_MEMORY = 5;
 async function loadCandles(): Promise<void> {
     Log.info('Loading candles...');
-    // await CandleCacheRepository.flushCandleCache();
+    await CandleCacheRepository.flushCandleCache();
     const interval = CandleInterval.MIN_01;
     const tradingDays = (await CandleRepository.getTradingDaysForInterval(interval)).slice(-1 * TRADING_DAYS_IN_MEMORY);
     Log.json(
@@ -268,7 +211,7 @@ async function loadCandles(): Promise<void> {
         await CandleCacheRepository.writeCandles(allCandles);
         await CandleCacheRepository.queueForDBWrites(downResCandles);
         Log.info(`\tProcessed ${timeCode} wrote ${allCandles.length} candles in ${Date.now() - _startTime} ms`);
-        // break;
+        break;
     }
 }
 
@@ -277,7 +220,6 @@ async function startWritePump(): Promise<any> {
 }
 
 export const CandleService = {
-    bulkConvertTicksToCandles,
     debug,
     syncHistorical,
     loadCandles,
