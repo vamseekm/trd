@@ -43,9 +43,7 @@ const sortedSetRemove = proxyCommand.bind(undefined, 'zrem');
 const delWithPrefix = async (prefix: string): Promise<number> => {
     const keys = await RedisService.keys(prefix);
     if (keys.length === 0) return 0;
-    for (const chunk of lodash.chunk(keys, 1000)) {
-        await RedisService.del(...chunk);
-    }
+    await Promise.all(lodash.chunk(keys, 1000).map((chunk) => RedisService.del(...chunk)));
     return keys.length;
 };
 
