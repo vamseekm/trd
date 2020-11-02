@@ -206,7 +206,7 @@ async function updateLTPAll(): Promise<void> {
     await updateLTP(instruments);
 }
 
-async function updateLTPInitial(): Promise<void> {
+async function updateLtpInitial(): Promise<void> {
     Log.info('Updating LTP of initial instruments...');
     const maxExpiry = DateTime.local().plus({ month: 2 }).toJSDate();
     const instruments = await InstrumentRepository.findAllInstruments(maxExpiry);
@@ -254,7 +254,7 @@ export const InstrumentService = {
     download,
     updateLTPAll,
     track,
-    updateLTPInitial,
+    updateLtpInitial,
     updateLTPTracked,
     updateMeta,
     findTracked: InstrumentRepository.findTrackedInstruments,

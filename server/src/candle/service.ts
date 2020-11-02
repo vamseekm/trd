@@ -184,10 +184,10 @@ async function debug(): Promise<void> {
         }
     }
 }
-const TRADING_DAYS_IN_MEMORY = 1;
+const TRADING_DAYS_IN_MEMORY = 5;
 async function loadCandles(): Promise<void> {
     Log.info('Loading candles...');
-    await CandleCacheRepository.flushCandleCache();
+    // await CandleCacheRepository.flushCandleCache();
     const interval = CandleInterval.MIN_01;
     const tradingDays = (await CandleRepository.getTradingDaysForInterval(interval)).slice(-1 * TRADING_DAYS_IN_MEMORY);
     Log.json(

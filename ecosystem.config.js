@@ -31,7 +31,7 @@ module.exports = {
     serverRun({
       name: "cron-clean",
       cron_restart: "1 */12 * * *",
-      args: "--Tick::clean",
+      args: "--Tick::clean --Instrument::updateMeta",
       autorestart: false,
     }),
     serverRun({
