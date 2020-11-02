@@ -9,5 +9,6 @@
         "host": "127.0.0.1",
         "port": 6379
     },
-    "RABBIT_URL": "amqp://localhost:5672"
+    "RABBIT_URL": "amqp://localhost:5672",
+    "TICK_DATA_PATH": "~/data/ticks"
 }

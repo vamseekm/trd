@@ -7,6 +7,7 @@ export class TickModel extends Model<TickModel> {
     id!: number;
 
     @Column({ type: DataType.STRING(128) })
+    @Index
     instrumentId!: string;
 
     @Index

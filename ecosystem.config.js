@@ -29,9 +29,9 @@ module.exports = {
   apps: [
     serverRun({ name: "api-server", args: "--API::startServer" }),
     serverRun({
-      name: "cron-clean",
+      name: "cron",
       cron_restart: "1 */12 * * *",
-      args: "--Tick::clean --Instrument::updateMeta",
+      args: "--Task::cron",
       autorestart: false,
     }),
     serverRun({

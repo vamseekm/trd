@@ -1,29 +1,42 @@
 import { newValidator } from './validator';
 
-export class OrderItem {
-    quantity!: number;
-    price!: number;
-    orders!: number;
+export interface OrderItem {
+    quantity: number;
+    price: number;
+    orders: number;
 }
 
-export class Tick {
-    instrumentId!: string;
-    exchange!: string;
-    tradingSymbol!: string;
-    lastTradedPrice!: number;
-    totalVolume!: number;
-    totalBuyQuantity!: number;
-    totalSellQuantity!: number;
-    timestamp!: Date;
-    time!: number;
-    day!: number;
-    lastTradeTimestamp!: Date;
-    openInterest!: number;
-    depth!: {
+export interface Tick {
+    instrumentId: string;
+    exchange: string;
+    tradingSymbol: string;
+    lastTradedPrice: number;
+    totalVolume: number;
+    totalBuyQuantity: number;
+    totalSellQuantity: number;
+    timestamp: Date;
+    time: number;
+    day: number;
+    lastTradeTimestamp: Date;
+    openInterest: number;
+    depth: {
         buy: OrderItem[];
         sell: OrderItem[];
     };
 }
+
+export type PersistentTick = Pick<
+    Tick,
+    | 'instrumentId'
+    | 'lastTradedPrice'
+    | 'totalVolume'
+    | 'totalBuyQuantity'
+    | 'totalSellQuantity'
+    | 'timestamp'
+    | 'lastTradeTimestamp'
+    | 'openInterest'
+    | 'depth'
+>;
 
 const TickSchema = {
     properties: {
