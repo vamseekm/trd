@@ -22,9 +22,8 @@ OrderPlacement
     L. Place orders through slack.
 QoL
     L. Auto restart on config change.
-    L. Cron to clean old candles/ticks.
+Cron
     L. Cron to sync candles.
-    L. Cron to auto login.
- Cron
     L. Load candles into memory.
+    L. Cron to auto login.
    
