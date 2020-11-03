@@ -1,4 +1,5 @@
 import { InstrumentService } from '../instrument';
+import { TickService } from '../tick/service';
 
 async function init(): Promise<void> {
     await InstrumentService.download();
@@ -10,6 +11,8 @@ async function init(): Promise<void> {
 
 async function cron(): Promise<void> {
     await InstrumentService.updateMeta();
+    await TickService.backup();
+    await TickService.clean();
 }
 
 export const TaskService = {
