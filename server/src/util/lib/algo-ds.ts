@@ -66,7 +66,7 @@ export function diffListOfObjects<T, K extends keyof T>(
 
 export function waitForever(): Promise<any> {
     return new Promise(() => {
-        console.log('Waiting forever...');
+        Log.info('Waiting forever...');
     });
 }
 

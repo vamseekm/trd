@@ -17,11 +17,7 @@ import { waitForever } from '../util';
 
 Settings.defaultZoneName = 'Asia/Calcutta';
 
-async function run(): Promise<void> {
-    await BridgeService.init();
-    await DatabaseService.connect();
-    const argv = minimist(process.argv.slice(2));
-    Log.json('Args', argv);
+function generateActionMap(): Record<string, any> {
     const entryModules: Record<string, any> = {
         APIService,
         CandleService,
@@ -41,7 +37,16 @@ async function run(): Promise<void> {
             actionMap[entryPointName] = entryModule[actionName].bind(entryModule);
         }
     }
+    return actionMap;
+}
+
+async function run(): Promise<void> {
+    await BridgeService.init();
+    await DatabaseService.connect();
+    const argv = minimist(process.argv.slice(2));
+    Log.json('Args', argv);
     Log.info('Available entry points:');
+    const actionMap = generateActionMap();
     Object.keys(actionMap).map((key: string) => Log.info(`\t => ${key}`));
     if (argv.help === true) {
         await waitForever();

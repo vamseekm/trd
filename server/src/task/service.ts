@@ -1,6 +1,9 @@
+import nodeCron from 'node-cron';
+
+import { Log } from '../infrastructure';
 import { InstrumentService } from '../instrument';
 import { TickService } from '../tick/service';
-import nodeCron from 'node-cron';
+import { waitForever } from '../util/lib/algo-ds';
 
 async function init(): Promise<void> {
     await InstrumentService.download();
@@ -10,16 +13,22 @@ async function init(): Promise<void> {
     await InstrumentService.updateLTPTracked();
 }
 
-async function cron(): Promise<void> {
-    console.log('Running cron.');
-    nodeCron.schedule('0 0 * * *', async function () {
-        await InstrumentService.updateMeta();
-        await TickService.backup();
-        await TickService.clean();
-        console.log('Done running cron.');
-        process.exit(0);
+async function cron(): Promise<any> {
+    void (async function () {
+        Log.info('Running in void');
+    })();
+    Log.info('Wating for cron to kick in...');
+    nodeCron.schedule('0 0 * * *', function () {
+        void (async function () {
+            Log.info('Cron job started...');
+            await InstrumentService.updateMeta();
+            await TickService.backup();
+            await TickService.clean();
+            Log.info('Done running cron.');
+            process.exit(0);
+        })();
     });
-    return new Promise(() => {});
+    await waitForever();
 }
 
 export const TaskService = {
