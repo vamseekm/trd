@@ -171,23 +171,24 @@ async function verifyCandles(): Promise<void> {
     }
 }
 
-async function debug(): Promise<void> {
-    const candle = await CandleRepository.getCandle('NFO:BANKNIFTY20O2221300CE:D01:2008210000');
-    if (candle != undefined) await CandleCacheRepository.writeCandles([candle]);
-    const cachedCandle = await CandleCacheRepository.getCandle('NFO:BANKNIFTY20O2221300CE:D01:2008210000');
-    if (cachedCandle != undefined && candle != undefined) {
-        console.log(candle, cachedCandle);
-        const keys = new Set([...Object.keys(candle), ...Object.keys(cachedCandle)]);
-        for (const key of keys) {
-            console.log((candle as any)[key] === (cachedCandle as any)[key], key);
-            console.log((candle as any)[key], (cachedCandle as any)[key]);
-        }
-    }
+async function loadCandleBatch({ timeCode, interval }: { timeCode: number; interval: CandleInterval }) {
+    const _startTime = Date.now();
+    const sourceCandles = await CandleRepository.findBy({
+        timeCode,
+        interval,
+    });
+    // await CandleCacheRepository.cacheWriteCandles(sourceCandles);
+    const downResPipeline = new DownResolutionPipeline(sourceCandles);
+    const downResCandles = await downResPipeline.execute();
+    const allCandles = [...sourceCandles, ...downResCandles];
+    await CandleCacheRepository.writeCandles(allCandles);
+    await CandleCacheRepository.queueForDBWrites(downResCandles);
+    Log.info(`\tProcessed ${timeCode} wrote ${allCandles.length} candles in ${Date.now() - _startTime} ms`);
 }
+
 const TRADING_DAYS_IN_MEMORY = 5;
-async function loadCandles(): Promise<void> {
+async function loadCandlesLimit(totalCodes?: number): Promise<void> {
     Log.info('Loading candles...');
-    // await CandleCacheRepository.flushCandleCache();
     const interval = CandleInterval.MIN_01;
     const tradingDays = (await CandleRepository.getTradingDaysForInterval(interval)).slice(-1 * TRADING_DAYS_IN_MEMORY);
     Log.json(
@@ -196,22 +197,23 @@ async function loadCandles(): Promise<void> {
     );
     const from = tradingDays[0];
     const to = new Date();
-    const timeCodes = await CandleRepository.getTimeCodesForInterval({ from, to, interval });
+    let timeCodes = await CandleRepository.getTimeCodesForInterval({ from, to, interval });
+    if (totalCodes != undefined) {
+        timeCodes = timeCodes.slice(totalCodes * -1);
+    }
     Log.info(`\tFound ${timeCodes.length} time codes.`);
     for (const [_i, timeCode] of timeCodes.entries()) {
-        const _startTime = Date.now();
-        const sourceCandles = await CandleRepository.findBy({
-            timeCode,
-            interval,
-        });
-        // await CandleCacheRepository.cacheWriteCandles(sourceCandles);
-        const downResPipeline = new DownResolutionPipeline(sourceCandles);
-        const downResCandles = await downResPipeline.execute();
-        const allCandles = [...sourceCandles, ...downResCandles];
-        await CandleCacheRepository.writeCandles(allCandles);
-        await CandleCacheRepository.queueForDBWrites(downResCandles);
-        Log.info(`\tProcessed ${timeCode} wrote ${allCandles.length} candles in ${Date.now() - _startTime} ms`);
+        await loadCandleBatch({ timeCode, interval });
     }
+}
+
+async function loadCandles(): Promise<void> {
+    await CandleCacheRepository.flushCandleCache();
+    return loadCandlesLimit();
+}
+
+async function debug(): Promise<void> {
+    await loadCandlesLimit(25);
 }
 
 async function startWritePump(): Promise<any> {

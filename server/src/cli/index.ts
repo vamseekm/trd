@@ -56,7 +56,10 @@ async function run(): Promise<void> {
     for (const option of Object.keys(argv)) {
         if (option == '_') continue;
         if (option.indexOf('::') === -1) continue;
-        if (actionMap[option] == undefined) new Error(`Action "${option}" not found.`);
+        if (actionMap[option] == undefined) {
+            console.error(new Error(`${option} not found.`));
+            continue;
+        }
         actions.push(actionMap[option]);
     }
     Log.info(`Executing ${actions.length} actions.`);
