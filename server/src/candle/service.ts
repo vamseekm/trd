@@ -207,8 +207,11 @@ async function loadCandlesLimit(totalCodes?: number): Promise<void> {
     }
 }
 
-async function loadCandles(): Promise<void> {
+async function flushCandleCache(): Promise<void> {
     await CandleCacheRepository.flushCandleCache();
+}
+
+async function loadCandles(): Promise<void> {
     return loadCandlesLimit();
 }
 
@@ -223,6 +226,7 @@ async function startWritePump(): Promise<any> {
 export const CandleService = {
     debug,
     syncHistorical,
+    flushCandleCache,
     loadCandles,
     verifyCandles,
     startWritePump,
