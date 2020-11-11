@@ -3,7 +3,7 @@ import { DateTime } from 'luxon';
 import { BrokerService } from '../broker';
 import { Log } from '../infrastructure';
 import { CandleCacheRepository, CandleRepository, InstrumentRepository } from '../persistance';
-import { DownResolutionPipeline } from '../pipeline/downres';
+import { PipelineService } from '../pipeline/service';
 import { Candle, CandleInterval, IBrokerCandle, ICandleProperties, Instrument, validateCandle } from '../types';
 import { CandleUtil, sleep, toDayAndTime } from '../util';
 import { CandleWritePump } from './write-pump';
@@ -177,17 +177,12 @@ async function loadCandleBatch({ timeCode, interval }: { timeCode: number; inter
         timeCode,
         interval,
     });
-    // await CandleCacheRepository.cacheWriteCandles(sourceCandles);
-    const downResPipeline = new DownResolutionPipeline(sourceCandles);
-    const downResCandles = await downResPipeline.execute();
-    const allCandles = [...sourceCandles, ...downResCandles];
-    await CandleCacheRepository.writeCandles(allCandles);
-    await CandleCacheRepository.queueForDBWrites(downResCandles);
+    const allCandles = await PipelineService.processCandles(sourceCandles);
     Log.info(`\tProcessed ${timeCode} wrote ${allCandles.length} candles in ${Date.now() - _startTime} ms`);
 }
 
 const TRADING_DAYS_IN_MEMORY = 5;
-async function loadCandlesLimit(totalCodes?: number): Promise<void> {
+async function loadCandlesLimit(limit?: number): Promise<void> {
     Log.info('Loading candles...');
     const interval = CandleInterval.MIN_01;
     const tradingDays = (await CandleRepository.getTradingDaysForInterval(interval)).slice(-1 * TRADING_DAYS_IN_MEMORY);
@@ -195,16 +190,14 @@ async function loadCandlesLimit(totalCodes?: number): Promise<void> {
         '\tTrading days: ',
         tradingDays.map((day) => day.toLocaleDateString()),
     );
-    const from = tradingDays[0];
-    const to = new Date();
-    let timeCodes = await CandleRepository.getTimeCodesForInterval({ from, to, interval });
-    if (totalCodes != undefined) {
-        timeCodes = timeCodes.slice(totalCodes * -1);
-    }
+    const timeCodes = await CandleRepository.getTimeCodesForInterval({
+        from: tradingDays[0],
+        to: new Date(),
+        interval,
+        limit,
+    });
     Log.info(`\tFound ${timeCodes.length} time codes.`);
-    for (const [_i, timeCode] of timeCodes.entries()) {
-        await loadCandleBatch({ timeCode, interval });
-    }
+    for (const timeCode of timeCodes) await loadCandleBatch({ timeCode, interval });
 }
 
 async function flushCandleCache(): Promise<void> {

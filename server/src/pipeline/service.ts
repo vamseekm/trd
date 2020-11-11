@@ -52,12 +52,13 @@ async function processTicks(ticks: Tick[]): Promise<Candle[]> {
     return sourceCandles;
 }
 
-async function processCandles(sourceCandles: Candle[]): Promise<void> {
+async function processCandles(sourceCandles: Candle[]): Promise<Candle[]> {
     const downResPipeline = new DownResolutionPipeline(sourceCandles);
     const downResCandles = await downResPipeline.execute();
     const allCandles = [...sourceCandles, ...downResCandles];
     await CandleCacheRepository.writeCandles(allCandles);
     await CandleCacheRepository.queueForDBWrites(downResCandles);
+    return allCandles;
 }
 
 export const PipelineService = {

@@ -47,12 +47,13 @@ async function findBy({
     to?: Date;
     timeCode?: number;
 }): Promise<Candle[]> {
-    let where: WhereOptions = {};
-    if (from && to) where = { ...where, timestamp: { [Op.gte]: from, [Op.lte]: to } };
-    if (interval) where = { ...where, interval };
-    if (id) where = { ...where, id };
-    if (id && interval) where = { ...where, key: { [Op.like]: `${id}${InstrumentConsts.ID_SEPERATOR}${interval}%` } };
-    if (timeCode) where = { ...where, timeCode };
+    const where: WhereOptions = {
+        ...(from && to && { timestamp: { [Op.gte]: from, [Op.lte]: to } }),
+        ...(interval && { interval }),
+        ...(id && { id }),
+        ...(id && interval && { key: { [Op.like]: `${id}${InstrumentConsts.ID_SEPERATOR}${interval}%` } }),
+        ...(timeCode && { timeCode }),
+    };
     if (Object.keys(where).length === 0) throw new Error('Please specify atleast one where condition.');
     return validate(await CandleModel.findAll({ where, order: Sequelize.col('key'), raw: true }));
 }
@@ -99,21 +100,25 @@ async function getTimeCodesForInterval({
     interval,
     from,
     to,
+    limit,
 }: {
     interval: CandleInterval;
     from: Date;
     to: Date;
+    limit?: number;
 }): Promise<number[]> {
-    return (
+    const timeCodes = (
         await CandleModel.findAll({
             attributes: [[Sequelize.fn('distinct', Sequelize.col('timeCode')), 'timeCode']],
             where: {
                 interval,
                 timestamp: { [Op.gte]: from, [Op.lte]: to },
             },
-            order: [[Sequelize.col('timeCode'), 'ASC']],
+            order: [[Sequelize.col('timeCode'), 'DESC']],
+            ...(limit != undefined && { limit }),
         })
     ).map((row) => row.timeCode);
+    return timeCodes.reverse();
 }
 
 export const CandleRepository = {
