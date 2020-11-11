@@ -105,23 +105,20 @@ async function getFnoInstrumentsToTrack(name: string): Promise<Instrument[]> {
     const instruments: Instrument[] = [...futures];
     const strikeInterval = stirkeIntervalMap[name] || 1;
     const strikeLimitPercent = 0.1;
-    if (futures.length > 0) {
-        const { lastPrice } = futures[0];
-        const strikeLimitHigh = lastPrice * (1 + strikeLimitPercent);
-        const strikeLimitLow = lastPrice * (1 - strikeLimitPercent);
-        for (const expiry of expiryList) {
-            const allOptionList = await InstrumentRepository.findOptions({
-                expiry,
-                name,
-                segment: 'NFO-OPT',
-                strikeLimitLow,
-                strikeLimitHigh,
-                strikeInterval,
-            });
-            for (const option of allOptionList) {
-                instruments.push(option);
-            }
-        }
+    if (futures.length === 0) return instruments;
+    const { lastPrice } = futures[0];
+    const strikeLimitHigh = lastPrice * (1 + strikeLimitPercent);
+    const strikeLimitLow = lastPrice * (1 - strikeLimitPercent);
+    for (const expiry of expiryList) {
+        const allOptionList = await InstrumentRepository.findOptions({
+            expiry,
+            name,
+            segment: 'NFO-OPT',
+            strikeLimitLow,
+            strikeLimitHigh,
+            strikeInterval,
+        });
+        instruments.push(...allOptionList);
     }
     return instruments;
 }

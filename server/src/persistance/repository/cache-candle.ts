@@ -88,12 +88,7 @@ function compactCandle(candle?: Candle): any {
 }
 
 async function setCandles(candles: Candle[]): Promise<any> {
-    const smallCandles = candles.map((candle) => {
-        return {
-            key: candle.key,
-            value: compactCandle(candle),
-        };
-    });
+    const smallCandles = candles.map((candle) => ({ key: candle.key, value: compactCandle(candle) }));
     return candleCache.setMulti(smallCandles);
 }
 

@@ -22,10 +22,7 @@ async function upsertCandles(inputCandleList: Candle[]): Promise<any> {
 
 async function getCandle(key: string): Promise<Candle | null> {
     const candle = await CandleModel.findOne({ where: { key }, raw: true });
-    if (candle != undefined) {
-        const [validatedCandle] = await validate([candle]);
-        return validatedCandle;
-    }
+    if (candle != undefined) return validate([candle])[0];
     return null;
 }
 
@@ -83,17 +80,16 @@ async function flush(): Promise<void> {
 }
 
 async function getTradingDaysForInterval(interval: CandleInterval): Promise<Date[]> {
-    return (
-        await CandleModel.findAll({
-            attributes: [[Sequelize.fn('min', Sequelize.col('timestamp')), 'date']],
-            where: {
-                interval,
-            },
-            group: [Sequelize.fn('date_trunc', 'day', Sequelize.col('timestamp'))],
-            order: [[Sequelize.fn('date_trunc', 'day', Sequelize.col('timestamp')), 'ASC']],
-            raw: true,
-        })
-    ).map(({ date }: any) => date as Date);
+    const rows = await CandleModel.findAll({
+        attributes: [[Sequelize.fn('min', Sequelize.col('timestamp')), 'date']],
+        where: {
+            interval,
+        },
+        group: [Sequelize.fn('date_trunc', 'day', Sequelize.col('timestamp'))],
+        order: [[Sequelize.fn('date_trunc', 'day', Sequelize.col('timestamp')), 'ASC']],
+        raw: true,
+    });
+    return rows.map(({ date }: any) => date);
 }
 
 async function getTimeCodesForInterval({
@@ -107,18 +103,17 @@ async function getTimeCodesForInterval({
     to: Date;
     limit?: number;
 }): Promise<number[]> {
-    const timeCodes = (
-        await CandleModel.findAll({
-            attributes: [[Sequelize.fn('distinct', Sequelize.col('timeCode')), 'timeCode']],
-            where: {
-                interval,
-                timestamp: { [Op.gte]: from, [Op.lte]: to },
-            },
-            order: [[Sequelize.col('timeCode'), 'DESC']],
-            ...(limit != undefined && { limit }),
-        })
-    ).map((row) => row.timeCode);
-    return timeCodes.reverse();
+    const rows = await CandleModel.findAll({
+        attributes: [[Sequelize.fn('distinct', Sequelize.col('timeCode')), 'timeCode']],
+        where: {
+            interval,
+            timestamp: { [Op.gte]: from, [Op.lte]: to },
+        },
+        order: [[Sequelize.col('timeCode'), 'DESC']],
+        ...(limit != undefined && { limit }),
+        raw: true,
+    });
+    return rows.map((row) => row.timeCode).reverse();
 }
 
 export const CandleRepository = {
