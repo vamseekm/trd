@@ -16,22 +16,21 @@ function getAllExchangeTimes(): Record<string, IExchangeConfig> {
     const exchangeConfig = Config.get('EXCHANGE_CONFIG') as Record<string, IExchangeConfig>;
     const names: string[] = Object.keys(exchangeConfig);
     for (const name of names) {
-        if (exchangeConfig[name]) {
-            const { start, end } = exchangeConfig[name];
-            const startDate = DateTime.fromObject({ year: 1970, month: 1, day: 1, ...start }).toJSDate();
-            const endDate = DateTime.fromObject({ year: 1970, month: 1, day: 1, ...end }).toJSDate();
-            const { time: startTime } = toDayAndTime(startDate);
-            const { time: endTime } = toDayAndTime(endDate);
-            exchangeTimes[name] = {
-                name,
-                startTime: Number.parseInt(startTime),
-                endTime: Number.parseInt(endTime),
-                start,
-                end,
-                dayStartOffset: startDate.getTime(),
-                dayEndOffset: endDate.getTime(),
-            };
-        }
+        if (!exchangeConfig[name]) continue;
+        const { start, end } = exchangeConfig[name];
+        const startDate = DateTime.fromObject({ year: 1970, month: 1, day: 1, ...start }).toJSDate();
+        const endDate = DateTime.fromObject({ year: 1970, month: 1, day: 1, ...end }).toJSDate();
+        const { time: startTime } = toDayAndTime(startDate);
+        const { time: endTime } = toDayAndTime(endDate);
+        exchangeTimes[name] = {
+            name,
+            startTime: Number.parseInt(startTime),
+            endTime: Number.parseInt(endTime),
+            start,
+            end,
+            dayStartOffset: startDate.getTime(),
+            dayEndOffset: endDate.getTime(),
+        };
     }
     return (_cachedExchangeTimes = exchangeTimes);
 }
