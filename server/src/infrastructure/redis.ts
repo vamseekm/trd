@@ -16,9 +16,11 @@ client.on('connect', () => Log.json('Redis connected.'));
 function proxyCommand(name: string, ...arguments_: any[]): Promise<any> {
     return new Promise((resolve: any, reject: any) => {
         arguments_.push((error: any, ...results: any[]) => {
-            // console.log(name);
-            // console.log(arguments);
-            // console.log(results);
+            if (process.env.REDIS_DEBUG && process.env.REDIS_DEBUG.indexOf(name) !== -1) {
+                console.log(name);
+                console.log(arguments);
+                console.log(results);
+            }
             if (error) {
                 reject(error, ...results);
             } else {
@@ -36,6 +38,8 @@ const get = proxyCommand.bind(undefined, 'get');
 const mget = proxyCommand.bind(undefined, 'mget');
 const mset = proxyCommand.bind(undefined, 'mset');
 const zadd = proxyCommand.bind(undefined, 'zadd');
+const zrange = proxyCommand.bind(undefined, 'zrange');
+const zRevRangeByScore = proxyCommand.bind(undefined, 'zrevrangebyscore');
 const renameIfNotExists = proxyCommand.bind(undefined, 'renamenx');
 const sortedSetSize = proxyCommand.bind(undefined, 'zcard');
 const sortedSetGetByRange = proxyCommand.bind(undefined, 'zrange');
@@ -55,9 +59,11 @@ export const RedisService = {
     del,
     keys,
     zadd,
+    zrange,
     renameIfNotExists,
     sortedSetSize,
     sortedSetGetByRange,
     sortedSetRemove,
     delWithPrefix,
+    zRevRangeByScore,
 };

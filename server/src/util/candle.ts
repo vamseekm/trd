@@ -25,7 +25,36 @@ function parseCandleKey(
     const time = timeCode.slice(4);
     return { key, exchange, tradingSymbol, interval, timeCode, day, time };
 }
-
+function makeCandleKey({
+    instrumentId,
+    exchange,
+    tradingSymbol,
+    interval,
+    day,
+    time,
+    timeCode,
+}: {
+    instrumentId?: string;
+    exchange?: string;
+    tradingSymbol?: string;
+    interval: string;
+    day?: string;
+    time?: string;
+    timeCode?: string;
+}): string {
+    const separator = InstrumentConsts.ID_SEPERATOR;
+    if (instrumentId == undefined) {
+        assertNotUndefined('exchange', exchange);
+        assertNotUndefined('tradingSymbol', tradingSymbol);
+        instrumentId = `${exchange}${separator}${tradingSymbol}`;
+    }
+    if (timeCode == undefined) {
+        assertNotUndefined('day', day);
+        assertNotUndefined('time', time);
+        timeCode = `${day}${time}`;
+    }
+    return `${instrumentId}${separator}${interval}${separator}${timeCode}`;
+}
 function getCandleMetaProperties({
     instrumentId,
     interval,
@@ -40,7 +69,7 @@ function getCandleMetaProperties({
     const alignedTime = getAlignedTime({ exchange, interval, timestamp });
     const { day, time } = toDayAndTime(alignedTime);
     const result = {
-        key: `${instrumentId}${separator}${interval}${separator}${day}${time}`,
+        key: makeCandleKey({ instrumentId, interval, day, time }),
     };
     Object.assign(result, ExchangeService.exchangeTimeProperties({ exchange, timestamp, interval }));
     return result as any;
@@ -76,4 +105,5 @@ export const CandleUtil = {
     parseCandleKey,
     getCandleMetaProperties,
     getAlignedTime,
+    makeCandleKey,
 };

@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Indicator flatten test 1`] = `
+Array [
+  "sma(close,26)",
+  "ema(close,26)",
+  "sma(close,12)",
+  "ema(close,12)",
+  "macdLine(close,12,26)",
+  "sma(macdLine(close,12,26),9)",
+  "ema(macdLine(close,12,26),9)",
+  "macdSignal(close,12,26,9)",
+  "macdHisto(close,12,26)",
+  "macd(close,12,26,9)",
+  "vwap()",
+]
+`;

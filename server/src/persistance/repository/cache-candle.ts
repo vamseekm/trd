@@ -7,23 +7,49 @@ import { CacheGroup } from './cache-group';
 import { CandleRepository } from './candle';
 import { SortedSet } from './sorted-set';
 
-const CANDLE_TIME_PREFIX = 'CT';
+const EXCHANGE_TIME_PREFIX = 'ET';
 
-function getCandleTimeRecord(key: string): { key: string; score: string; value: string } {
+function generateCandleTimeRecord(key: string): { key: string; score: string; value: string } {
+    const { exchange, timeCode, interval } = CandleUtil.parseCandleKey(key);
     const tokens = key.split(InstrumentConsts.ID_SEPERATOR);
     if (tokens.length != 4) throw new Error(`Invalid candle key format: ${key}`);
-    const sortedSetKeySuffix = tokens.slice(0, 3).join(InstrumentConsts.ID_SEPERATOR);
-    const value = tokens[3];
-    return { key: `${CANDLE_TIME_PREFIX}:${sortedSetKeySuffix}`, score: value, value };
+    const value = timeCode;
+    return { key: `${EXCHANGE_TIME_PREFIX}:${exchange}:${interval}`, score: value, value };
 }
 
 function getCandleMutateRecord(key: string): { key: string; score: string; value: string } {
     return { key: `${CandleConsts.QUEUE_CANDLE_DB_WRITE_KEY}`, score: `${Date.now()}`, value: key };
 }
 
+async function readCandleTimeRecords({
+    exchange,
+    interval,
+}: {
+    exchange: string;
+    interval: string;
+}): Promise<string[]> {
+    const key = `${EXCHANGE_TIME_PREFIX}:${exchange}:${interval}`;
+    return RedisService.zrange(key, 0, -1);
+}
+
+async function readPreviousCandleTimeRecords({
+    exchange,
+    interval,
+    timeCode,
+    count,
+}: {
+    exchange: string;
+    interval: string;
+    timeCode: string;
+    count: number;
+}): Promise<string[]> {
+    const key = `${EXCHANGE_TIME_PREFIX}:${exchange}:${interval}`;
+    return RedisService.zRevRangeByScore(key, timeCode, '-inf', 'LIMIT', 0, count);
+}
+
 async function setCandleRecords(candles: Candle[]): Promise<any> {
     const items = candles.map(({ key }) => {
-        return getCandleTimeRecord(key);
+        return generateCandleTimeRecord(key);
     });
     return SortedSet.writeItems({ items });
 }
@@ -105,7 +131,7 @@ async function deleteCandle({ key }: { key: string }): Promise<any> {
 }
 
 async function clearCandleTimes(): Promise<any> {
-    return Promise.all([RedisService.delWithPrefix(`${CANDLE_TIME_PREFIX}:*`), CandleWritePump.clear()]);
+    return Promise.all([RedisService.delWithPrefix(`${EXCHANGE_TIME_PREFIX}:*`), CandleWritePump.clear()]);
 }
 
 async function flushCandleCache(): Promise<any> {
@@ -119,4 +145,6 @@ export const CandleCacheRepository = {
     deleteCandle,
     flushCandleCache,
     queueForDBWrites,
+    readCandleTimeRecords,
+    readPreviousCandleTimeRecords,
 };

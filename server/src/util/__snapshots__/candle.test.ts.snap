@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`makeCandleKey 1`] = `"EX:INS:M01:20125959"`;
+
+exports[`makeCandleKey 2`] = `"EX:INS:M01:20125959"`;
+
+exports[`makeCandleKey 3`] = `"EX:INS:M01:20125959"`;

@@ -209,7 +209,8 @@ async function loadCandles(): Promise<void> {
 }
 
 async function debug(): Promise<void> {
-    await loadCandlesLimit(25);
+    await flushCandleCache();
+    await loadCandlesLimit(2);
 }
 
 async function startWritePump(): Promise<any> {
