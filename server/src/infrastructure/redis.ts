@@ -18,7 +18,7 @@ function proxyCommand(name: string, ...arguments_: any[]): Promise<any> {
         arguments_.push((error: any, ...results: any[]) => {
             if (process.env.REDIS_DEBUG && process.env.REDIS_DEBUG.indexOf(name) !== -1) {
                 console.log(name);
-                console.log(arguments);
+                console.log(arguments_);
                 console.log(results);
             }
             if (error) {
