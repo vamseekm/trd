@@ -190,7 +190,7 @@ async function loadCandleBatch({
     });
     const { candles, indicators } = await PipelineService.processCandles(sourceCandles);
     Log.info(
-        `\tProcessed ${timeCode} wrote ${candles.length} candles, ${indicators.length} indicators in ${
+        `\tProcessed ${timeCode} and wrote ${candles.length} candles, ${indicators.length} indicators in ${
             Date.now() - _startTime
         } ms`,
     );
@@ -228,7 +228,7 @@ async function loadCandles(): Promise<void> {
 async function debug(): Promise<void> {
     await flushCandleCache();
     await IndicatorService.flushCache();
-    await loadCandlesLimit({ limit: 10 });
+    await loadCandlesLimit({ limit: 300 });
 }
 
 async function startWritePump(): Promise<any> {

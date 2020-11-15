@@ -83,26 +83,7 @@ async function getCandles(keys: string[], callback?: GetCandlesType): Promise<(C
 }
 
 async function getCandlesFromCache(keys: string[]): Promise<(Candle | undefined)[]> {
-    const candles = await candleCache.getMulti({ keys });
-    for (const [i, candle] of candles.entries()) {
-        if (candle == undefined) continue;
-        if (typeof candle.timestamp === 'string') {
-            candle.timestamp = new Date(candle.timestamp);
-        }
-        candle.volume = Number.parseInt(candle.volume);
-        const { exchange, tradingSymbol, timeCode, interval } = CandleUtil.parseCandleKey(keys[i]);
-        candle.key = keys[i];
-        candle.exchange = exchange;
-        candle.instrumentId = `${exchange}${InstrumentConsts.ID_SEPERATOR}${tradingSymbol}`;
-        candle.openInterest = candle.openInterest || 0;
-        candle.interval = interval;
-        candle.timeCode = Number.parseInt(timeCode, 10);
-        if (validateCandle(candle) === false) {
-            console.log(candle);
-            throw new Error(JSON.stringify(validateCandle.errors, undefined, 2));
-        }
-    }
-    return candles;
+    return getCandles(keys);
 }
 
 async function getCandle(key: string | undefined): Promise<Candle | undefined> {
