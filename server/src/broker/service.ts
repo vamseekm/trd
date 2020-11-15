@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import fs from 'fs';
 import { DateTime } from 'luxon';
 
 import { Config, Log } from '../infrastructure';
@@ -52,18 +53,15 @@ async function generateAccessToken(requestToken: string): Promise<string> {
     }
 }
 
-const brokerCache = new CacheGroup('broker');
 async function getProfile(): Promise<IBrokerProfile> {
-    return brokerCache.get({ key: 'Broker.getProfile' }, async () => {
-        const kite = await kiteInstance();
-        const profile = await kite.getProfile();
-        return {
-            name: profile.user_shortname,
-            exchanges: profile.exchanges,
-            products: profile.products,
-            orderTypes: profile.order_types,
-        };
-    });
+    const kite = await kiteInstance();
+    const profile = await kite.getProfile();
+    return {
+        name: profile.user_shortname,
+        exchanges: profile.exchanges,
+        products: profile.products,
+        orderTypes: profile.order_types,
+    };
 }
 
 async function getExchanges(): Promise<string[]> {
@@ -84,14 +82,20 @@ async function getLTP(inputIdList: string[]): Promise<BrokerQuoteLtp[]> {
 }
 const brokerInstrumentCahce = new CacheGroup('bk_ins');
 async function getInstrumentsByExchange(exchange: string): Promise<Instrument[]> {
-    const instruments: any = await brokerInstrumentCahce.get({ key: exchange }, async () => {
+    const instruments: [any] = await brokerInstrumentCahce.get({ key: exchange }, async () => {
         const kite = await kiteInstance();
-        return kite.getInstruments(exchange);
+        const instruments = await kite.getInstruments(exchange);
+        return instruments;
     });
     const results: Instrument[] = [];
-    for (const inputInstrument of instruments) {
+    for (const [i, inputInstrument] of instruments.entries()) {
+        if (i === 0) {
+            console.log('instruments sample:', instruments.slice(0, 1));
+            console.log(Object.keys(inputInstrument));
+        }
         if (!inputInstrument.instrument_token || inputInstrument.instrument_token.length === 0) {
-            Log.json('Invalid instrument', inputInstrument);
+            Log.json(`Invalid instrument: ${i}`, inputInstrument);
+            Log.json('Invalid instrument keys:', Object.keys(inputInstrument));
             continue;
         }
         const instrument = {

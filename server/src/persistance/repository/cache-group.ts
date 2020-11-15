@@ -72,7 +72,8 @@ export class CacheGroup {
     }
 
     async set(item: KVPair): Promise<any> {
-        return this.setMulti([item]);
+        await this.setMulti([item]);
+        return item.value;
     }
 
     async setMulti(originalItems: KVPair[]): Promise<any> {

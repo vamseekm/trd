@@ -32,6 +32,12 @@ module.exports = {
       name: "cron-clean",
       args: "--Task::cron",
     }),
+
+    serverRun({
+      name: "cron-auto-login",
+      args: "--Task::autoLoginCron",
+    }),
+
     serverRun({
       name: "tick-processor",
       args:

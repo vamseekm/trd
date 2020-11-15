@@ -67,9 +67,10 @@ async function downloadSymbolMeta({
 }
 
 async function download(): Promise<void> {
-    const exchanges = (await BrokerService.getExchanges()).filter(
-        (exchange) => exchange === 'NSE' || exchange === 'NFO',
-    );
+    const exchanges = (await BrokerService.getExchanges())
+        .filter((exchange) => exchange === 'NSE' || exchange === 'NFO')
+        .sort()
+        .reverse();
     Log.json('Exchange list:', { exchanges });
     for (const exchange of exchanges) {
         try {
