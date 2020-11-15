@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/cognitive-complexity */
 import { RedisService } from '../../infrastructure';
 import { Candle } from '../../types';
 interface KVPair {
@@ -19,8 +18,8 @@ export class CacheGroup {
         return RedisService.delWithPrefix(this.redisCacheKey('*'));
     }
 
+    // eslint-disable-next-line sonarjs/cognitive-complexity
     async getMulti({ keys }: { keys: string[] }, callback?: (args: any) => Promise<any>): Promise<any> {
-        // keys = ['NFO:BANKNIFTY20O1521800CE:M01:2010121011', 'NFO:BANKNIFTY20O1524000PE:M01:2010121011'];
         const cachedKeys = keys.map((key) => this.redisCacheKey(key));
         const items = await RedisService.mget(...cachedKeys);
         const missingKeys: string[] = [];
