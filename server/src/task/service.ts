@@ -29,10 +29,7 @@ async function runCronTasks(): Promise<any> {
 }
 
 async function cron(): Promise<any> {
-    void (async function () {
-        Log.info('Running in void');
-    })();
-    Log.info('Wating for cron to kick in...');
+    Log.info('Started cron job...');
     nodeCron.schedule('0 0 * * *', function () {
         void (async function () {
             Log.info('Cron job started...');
@@ -91,11 +88,12 @@ async function autoLogin(): Promise<void> {
     await browser.close();
 }
 
-async function autoLoginCron() {
+async function autoLoginCron(): Promise<void> {
+    Log.info(`Auto login cron job started...`);
     nodeCron.schedule('*/5 * * * *', function () {
         void (async function () {
             Log.info('Cron job started...');
-            await runCronTasks();
+            await autoLogin();
             Log.info('Done running cron.');
             process.exit(0);
         })();

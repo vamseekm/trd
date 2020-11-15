@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import fs from 'fs';
 import { DateTime } from 'luxon';
 
 import { Config, Log } from '../infrastructure';
@@ -84,8 +83,7 @@ const brokerInstrumentCahce = new CacheGroup('bk_ins');
 async function getInstrumentsByExchange(exchange: string): Promise<Instrument[]> {
     const instruments: [any] = await brokerInstrumentCahce.get({ key: exchange }, async () => {
         const kite = await kiteInstance();
-        const instruments = await kite.getInstruments(exchange);
-        return instruments;
+        return kite.getInstruments(exchange);
     });
     const results: Instrument[] = [];
     for (const [i, inputInstrument] of instruments.entries()) {
