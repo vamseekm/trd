@@ -1,8 +1,9 @@
 import { AbstractIndicatorCalc } from '../indicator/calcs/base';
 import { flattenIndicatorDependency } from '../indicator/calcs/lib';
-import { defaultMacdIndicator } from '../indicator/calcs/macd';
+import { SmaIndicatorCalc } from '../indicator/calcs/ma';
 import { CandleCacheRepository } from '../persistance/repository/cache-candle';
-import { Candle, InstrumentConsts } from '../types';
+import { IndicatorCacheRepository } from '../persistance/repository/cache-indicator';
+import { Candle, Indicator, InstrumentConsts } from '../types';
 import { CandleUtil } from '../util';
 
 interface IndicatorState {
@@ -12,23 +13,28 @@ interface IndicatorState {
     indicatorFetchCount: number;
     prevCandleKeys: string[];
     prevIndicatorKeys: string[];
-    updatedIndicator: Record<string, number>;
+    updatedIndicator: Indicator;
 }
 
-const indicatorCalcList: AbstractIndicatorCalc[] = [defaultMacdIndicator()];
+const indicatorCalcList: AbstractIndicatorCalc[] = [new SmaIndicatorCalc({ field: 'close', intervals: 8 })];
 
 export class IndicatorPipeline {
-    indicatorStateList: IndicatorState[];
+    indicatorStateList: IndicatorState[] = [];
+    candleMap: Record<string, Candle> = {};
+    indicatorMap: Record<string, Indicator> = {};
     constructor(sourceCandles: Candle[]) {
-        this.indicatorStateList = sourceCandles.map((sourceCandle) => ({
-            sourceCandle,
-            indicatorCalcList: flattenIndicatorDependency(indicatorCalcList),
-            candleFetchCount: 0,
-            indicatorFetchCount: 0,
-            prevCandleKeys: [],
-            prevIndicatorKeys: [],
-            updatedIndicator: {},
-        }));
+        for (const sourceCandle of sourceCandles) {
+            this.candleMap[sourceCandle.key] = sourceCandle;
+            this.indicatorStateList.push({
+                sourceCandle,
+                indicatorCalcList: flattenIndicatorDependency(indicatorCalcList),
+                candleFetchCount: 0,
+                indicatorFetchCount: 0,
+                prevCandleKeys: [],
+                prevIndicatorKeys: [],
+                updatedIndicator: { key: '', values: {} },
+            });
+        }
     }
 
     prepare(): void {
@@ -45,8 +51,11 @@ export class IndicatorPipeline {
 
     async fetch(): Promise<void> {
         const timeRecords: Record<string, string[]> = {};
-        const start = Date.now();
+        // const start = Date.now();
+        const allCandleKeySet = new Set<string>();
+        const allIndicatorKeySet = new Set<string>();
         for (const indicatorState of this.indicatorStateList) {
+            indicatorState.updatedIndicator.key = indicatorState.sourceCandle.key;
             const { exchange, tradingSymbol, interval, timeCode } = CandleUtil.parseCandleKey(
                 indicatorState.sourceCandle.key,
             );
@@ -56,7 +65,7 @@ export class IndicatorPipeline {
                     exchange,
                     interval,
                     timeCode,
-                    count: Math.max(indicatorState.indicatorFetchCount, indicatorState.candleFetchCount),
+                    count: Math.max(indicatorState.indicatorFetchCount, indicatorState.candleFetchCount) + 1,
                 });
             }
             const candleKeys = timeRecords[timeRecordsKey].map((timeCode) => {
@@ -64,12 +73,46 @@ export class IndicatorPipeline {
             });
             indicatorState.prevCandleKeys = [...candleKeys];
             indicatorState.prevIndicatorKeys = [...candleKeys];
+            indicatorState.prevCandleKeys.forEach(allCandleKeySet.add.bind(allCandleKeySet));
+            indicatorState.prevIndicatorKeys.forEach(allIndicatorKeySet.add.bind(allIndicatorKeySet));
         }
-        console.log(Date.now() - start);
+        const allCandleKeys = [...allCandleKeySet];
+        const allCandles = await CandleCacheRepository.getCandles(allCandleKeys);
+        for (const [i, candleKey] of allCandleKeys.entries()) {
+            const candle = allCandles[i];
+            if (candle != undefined) this.candleMap[candleKey] = candle;
+        }
+        const allIndicatorKeys = [...allIndicatorKeySet];
+        const allIndicators = await IndicatorCacheRepository.getIndicators(allIndicatorKeys);
+        for (const [i, indicatorKey] of allIndicatorKeys.entries()) {
+            const indicator = allIndicators[i];
+            this.indicatorMap[indicatorKey] = indicator || { key: indicatorKey, values: {} };
+        }
+        // console.log('fetcht time:', Date.now() - start);
     }
 
-    async execute(): Promise<any> {
+    calculateIndicator(indicatorState: IndicatorState): void {
+        const candleList = indicatorState.prevCandleKeys.map((candleKey) => this.candleMap[candleKey]);
+        const indicatorList = indicatorState.prevIndicatorKeys.map((indicatorKey) => this.indicatorMap[indicatorKey]);
+        for (const indicatorCalc of indicatorState.indicatorCalcList) {
+            const updatedIndicator = indicatorCalc.calculate(candleList, indicatorList);
+            this.indicatorMap[updatedIndicator.key] = updatedIndicator;
+            indicatorState.updatedIndicator = updatedIndicator;
+        }
+    }
+
+    calculate(): void {
+        this.indicatorStateList.forEach(this.calculateIndicator.bind(this));
+    }
+
+    async getUpdatedIndicators(): Promise<Indicator[]> {
+        return this.indicatorStateList.map(({ updatedIndicator }) => updatedIndicator);
+    }
+
+    async execute(): Promise<Indicator[]> {
         this.prepare();
         await this.fetch();
+        this.calculate();
+        return this.getUpdatedIndicators();
     }
 }

@@ -40,7 +40,7 @@ function makeCandleKey({
     interval: string;
     day?: string;
     time?: string;
-    timeCode?: string;
+    timeCode?: string | number;
 }): string {
     const separator = InstrumentConsts.ID_SEPERATOR;
     if (instrumentId == undefined) {

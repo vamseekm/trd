@@ -6,9 +6,6 @@ import { CandleConsts } from '../types';
 import { RateLimiter, sleep } from '../util';
 
 async function start(): Promise<any> {
-    const nopFunc = async () => {
-        return [];
-    };
     const limiter = new RateLimiter({ bufferSize: 5000, delay: 1000, maxDelay: 1000 });
     const currentQueue = CandleConsts.CURRENT_QUEUE_CANDLE_DB_WRITE_KEY;
     // eslint-disable-next-line no-constant-condition
@@ -24,7 +21,7 @@ async function start(): Promise<any> {
         const { batchSize, delay } = limiter.computeDelayAndBatchSize(totalSize);
         const keys = await RedisService.sortedSetGetByRange(currentQueue, 0, batchSize);
         if (keys.length > 0) {
-            const candles = (await CandleCacheRepository.getCandles(keys, nopFunc)).filter(isPresent);
+            const candles = (await CandleCacheRepository.getCandles(keys)).filter(isPresent);
             await CandleRepository.upsertCandles(candles);
             await RedisService.sortedSetRemove(currentQueue, ...keys);
             totalSize -= keys.length;

@@ -1,6 +1,7 @@
 import { isPresent } from 'ts-is-present';
 
 import { CandleCacheRepository } from '../persistance';
+import { CandleRepository } from '../persistance/repository/candle';
 import { Candle, CandleInterval, Tick } from '../types';
 import { CandleUtil, toDayAndTime } from '../util';
 
@@ -55,7 +56,7 @@ export class TickPipeline {
         const candleKeys: string[] = this.tickStateList
             .flatMap((tickState) => [tickState.currentCandleKey, tickState.previousCandleKey])
             .filter(isPresent);
-        const candleResults = await CandleCacheRepository.getCandles(candleKeys);
+        const candleResults = await CandleCacheRepository.getCandles(candleKeys, CandleRepository.getCandles);
         candleResults.filter(isPresent).forEach((candle) => {
             this.candleMap[candle.key] = candle;
         });

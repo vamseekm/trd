@@ -1,10 +1,11 @@
 import { DateTime } from 'luxon';
 
 import { BrokerService } from '../broker';
+import { IndicatorService } from '../indicator/service';
 import { Log } from '../infrastructure';
 import { CandleCacheRepository, CandleRepository, InstrumentRepository } from '../persistance';
 import { PipelineService } from '../pipeline/service';
-import { Candle, CandleInterval, IBrokerCandle, ICandleProperties, Instrument, validateCandle } from '../types';
+import { Candle, CandleInterval, IBrokerCandle, Instrument, validateCandle } from '../types';
 import { CandleUtil, sleep, toDayAndTime } from '../util';
 import { CandleWritePump } from './write-pump';
 
@@ -12,11 +13,10 @@ function mapBrokerCandleToNativeCandle(
     instrument: Instrument,
     interval: CandleInterval,
     candle: IBrokerCandle,
-): { candle: Candle | undefined; props: ICandleProperties } {
+): Candle {
     const { id: instrumentId, exchange } = instrument;
-    const properties = CandleUtil.getCandleMetaProperties({ instrumentId, interval, timestamp: candle.date });
     const { timeCode } = toDayAndTime(candle.date);
-    const { key } = properties;
+    const key = CandleUtil.makeCandleKey({ instrumentId, interval, timeCode });
     const nativeCandle = {
         key,
         exchange,
@@ -34,7 +34,7 @@ function mapBrokerCandleToNativeCandle(
         totalOpenInterest: 0,
     };
     if (validateCandle(nativeCandle) === false) throw new Error(JSON.stringify(validateCandle.errors, undefined, 2));
-    return { candle: nativeCandle, props: properties };
+    return nativeCandle;
 }
 
 function mapBrokerCandlesToNaiveCandles(
@@ -45,7 +45,9 @@ function mapBrokerCandlesToNaiveCandles(
     const nativeCandles: Candle[] = [];
     let previousCandle: Candle | undefined;
     for (const inputCandle of inputCandles) {
-        const { candle: nativeCandle, props } = mapBrokerCandleToNativeCandle(instrument, interval, inputCandle);
+        const nativeCandle = mapBrokerCandleToNativeCandle(instrument, interval, inputCandle);
+        const { instrumentId, timestamp } = nativeCandle;
+        const props = CandleUtil.getCandleMetaProperties({ instrumentId, interval, timestamp });
         if (nativeCandle == undefined) continue;
         if (props.valid === false) throw new Error(`Invalid key: ${props.key}`);
         if (props.dayBegin) {
@@ -171,18 +173,33 @@ async function verifyCandles(): Promise<void> {
     }
 }
 
-async function loadCandleBatch({ timeCode, interval }: { timeCode: number; interval: CandleInterval }) {
+async function loadCandleBatch({
+    timeCode,
+    interval,
+    instrumentId,
+}: {
+    timeCode: number;
+    interval: CandleInterval;
+    instrumentId?: string;
+}) {
     const _startTime = Date.now();
     const sourceCandles = await CandleRepository.findBy({
         timeCode,
         interval,
+        instrumentId,
     });
-    const allCandles = await PipelineService.processCandles(sourceCandles);
-    Log.info(`\tProcessed ${timeCode} wrote ${allCandles.length} candles in ${Date.now() - _startTime} ms`);
+    const { candles, indicators } = await PipelineService.processCandles(sourceCandles);
+    Log.info(
+        `\tProcessed ${timeCode} wrote ${candles.length} candles, ${indicators.length} indicators in ${
+            Date.now() - _startTime
+        } ms`,
+    );
 }
 
 const TRADING_DAYS_IN_MEMORY = 5;
-async function loadCandlesLimit(limit?: number): Promise<void> {
+async function loadCandlesLimit({ limit, instrumentId }: { limit?: number; instrumentId?: string } = {}): Promise<
+    void
+> {
     Log.info('Loading candles...');
     const interval = CandleInterval.MIN_01;
     const tradingDays = (await CandleRepository.getTradingDaysForInterval(interval)).slice(-1 * TRADING_DAYS_IN_MEMORY);
@@ -197,7 +214,7 @@ async function loadCandlesLimit(limit?: number): Promise<void> {
         limit,
     });
     Log.info(`\tFound ${timeCodes.length} time codes.`);
-    for (const timeCode of timeCodes) await loadCandleBatch({ timeCode, interval });
+    for (const timeCode of timeCodes) await loadCandleBatch({ timeCode, interval, instrumentId });
 }
 
 async function flushCandleCache(): Promise<void> {
@@ -210,7 +227,8 @@ async function loadCandles(): Promise<void> {
 
 async function debug(): Promise<void> {
     await flushCandleCache();
-    await loadCandlesLimit(2);
+    await IndicatorService.flushCache();
+    await loadCandlesLimit({ limit: 10 });
 }
 
 async function startWritePump(): Promise<any> {

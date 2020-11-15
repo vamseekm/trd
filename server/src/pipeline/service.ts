@@ -1,5 +1,6 @@
 import { CandleCacheRepository } from '../persistance';
-import { Candle, Tick } from '../types';
+import { IndicatorCacheRepository } from '../persistance/repository/cache-indicator';
+import { Candle, Indicator, Tick } from '../types';
 import { printStats } from '../util';
 import { DownResolutionPipeline } from './downres';
 import { IndicatorPipeline } from './indicator';
@@ -53,15 +54,18 @@ async function processTicks(ticks: Tick[]): Promise<Candle[]> {
     return sourceCandles;
 }
 
-async function processCandles(sourceCandles: Candle[]): Promise<Candle[]> {
+async function processCandles(sourceCandles: Candle[]): Promise<{ candles: Candle[]; indicators: Indicator[] }> {
     const downResPipeline = new DownResolutionPipeline(sourceCandles);
     const downResCandles = await downResPipeline.execute();
     const allCandles = [...sourceCandles, ...downResCandles];
     await CandleCacheRepository.writeCandles(allCandles);
-    await CandleCacheRepository.queueForDBWrites(downResCandles);
     const indicatorPipeline = new IndicatorPipeline(allCandles);
-    await indicatorPipeline.execute();
-    return allCandles;
+    const indicators = await indicatorPipeline.execute();
+    await Promise.all([
+        CandleCacheRepository.queueForDBWrites(downResCandles),
+        IndicatorCacheRepository.writeIndicators(indicators),
+    ]);
+    return { candles: allCandles, indicators };
 }
 
 export const PipelineService = {

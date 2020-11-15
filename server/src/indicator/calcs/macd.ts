@@ -6,13 +6,14 @@ export interface MacdInputOptions {
     emaPeriodLong: number;
     signalPeriod: number;
     field: string;
+    intervals: number;
 }
 
 export class MacdLineCacl extends AbstractIndicatorCalc {
     longEma: EmaIndicatorCalc;
     shortEma: EmaIndicatorCalc;
     constructor(opts: MacdInputOptions) {
-        super({ id: `macdLine(${opts.field},${opts.emaPeriodShort},${opts.emaPeriodLong})` });
+        super({ ...opts, id: `macdLine(${opts.field},${opts.emaPeriodShort},${opts.emaPeriodLong})` });
         this.longEma = new EmaIndicatorCalc({ intervals: opts.emaPeriodLong, field: opts.field });
         this.shortEma = new EmaIndicatorCalc({ intervals: opts.emaPeriodShort, field: opts.field });
         this.addSubIndicator(this.longEma);
@@ -25,6 +26,7 @@ export class MacdSignalLineCalc extends AbstractIndicatorCalc {
     signalLine: EmaIndicatorCalc;
     constructor(opts: MacdInputOptions) {
         super({
+            ...opts,
             id: `macdSignal(${opts.field},${opts.emaPeriodShort},${opts.emaPeriodLong},${opts.signalPeriod})`,
         });
         this.macdLine = new MacdLineCacl(opts);
@@ -38,7 +40,7 @@ export class MacdHistogramCalc extends AbstractIndicatorCalc {
     longEma: EmaIndicatorCalc;
     shortEma: EmaIndicatorCalc;
     constructor(opts: MacdInputOptions) {
-        super({ id: `macdHisto(${opts.field},${opts.emaPeriodShort},${opts.emaPeriodLong})` });
+        super({ ...opts, id: `macdHisto(${opts.field},${opts.emaPeriodShort},${opts.emaPeriodLong})` });
         this.longEma = new EmaIndicatorCalc({ intervals: opts.emaPeriodLong, field: opts.field });
         this.shortEma = new EmaIndicatorCalc({ intervals: opts.emaPeriodShort, field: opts.field });
         this.addSubIndicator(this.longEma);
@@ -51,7 +53,10 @@ export class MacdIndicatorCalc extends AbstractIndicatorCalc {
     signalLine: MacdSignalLineCalc;
     histogram: MacdHistogramCalc;
     constructor(opts: MacdInputOptions) {
-        super({ id: `macd(${opts.field},${opts.emaPeriodShort},${opts.emaPeriodLong},${opts.signalPeriod})` });
+        super({
+            ...opts,
+            id: `macd(${opts.field},${opts.emaPeriodShort},${opts.emaPeriodLong},${opts.signalPeriod})`,
+        });
         this.macdLine = new MacdLineCacl(opts);
         this.signalLine = new MacdSignalLineCalc(opts);
         this.histogram = new MacdHistogramCalc(opts);
@@ -61,5 +66,11 @@ export class MacdIndicatorCalc extends AbstractIndicatorCalc {
     }
 }
 export function defaultMacdIndicator(): AbstractIndicatorCalc {
-    return new MacdIndicatorCalc({ emaPeriodShort: 12, emaPeriodLong: 26, signalPeriod: 9, field: 'close' });
+    return new MacdIndicatorCalc({
+        emaPeriodShort: 12,
+        emaPeriodLong: 26,
+        signalPeriod: 9,
+        field: 'close',
+        intervals: 1,
+    });
 }

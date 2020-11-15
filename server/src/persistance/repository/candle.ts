@@ -37,12 +37,14 @@ async function findBy({
     from,
     to,
     timeCode,
+    instrumentId,
 }: {
     id?: string;
     interval?: CandleInterval;
     from?: Date;
     to?: Date;
     timeCode?: number;
+    instrumentId?: string;
 }): Promise<Candle[]> {
     const where: WhereOptions = {
         ...(from && to && { timestamp: { [Op.gte]: from, [Op.lte]: to } }),
@@ -50,6 +52,7 @@ async function findBy({
         ...(id && { id }),
         ...(id && interval && { key: { [Op.like]: `${id}${InstrumentConsts.ID_SEPERATOR}${interval}%` } }),
         ...(timeCode && { timeCode }),
+        ...(instrumentId && { instrumentId }),
     };
     if (Object.keys(where).length === 0) throw new Error('Please specify atleast one where condition.');
     return validate(await CandleModel.findAll({ where, order: Sequelize.col('key'), raw: true }));

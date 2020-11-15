@@ -59,11 +59,31 @@ const candleCache = new CacheGroup('C', true);
 
 type GetCandlesType = typeof CandleRepository.getCandles;
 
-async function getCandles(
-    keys: string[],
-    callback: GetCandlesType = CandleRepository.getCandles,
-): Promise<(Candle | undefined)[]> {
+async function getCandles(keys: string[], callback?: GetCandlesType): Promise<(Candle | undefined)[]> {
     const candles = await candleCache.getMulti({ keys }, callback);
+    for (const [i, candle] of candles.entries()) {
+        if (candle == undefined) continue;
+        if (typeof candle.timestamp === 'string') {
+            candle.timestamp = new Date(candle.timestamp);
+        }
+        candle.volume = Number.parseInt(candle.volume);
+        const { exchange, tradingSymbol, timeCode, interval } = CandleUtil.parseCandleKey(keys[i]);
+        candle.key = keys[i];
+        candle.exchange = exchange;
+        candle.instrumentId = `${exchange}${InstrumentConsts.ID_SEPERATOR}${tradingSymbol}`;
+        candle.openInterest = candle.openInterest || 0;
+        candle.interval = interval;
+        candle.timeCode = Number.parseInt(timeCode, 10);
+        if (validateCandle(candle) === false) {
+            console.log(candle);
+            throw new Error(JSON.stringify(validateCandle.errors, undefined, 2));
+        }
+    }
+    return candles;
+}
+
+async function getCandlesFromCache(keys: string[]): Promise<(Candle | undefined)[]> {
+    const candles = await candleCache.getMulti({ keys });
     for (const [i, candle] of candles.entries()) {
         if (candle == undefined) continue;
         if (typeof candle.timestamp === 'string') {
@@ -142,6 +162,7 @@ export const CandleCacheRepository = {
     writeCandles,
     getCandle,
     getCandles,
+    getCandlesFromCache,
     deleteCandle,
     flushCandleCache,
     queueForDBWrites,

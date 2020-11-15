@@ -73,6 +73,9 @@ export class DownResolutionPipeline {
         candleResults.filter(isPresent).forEach((candle) => {
             this.candleMap[candle.key] = candle;
         });
+        for (const sourceCandle of this.sourceCandleList) {
+            this.candleMap[sourceCandle.key] = sourceCandle;
+        }
     }
 
     // eslint-disable-next-line sonarjs/cognitive-complexity

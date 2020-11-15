@@ -27,12 +27,13 @@ export class CacheGroup {
         for (const [i, key] of cachedKeys.entries()) {
             if (items[i] == undefined) {
                 missingKeys.push(key);
-            } else {
-                const { value } = JSON.parse(items[i]);
-                items[i] = value;
+                continue;
             }
+            const { value } = JSON.parse(items[i]);
+            items[i] = value;
         }
-        if (callback != undefined) {
+        if (callback != undefined && missingKeys.length > 0) {
+            console.trace('Missing keys: ', missingKeys.length);
             const dbCandles: Candle[] = await callback(missingKeys);
             if (dbCandles.length > 0) {
                 const dbCandleMap: Map<string, Candle> = new Map();
