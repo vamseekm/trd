@@ -4,7 +4,7 @@
   "description": "hello",
   "main": "webpack.config.js",
   "scripts": {
-    "client:dev": "npm i -g yarn && yarn && depcheck; npx webpack-dev-server --mode development --content-base ./dist --hot --inline --color --port 3200 --host 127.0.0.1"
+    "client:dev": "npm i -g yarn && yarn && depcheck; npx webpack-dev-server --mode development --content-base ./dist --hot --inline --color "
   },
   "author": "",
   "license": "ISC",

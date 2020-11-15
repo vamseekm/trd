@@ -9,7 +9,9 @@ module.exports = {
     compress: true,
     disableHostCheck: true,
     clientLogLevel: "silent",
+    port: 3200,
     sockPort: 443,
+    sockHost: "trd.local",
   },
 
   output: {
