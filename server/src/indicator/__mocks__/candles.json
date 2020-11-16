@@ -1,37 +1,56 @@
 [
     {
+        "timeCode": 2011091529,
+        "open": 50,
+        "close": 1000,
+        "high": 50,
+        "low": 50,
+        "volume": 1000,
+        "totalVolume": 1000
+    },
+    {
         "timeCode": 2011101010,
         "open": 10,
         "close": 10,
         "high": 10,
-        "low": 10
+        "low": 10,
+        "volume": 100,
+        "totalVolume": 100
     },
     {
         "timeCode": 2011101011,
         "open": 11,
         "close": 20,
         "high": 11,
-        "low": 11
+        "low": 11,
+        "volume": 50,
+        "totalVolume": 150
     },
     {
         "timeCode": 2011101012,
         "open": 5,
         "close": 15,
         "high": 5,
-        "low": 5
+        "low": 5,
+        "volume": 40,
+        "totalVolume": 190
     },
     {
         "timeCode": 2011101013,
         "open": 5,
         "close": 5,
         "high": 5,
-        "low": 5
+        "low": 5,
+        "volume": 30,
+        "totalVolume": 220
     },
     {
         "timeCode": 2011101014,
         "open": 5,
         "close": 1,
         "high": 5,
-        "low": 5
+        "low": 5,
+        "volume": 20,
+        "totalVolume": 240
     }
 ]

@@ -31,15 +31,16 @@ function readMockCandles(): Candle[] {
         open: number;
         high: number;
         low: number;
+        volume: number;
+        totalVolume: number;
     }[] = require('./__mocks__/candles.json');
     const exchange = 'NSE';
     const tradingSymbol = 'DUMMY';
     const instrumentId = `${exchange}${InstrumentConsts.ID_SEPERATOR}${tradingSymbol}`;
     const interval = CandleInterval.MIN_01;
-
     return candleData.map(
         (candle): Candle => {
-            const { timeCode, close, open, high, low } = candle;
+            const { timeCode, close, open, high, low, volume, totalVolume } = candle;
             const key = CandleUtil.makeCandleKey({ instrumentId, interval, timeCode });
             return {
                 key,
@@ -52,9 +53,9 @@ function readMockCandles(): Candle[] {
                 open,
                 high,
                 low,
+                volume,
+                totalVolume,
                 openInterest: 0,
-                volume: 0,
-                totalVolume: 0,
                 totalOpenInterest: 0,
             };
         },
@@ -99,6 +100,13 @@ test('Moving averages', async () => {
     ]);
     // console.log(await readCandlesFromMemory());
     expect(await readCandlesFromMemory()).toMatchSnapshot();
+    expect(await readIndicatorsFromMemory()).toMatchSnapshot();
+    expect(true).toEqual(true);
+});
+
+test('VWAP', async () => {
+    await runIndicators(readMockCandles(), [new VWapIndicatorCalc()]);
+    // console.log(await readCandlesFromMemory());
     expect(await readIndicatorsFromMemory()).toMatchSnapshot();
     expect(true).toEqual(true);
 });

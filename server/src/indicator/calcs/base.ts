@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Candle, Indicator } from '../../types';
+import { assertNotUndefined } from '../../util';
+import { toDayAndTime } from '../../util/time';
 export interface IndicatorCalcParams {
     combinedCurrent: Record<string, number>;
     combinedPrevious: Record<string, number>;
@@ -9,6 +11,7 @@ export interface IndicatorCalcParams {
     currentIndicator: Indicator;
     candleList: Candle[];
     indicatorList: Indicator[];
+    sameDay: boolean;
 }
 export class AbstractIndicatorCalc {
     id: string;
@@ -51,15 +54,27 @@ export class AbstractIndicatorCalc {
     }
 
     public calculate(candleList: Candle[], indicatorList: Indicator[]): Indicator {
+        const combinedCurrent = Object.assign({}, candleList[0] || {}, indicatorList[0]?.values || {});
+        const combinedPrevious = Object.assign({}, candleList[1] || {}, indicatorList[1]?.values || {});
+        const sameDay =
+            combinedCurrent.timeCode != undefined &&
+            combinedPrevious.timeCode != undefined &&
+            toDayAndTime(combinedCurrent.timestamp).day === toDayAndTime(combinedPrevious.timestamp).day;
+        assertNotUndefined('currentValue', combinedCurrent[this.field]);
+        const currentIndicator = indicatorList[0];
+        const currentCandle = candleList[0];
+        const { close, totalVolume, volume, open, high, low } = currentCandle;
+        currentIndicator.values = { ...currentIndicator.values, open, high, low, close, totalVolume, volume };
         return this.calculateWithParams({
-            combinedCurrent: Object.assign({}, candleList[0] || {}, indicatorList[0]?.values || {}),
-            combinedPrevious: Object.assign({}, candleList[1] || {}, indicatorList[1]?.values || {}),
-            currentCandle: candleList[0],
+            combinedCurrent,
+            combinedPrevious,
+            currentCandle,
+            currentIndicator,
             previousCandle: candleList[1],
-            currentIndicator: indicatorList[0],
             previousIndicator: indicatorList[1],
             candleList,
             indicatorList,
+            sameDay,
         });
     }
 

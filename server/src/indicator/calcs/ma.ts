@@ -1,5 +1,4 @@
 import { Indicator } from '../../types';
-import { assertNotUndefined } from '../../util/lib/algo-ds';
 import { AbstractIndicatorCalc, IndicatorCalcParams } from './base';
 export interface MaInput {
     field: string;
@@ -11,11 +10,15 @@ export class SmaIndicatorCalc extends AbstractIndicatorCalc {
         super({ ...opts, id: `sma(${opts.field},${opts.intervals})` });
     }
 
-    calculateWithParams({ combinedPrevious, combinedCurrent, currentIndicator }: IndicatorCalcParams): Indicator {
+    calculateWithParams({
+        combinedPrevious,
+        combinedCurrent,
+        currentIndicator,
+        sameDay,
+    }: IndicatorCalcParams): Indicator {
         const prevSma = (combinedPrevious as any)[this.id];
         const currentValue = (combinedCurrent as any)[this.field];
-        assertNotUndefined('this.field', currentValue);
-        if (prevSma == undefined) {
+        if (prevSma == undefined || sameDay === false) {
             currentIndicator.values[this.id] = currentValue;
             return currentIndicator;
         }
@@ -34,16 +37,21 @@ export class EmaIndicatorCalc extends AbstractIndicatorCalc {
         this.addSubIndicator(this.smaIndicator);
     }
 
-    calculateWithParams({ currentIndicator, previousIndicator, currentCandle }: IndicatorCalcParams): Indicator {
-        const prevEma = previousIndicator?.values[this.id];
-        const currentValue = (currentCandle as any)[this.field];
-        if (prevEma == undefined) {
+    calculateWithParams({
+        combinedCurrent,
+        combinedPrevious,
+        currentIndicator,
+        sameDay,
+    }: IndicatorCalcParams): Indicator {
+        const prevEma = (combinedPrevious as any)?.[this.id];
+        const currentValue = (combinedCurrent as any)[this.field];
+        if (prevEma == undefined || sameDay === false) {
             currentIndicator.values[this.id] = currentValue;
             return currentIndicator;
         }
         const k = 2 / (this.intervals + 1);
         const currentEma = currentValue * k + prevEma * (1 - k);
-        currentIndicator.values[this.id] = currentEma;
+        currentIndicator.values[this.id] = Number.parseFloat(currentEma.toFixed(4));
         return currentIndicator;
     }
 }

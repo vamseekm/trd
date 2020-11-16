@@ -12,12 +12,29 @@ Array [
   "macdSignal(close,12,26,9)",
   "macdHisto(close,12,26)",
   "macd(close,12,26,9)",
-  "vwap()",
+  "totalValue",
+  "vwap",
 ]
 `;
 
 exports[`Moving averages 1`] = `
 Array [
+  Object {
+    "close": 1000,
+    "exchange": "NSE",
+    "high": 50,
+    "instrumentId": "NSE:DUMMY",
+    "interval": "M01",
+    "key": "NSE:DUMMY:M01:2011091529",
+    "low": 50,
+    "open": 50,
+    "openInterest": 0,
+    "timeCode": 2011091529,
+    "timestamp": 2020-11-09T09:59:00.000Z,
+    "totalOpenInterest": 0,
+    "totalVolume": 1000,
+    "volume": 1000,
+  },
   Object {
     "close": 10,
     "exchange": "NSE",
@@ -31,8 +48,8 @@ Array [
     "timeCode": 2011101010,
     "timestamp": 2020-11-10T04:40:00.000Z,
     "totalOpenInterest": 0,
-    "totalVolume": 0,
-    "volume": 0,
+    "totalVolume": 100,
+    "volume": 100,
   },
   Object {
     "close": 20,
@@ -47,8 +64,8 @@ Array [
     "timeCode": 2011101011,
     "timestamp": 2020-11-10T04:41:00.000Z,
     "totalOpenInterest": 0,
-    "totalVolume": 0,
-    "volume": 0,
+    "totalVolume": 150,
+    "volume": 50,
   },
   Object {
     "close": 15,
@@ -63,8 +80,8 @@ Array [
     "timeCode": 2011101012,
     "timestamp": 2020-11-10T04:42:00.000Z,
     "totalOpenInterest": 0,
-    "totalVolume": 0,
-    "volume": 0,
+    "totalVolume": 190,
+    "volume": 40,
   },
   Object {
     "close": 5,
@@ -79,8 +96,8 @@ Array [
     "timeCode": 2011101013,
     "timestamp": 2020-11-10T04:43:00.000Z,
     "totalOpenInterest": 0,
-    "totalVolume": 0,
-    "volume": 0,
+    "totalVolume": 220,
+    "volume": 30,
   },
   Object {
     "close": 1,
@@ -95,8 +112,8 @@ Array [
     "timeCode": 2011101014,
     "timestamp": 2020-11-10T04:44:00.000Z,
     "totalOpenInterest": 0,
-    "totalVolume": 0,
-    "volume": 0,
+    "totalVolume": 240,
+    "volume": 20,
   },
 ]
 `;
@@ -104,38 +121,164 @@ Array [
 exports[`Moving averages 2`] = `
 Array [
   Object {
+    "key": "NSE:DUMMY:M01:2011091529",
+    "values": Object {
+      "close": 1000,
+      "ema(close,10)": 1000,
+      "high": 50,
+      "low": 50,
+      "open": 50,
+      "sma(close,10)": 1000,
+      "totalVolume": 1000,
+      "volume": 1000,
+    },
+  },
+  Object {
     "key": "NSE:DUMMY:M01:2011101010",
     "values": Object {
+      "close": 10,
       "ema(close,10)": 10,
+      "high": 10,
+      "low": 10,
+      "open": 10,
       "sma(close,10)": 10,
+      "totalVolume": 100,
+      "volume": 100,
     },
   },
   Object {
     "key": "NSE:DUMMY:M01:2011101011",
     "values": Object {
-      "ema(close,10)": 11.818181818181818,
+      "close": 20,
+      "ema(close,10)": 11.8182,
+      "high": 11,
+      "low": 11,
+      "open": 11,
       "sma(close,10)": 11,
+      "totalVolume": 150,
+      "volume": 50,
     },
   },
   Object {
     "key": "NSE:DUMMY:M01:2011101012",
     "values": Object {
-      "ema(close,10)": 12.396694214876032,
+      "close": 15,
+      "ema(close,10)": 12.3967,
+      "high": 5,
+      "low": 5,
+      "open": 5,
       "sma(close,10)": 11.4,
+      "totalVolume": 190,
+      "volume": 40,
     },
   },
   Object {
     "key": "NSE:DUMMY:M01:2011101013",
     "values": Object {
-      "ema(close,10)": 11.051840721262206,
+      "close": 5,
+      "ema(close,10)": 11.0518,
+      "high": 5,
+      "low": 5,
+      "open": 5,
       "sma(close,10)": 10.76,
+      "totalVolume": 220,
+      "volume": 30,
     },
   },
   Object {
     "key": "NSE:DUMMY:M01:2011101014",
     "values": Object {
-      "ema(close,10)": 9.224233317396349,
+      "close": 1,
+      "ema(close,10)": 9.2242,
+      "high": 5,
+      "low": 5,
+      "open": 5,
       "sma(close,10)": 9.784,
+      "totalVolume": 240,
+      "volume": 20,
+    },
+  },
+]
+`;
+
+exports[`VWAP 1`] = `
+Array [
+  Object {
+    "key": "NSE:DUMMY:M01:2011091529",
+    "values": Object {
+      "close": 1000,
+      "high": 50,
+      "low": 50,
+      "open": 50,
+      "totalValue": 1000000,
+      "totalVolume": 1000,
+      "volume": 1000,
+      "vwap": 1000,
+    },
+  },
+  Object {
+    "key": "NSE:DUMMY:M01:2011101010",
+    "values": Object {
+      "close": 10,
+      "high": 10,
+      "low": 10,
+      "open": 10,
+      "totalValue": 1000,
+      "totalVolume": 100,
+      "volume": 100,
+      "vwap": 10,
+    },
+  },
+  Object {
+    "key": "NSE:DUMMY:M01:2011101011",
+    "values": Object {
+      "close": 20,
+      "high": 11,
+      "low": 11,
+      "open": 11,
+      "totalValue": 2000,
+      "totalVolume": 150,
+      "volume": 50,
+      "vwap": 13.3333,
+    },
+  },
+  Object {
+    "key": "NSE:DUMMY:M01:2011101012",
+    "values": Object {
+      "close": 15,
+      "high": 5,
+      "low": 5,
+      "open": 5,
+      "totalValue": 2600,
+      "totalVolume": 190,
+      "volume": 40,
+      "vwap": 13.6842,
+    },
+  },
+  Object {
+    "key": "NSE:DUMMY:M01:2011101013",
+    "values": Object {
+      "close": 5,
+      "high": 5,
+      "low": 5,
+      "open": 5,
+      "totalValue": 2750,
+      "totalVolume": 220,
+      "volume": 30,
+      "vwap": 12.5,
+    },
+  },
+  Object {
+    "key": "NSE:DUMMY:M01:2011101014",
+    "values": Object {
+      "close": 1,
+      "high": 5,
+      "low": 5,
+      "open": 5,
+      "totalValue": 2770,
+      "totalVolume": 240,
+      "volume": 20,
+      "vwap": 11.5417,
     },
   },
 ]
