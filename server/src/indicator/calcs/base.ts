@@ -64,7 +64,7 @@ export class AbstractIndicatorCalc {
         const currentIndicator = indicatorList[0];
         const currentCandle = candleList[0];
         const { close, totalVolume, volume, open, high, low } = currentCandle;
-        currentIndicator.values = { ...currentIndicator.values, open, high, low, close, totalVolume, volume };
+        currentIndicator.values = { open, high, low, close, totalVolume, volume, ...currentIndicator.values };
         return this.calculateWithParams({
             combinedCurrent,
             combinedPrevious,
