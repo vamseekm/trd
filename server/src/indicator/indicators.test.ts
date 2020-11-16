@@ -1,4 +1,13 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+import { CandleCacheRepository } from '../persistance/repository/cache-candle';
+import { IndicatorCacheRepository } from '../persistance/repository/cache-indicator';
+import { IndicatorPipeline } from '../pipeline/indicator';
+import { Candle, CandleInterval, InstrumentConsts } from '../types';
+import { CandleUtil } from '../util/candle';
+import { timeCodeToDate } from '../util/time';
+import { AbstractIndicatorCalc } from './calcs/base';
 import { flattenIndicatorDependency } from './calcs/lib';
+import { EmaIndicatorCalc, SmaIndicatorCalc } from './calcs/ma';
 import { MacdIndicatorCalc } from './calcs/macd';
 import { VWapIndicatorCalc } from './calcs/vwap';
 
@@ -15,27 +24,81 @@ test('Indicator dependency flatten', async () => {
     expect(ids).toMatchSnapshot();
 });
 
-// beforeEach(() => {
-//     // eslint-disable-next-line @typescript-eslint/no-var-requires
-//     const candleData: { timeCode: number; close: number }[] = require('./__mocks__/candles.json');
-//     const exchange = 'NSE';
-//     const tradingSymbol = 'DUMMY';
-//     const instrumentId = `${exchange}${InstrumentConsts.ID_SEPERATOR}${tradingSymbol}`;
-//     const interval = CandleInterval.MIN_01;
-//     const candles = candleData.map(
-//         (candle): Candle => {
-//             const { timeCode, close } = candle;
-//             return {
-//                 exchange,
-//                 instrumentId,
-//                 timeCode,
-//                 close,
-//             };
-//         },
-//     );
-//     // console.log(candles);
-// });
+function readMockCandles(): Candle[] {
+    const candleData: {
+        timeCode: number;
+        close: number;
+        open: number;
+        high: number;
+        low: number;
+    }[] = require('./__mocks__/candles.json');
+    const exchange = 'NSE';
+    const tradingSymbol = 'DUMMY';
+    const instrumentId = `${exchange}${InstrumentConsts.ID_SEPERATOR}${tradingSymbol}`;
+    const interval = CandleInterval.MIN_01;
 
-test('SMA', async () => {
+    return candleData.map(
+        (candle): Candle => {
+            const { timeCode, close, open, high, low } = candle;
+            const key = CandleUtil.makeCandleKey({ instrumentId, interval, timeCode });
+            return {
+                key,
+                exchange,
+                instrumentId,
+                timeCode,
+                interval,
+                close,
+                timestamp: timeCodeToDate(timeCode),
+                open,
+                high,
+                low,
+                openInterest: 0,
+                volume: 0,
+                totalVolume: 0,
+                totalOpenInterest: 0,
+            };
+        },
+    );
+}
+
+async function readCandlesFromMemory() {
+    const candles = readMockCandles();
+    const keys = candles.map((candle) => candle.key);
+    return CandleCacheRepository.getCandles(keys);
+}
+
+async function readIndicatorsFromMemory() {
+    const candles = readMockCandles();
+    const keys = candles.map((candle) => candle.key);
+    return IndicatorCacheRepository.getIndicators(keys);
+}
+
+async function runIndicators(candles: Candle[], indicatorList: AbstractIndicatorCalc[]) {
+    const keys = candles.map((candle) => candle.key);
+    await IndicatorCacheRepository.remove(keys);
+    await CandleCacheRepository.remove(keys);
+    await CandleCacheRepository.writeCandles(candles);
+    for (const candle of candles) {
+        const pipelie = new IndicatorPipeline([candle], indicatorList);
+        const indicators = await pipelie.execute();
+        await IndicatorCacheRepository.writeIndicators(indicators);
+    }
+}
+
+beforeEach(async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // for (const candle of readMockCandles()) {
+    //     await PipelineService.processCandles([candle]);
+    // }
+});
+
+test('Moving averages', async () => {
+    await runIndicators(readMockCandles(), [
+        new SmaIndicatorCalc({ field: 'close', intervals: 10 }),
+        new EmaIndicatorCalc({ field: 'close', intervals: 10 }),
+    ]);
+    // console.log(await readCandlesFromMemory());
+    expect(await readCandlesFromMemory()).toMatchSnapshot();
+    expect(await readIndicatorsFromMemory()).toMatchSnapshot();
     expect(true).toEqual(true);
 });

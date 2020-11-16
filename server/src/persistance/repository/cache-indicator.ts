@@ -19,8 +19,13 @@ async function flush(): Promise<unknown> {
     return indicatorCache.flush();
 }
 
+async function remove(keys: string[]): Promise<unknown> {
+    return Promise.all(keys.map((key) => indicatorCache.del(key)));
+}
+
 export const IndicatorCacheRepository = {
     getIndicators,
     writeIndicators,
     flush,
+    remove,
 };

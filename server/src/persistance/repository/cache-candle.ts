@@ -139,6 +139,10 @@ async function flushCandleCache(): Promise<any> {
     return Promise.all([clearCandleTimes(), candleCache.flush()]);
 }
 
+async function remove(keys: string[]): Promise<unknown> {
+    return Promise.all(keys.map((key) => candleCache.del(key)));
+}
+
 export const CandleCacheRepository = {
     writeCandles,
     getCandle,
@@ -149,4 +153,5 @@ export const CandleCacheRepository = {
     queueForDBWrites,
     readCandleTimeRecords,
     readPreviousCandleTimeRecords,
+    remove,
 };

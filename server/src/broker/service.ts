@@ -79,8 +79,9 @@ async function getLTP(inputIdList: string[]): Promise<BrokerQuoteLtp[]> {
         },
     );
 }
-const brokerInstrumentCahce = new CacheGroup('bk_ins');
+
 async function getInstrumentsByExchange(exchange: string): Promise<Instrument[]> {
+    const brokerInstrumentCahce = new CacheGroup('bk_ins');
     const instruments: [any] = await brokerInstrumentCahce.get({ key: exchange }, async () => {
         const kite = await kiteInstance();
         return kite.getInstruments(exchange);

@@ -16,13 +16,14 @@ interface IndicatorState {
     updatedIndicator: Indicator;
 }
 
-const indicatorCalcList: AbstractIndicatorCalc[] = [new SmaIndicatorCalc({ field: 'close', intervals: 8 })];
+const DEFAULT_INDICATORS: AbstractIndicatorCalc[] = [new SmaIndicatorCalc({ field: 'close', intervals: 8 })];
 
 export class IndicatorPipeline {
     indicatorStateList: IndicatorState[] = [];
     candleMap: Record<string, Candle> = {};
     indicatorMap: Record<string, Indicator> = {};
-    constructor(sourceCandles: Candle[]) {
+    constructor(sourceCandles: Candle[], indicatorCalcList?: AbstractIndicatorCalc[]) {
+        indicatorCalcList = indicatorCalcList || DEFAULT_INDICATORS;
         for (const sourceCandle of sourceCandles) {
             this.candleMap[sourceCandle.key] = sourceCandle;
             this.indicatorStateList.push({

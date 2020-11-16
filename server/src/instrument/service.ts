@@ -248,6 +248,10 @@ async function debug(): Promise<void> {
     await getTrackableFnoInstruments();
 }
 
+async function findTracked(): Promise<Instrument[]> {
+    return InstrumentRepository.findTrackedInstruments();
+}
+
 export const InstrumentService = {
     download,
     updateLTPAll,
@@ -255,6 +259,6 @@ export const InstrumentService = {
     updateLtpInitial,
     updateLTPTracked,
     updateMeta,
-    findTracked: InstrumentRepository.findTrackedInstruments,
+    findTracked,
     debug,
 };
