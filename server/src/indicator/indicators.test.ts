@@ -80,8 +80,8 @@ async function runIndicators(candles: Candle[], indicatorList: AbstractIndicator
     await CandleCacheRepository.remove(keys);
     await CandleCacheRepository.writeCandles(candles);
     for (const candle of candles) {
-        const pipelie = new IndicatorPipeline([candle], indicatorList);
-        const indicators = await pipelie.execute();
+        const pipeline = new IndicatorPipeline([candle], indicatorList);
+        const indicators = await pipeline.execute();
         await IndicatorCacheRepository.writeIndicators(indicators);
     }
 }

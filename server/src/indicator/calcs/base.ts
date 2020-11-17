@@ -60,6 +60,12 @@ export class AbstractIndicatorCalc {
             combinedCurrent.timeCode != undefined &&
             combinedPrevious.timeCode != undefined &&
             toDayAndTime(combinedCurrent.timestamp).day === toDayAndTime(combinedPrevious.timestamp).day;
+        if (combinedCurrent[this.field] == undefined) {
+            console.trace('currentCandle.field is undefined');
+            console.log('Current:', candleList);
+            console.log('Combined current:', combinedCurrent);
+            console.log('combined previous:', combinedPrevious);
+        }
         assertNotUndefined('currentValue', combinedCurrent[this.field]);
         const currentIndicator = indicatorList[0];
         const currentCandle = candleList[0];

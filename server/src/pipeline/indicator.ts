@@ -89,13 +89,17 @@ export class IndicatorPipeline {
             const indicator = allIndicators[i];
             this.indicatorMap[indicatorKey] = indicator || { key: indicatorKey, values: {} };
         }
-        // console.log('fetcht time:', Date.now() - start);
+        for (const { sourceCandle } of this.indicatorStateList) {
+            this.candleMap[sourceCandle.key] = sourceCandle;
+        }
     }
 
     calculateIndicator(indicatorState: IndicatorState): void {
-        const candleList = indicatorState.prevCandleKeys.map((candleKey) => this.candleMap[candleKey]);
-        const indicatorList = indicatorState.prevIndicatorKeys.map((indicatorKey) => this.indicatorMap[indicatorKey]);
         for (const indicatorCalc of indicatorState.indicatorCalcList) {
+            const candleList = indicatorState.prevCandleKeys.map((candleKey) => this.candleMap[candleKey]);
+            const indicatorList = indicatorState.prevIndicatorKeys.map(
+                (indicatorKey) => this.indicatorMap[indicatorKey],
+            );
             const updatedIndicator = indicatorCalc.calculate(candleList, indicatorList);
             this.indicatorMap[updatedIndicator.key] = updatedIndicator;
             indicatorState.updatedIndicator = updatedIndicator;
@@ -103,7 +107,9 @@ export class IndicatorPipeline {
     }
 
     calculate(): void {
-        this.indicatorStateList.forEach(this.calculateIndicator.bind(this));
+        for (const indicatorState of this.indicatorStateList) {
+            this.calculateIndicator(indicatorState);
+        }
     }
 
     async getUpdatedIndicators(): Promise<Indicator[]> {

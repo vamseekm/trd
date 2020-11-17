@@ -1,4 +1,4 @@
-import { RedisService } from '../../infrastructure';
+import { Log, RedisService } from '../../infrastructure';
 import { Candle } from '../../types';
 interface KVPair {
     key: string;
@@ -32,7 +32,7 @@ export class CacheGroup {
             items[i] = value;
         }
         if (callback != undefined && missingKeys.length > 0) {
-            console.trace('Missing keys: ', missingKeys.length);
+            Log.info(`Missing keys: ${missingKeys.length}`);
             const dbCandles: Candle[] = await callback(missingKeys);
             if (dbCandles.length > 0) {
                 const dbCandleMap: Map<string, Candle> = new Map();

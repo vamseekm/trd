@@ -14,12 +14,14 @@ client.on('connect', () => Log.json('Redis connected.'));
 // client.on('ready', () => Log.json('Redis ready.'));
 
 function proxyCommand(name: string, ...arguments_: any[]): Promise<any> {
+    if (arguments_.length === 0) return Promise.resolve([]);
     return new Promise((resolve: any, reject: any) => {
         arguments_.push((error: any, ...results: any[]) => {
             if (process.env.REDIS_DEBUG && process.env.REDIS_DEBUG.indexOf(name) !== -1) {
-                console.log(name);
-                console.log(arguments_);
-                console.log(results);
+                console.trace('Cmd:', name);
+                console.log('Err:', error);
+                console.log('Args:', arguments_);
+                console.log('Results:', results);
             }
             if (error) {
                 reject(error, ...results);

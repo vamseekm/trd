@@ -35,6 +35,7 @@ async function processTicks(ticks: Tick[]): Promise<Candle[]> {
     const tickPipeline = new TickPipeline(ticks);
     const sourceCandles = await tickPipeline.execute();
     const startWriteTime = Date.now();
+    await CandleCacheRepository.writeCandles(sourceCandles);
     await CandleCacheRepository.queueForDBWrites(sourceCandles);
     await processCandles(sourceCandles);
     const timeCode = sourceCandles.length > 0 ? sourceCandles[0].timeCode : 0;
