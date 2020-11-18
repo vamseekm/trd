@@ -98,6 +98,6 @@ export function maskString(string: string): string {
     return string.slice(0, 3) + string.slice(3, -3).replace(/./g, '*') + string.slice(-3, string.length);
 }
 
-export function assertNotUndefined<T>(name: string, value: T): void {
-    if (value == undefined) throw new Error(`${name} can't be undefined`);
+export function assertNotUndefined<T>(value: T): void {
+    if (value == undefined) throw new Error("Can't be undefined");
 }

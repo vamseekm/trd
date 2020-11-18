@@ -10,18 +10,18 @@ export class TypicalPriceCalc extends AbstractIndicatorCalc {
 
     calculateWithParams({ combinedCurrent, currentIndicator }: IndicatorCalcParams): Indicator {
         const { high, low, close } = combinedCurrent;
-        assertNotUndefined('high', high);
-        assertNotUndefined('low', low);
-        assertNotUndefined('close', low);
+        assertNotUndefined(high);
+        assertNotUndefined(low);
+        assertNotUndefined(low);
         currentIndicator.values[this.id] = truncateFloat((high + low + close) / 3);
         return currentIndicator;
     }
 }
 export class TotalValueCalc extends AbstractIndicatorCalc {
-    tp: TypicalPriceCalc = new TypicalPriceCalc();
+    typeicalPrice: TypicalPriceCalc = new TypicalPriceCalc();
     constructor() {
         super({ id: `totalValue`, intervals: 1, field: 'typicalPrice' });
-        this.addSubIndicator(this.tp);
+        this.addSubIndicator(this.typeicalPrice);
     }
 
     calculateWithParams({
@@ -31,7 +31,7 @@ export class TotalValueCalc extends AbstractIndicatorCalc {
         sameDay,
     }: IndicatorCalcParams): Indicator {
         const previousTotalValue = combinedPrevious?.[this.id];
-        assertNotUndefined('typeicalPrice', combinedCurrent[this.tp.id]);
+        assertNotUndefined(combinedCurrent[this.typeicalPrice.id]);
         if (previousTotalValue == undefined || sameDay === false) {
             currentIndicator.values[this.id] = combinedCurrent[this.field] * combinedCurrent['volume'];
             return currentIndicator;
@@ -44,15 +44,17 @@ export class TotalValueCalc extends AbstractIndicatorCalc {
     }
 }
 export class VWapIndicatorCalc extends AbstractIndicatorCalc {
-    tv: TotalValueCalc;
+    totalValue: TotalValueCalc;
     constructor() {
         super({ id: 'vwap', intervals: 1 });
-        this.tv = new TotalValueCalc();
-        this.addSubIndicator(this.tv);
+        this.totalValue = new TotalValueCalc();
+        this.addSubIndicator(this.totalValue);
     }
 
     calculateWithParams({ combinedCurrent, currentIndicator }: IndicatorCalcParams): Indicator {
-        currentIndicator.values[this.id] = truncateFloat(combinedCurrent[this.tv.id] / combinedCurrent['totalVolume']);
+        currentIndicator.values[this.id] = truncateFloat(
+            combinedCurrent[this.totalValue.id] / combinedCurrent['totalVolume'],
+        );
         return currentIndicator;
     }
 }

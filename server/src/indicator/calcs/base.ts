@@ -66,7 +66,7 @@ export class AbstractIndicatorCalc {
             console.log('Combined current:', combinedCurrent);
             console.log('combined previous:', combinedPrevious);
         }
-        assertNotUndefined('currentValue', combinedCurrent[this.field]);
+        assertNotUndefined(combinedCurrent[this.field]);
         const currentIndicator = indicatorList[0];
         const currentCandle = candleList[0];
         const { close, totalVolume, volume, open, high, low } = currentCandle;

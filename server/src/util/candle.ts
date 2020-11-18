@@ -17,10 +17,10 @@ function parseCandleKey(
     time: string;
 } {
     const [exchange, tradingSymbol, interval, timeCode] = key.split(InstrumentConsts.ID_SEPERATOR);
-    assertNotUndefined('exchange', exchange);
-    assertNotUndefined('tradingSymbol', tradingSymbol);
-    assertNotUndefined('interval', interval);
-    assertNotUndefined('timeCode', timeCode);
+    assertNotUndefined(exchange);
+    assertNotUndefined(tradingSymbol);
+    assertNotUndefined(interval);
+    assertNotUndefined(timeCode);
     const day = timeCode.slice(0, 4);
     const time = timeCode.slice(4);
     return { key, exchange, tradingSymbol, interval, timeCode, day, time };
@@ -44,13 +44,13 @@ function makeCandleKey({
 }): string {
     const separator = InstrumentConsts.ID_SEPERATOR;
     if (instrumentId == undefined) {
-        assertNotUndefined('exchange', exchange);
-        assertNotUndefined('tradingSymbol', tradingSymbol);
+        assertNotUndefined(exchange);
+        assertNotUndefined(tradingSymbol);
         instrumentId = `${exchange}${separator}${tradingSymbol}`;
     }
     if (timeCode == undefined) {
-        assertNotUndefined('day', day);
-        assertNotUndefined('time', time);
+        assertNotUndefined(day);
+        assertNotUndefined(time);
         timeCode = `${day}${time}`;
     }
     return `${instrumentId}${separator}${interval}${separator}${timeCode}`;
