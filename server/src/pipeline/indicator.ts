@@ -12,8 +12,7 @@ interface IndicatorState {
     indicatorCalcList: AbstractIndicatorCalc[];
     candleFetchCount: number;
     indicatorFetchCount: number;
-    prevCandleKeys: string[];
-    prevIndicatorKeys: string[];
+    prevKeys: string[];
     updatedIndicator: Indicator;
 }
 
@@ -35,8 +34,7 @@ export class IndicatorPipeline {
                 indicatorCalcList: flattenIndicatorDependency(indicatorCalcList),
                 candleFetchCount: 0,
                 indicatorFetchCount: 0,
-                prevCandleKeys: [],
-                prevIndicatorKeys: [],
+                prevKeys: [],
                 updatedIndicator: { key: '', values: {} },
             });
         }
@@ -55,7 +53,7 @@ export class IndicatorPipeline {
     }
 
     async fetch(): Promise<void> {
-        const timeRecords: Record<string, string[]> = {};
+        const timeRecordsCache: Record<string, string[]> = {};
         // const start = Date.now();
         const allCandleKeySet = new Set<string>();
         const allIndicatorKeySet = new Set<string>();
@@ -65,21 +63,20 @@ export class IndicatorPipeline {
                 indicatorState.sourceCandle.key,
             );
             const timeRecordsKey = `${exchange}-${interval}-${timeCode}`;
-            if (timeRecords[timeRecordsKey] == undefined) {
-                timeRecords[timeRecordsKey] = await CandleCacheRepository.readPreviousCandleTimeRecords({
+            if (timeRecordsCache[timeRecordsKey] == undefined) {
+                timeRecordsCache[timeRecordsKey] = await CandleCacheRepository.readPreviousCandleTimeRecords({
                     exchange,
                     interval,
                     timeCode,
                     count: Math.max(indicatorState.indicatorFetchCount, indicatorState.candleFetchCount) + 1,
                 });
             }
-            const candleKeys = timeRecords[timeRecordsKey].map((timeCode) => {
+            const candleKeys = timeRecordsCache[timeRecordsKey].map((timeCode) => {
                 return CandleUtil.makeCandleKey({ exchange, tradingSymbol, timeCode, interval });
             });
-            indicatorState.prevCandleKeys = [...candleKeys];
-            indicatorState.prevIndicatorKeys = [...candleKeys];
-            indicatorState.prevCandleKeys.forEach(allCandleKeySet.add.bind(allCandleKeySet));
-            indicatorState.prevIndicatorKeys.forEach(allIndicatorKeySet.add.bind(allIndicatorKeySet));
+            indicatorState.prevKeys = [...candleKeys];
+            indicatorState.prevKeys.forEach(allCandleKeySet.add.bind(allCandleKeySet));
+            indicatorState.prevKeys.forEach(allIndicatorKeySet.add.bind(allIndicatorKeySet));
         }
         const allCandleKeys = [...allCandleKeySet];
         const allCandles = await CandleCacheRepository.getCandles(allCandleKeys);
@@ -100,14 +97,12 @@ export class IndicatorPipeline {
 
     calculateIndicator(indicatorState: IndicatorState): void {
         for (const indicatorCalc of indicatorState.indicatorCalcList) {
-            const candleList = indicatorState.prevCandleKeys.map((candleKey) => this.candleMap[candleKey]);
+            const candleList = indicatorState.prevKeys.map((candleKey) => this.candleMap[candleKey]);
             if (candleList[0] == undefined) {
                 console.log(indicatorState.sourceCandle.key);
-                console.log(indicatorState.prevCandleKeys);
+                console.log(indicatorState.prevKeys);
             }
-            const indicatorList = indicatorState.prevIndicatorKeys.map(
-                (indicatorKey) => this.indicatorMap[indicatorKey],
-            );
+            const indicatorList = indicatorState.prevKeys.map((indicatorKey) => this.indicatorMap[indicatorKey]);
             const updatedIndicator = indicatorCalc.calculate(candleList, indicatorList);
             this.indicatorMap[updatedIndicator.key] = updatedIndicator;
             indicatorState.updatedIndicator = updatedIndicator;
