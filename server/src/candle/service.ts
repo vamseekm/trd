@@ -150,17 +150,25 @@ function candleDiff(brokerCandle: Candle, databaseCandle: Candle): void {
 }
 
 async function verifyCandles(): Promise<void> {
-    const from = DateTime.local(2020, 10, 14, 0, 0, 0).toJSDate();
+    const days = await CandleRepository.getTradingDaysForInterval(CandleInterval.MIN_05);
+    // const from = DateTime.local(2020, 10, 17, 0, 0, 0).toJSDate();
+    const from = days[days.length - 1];
     const to = DateTime.fromJSDate(from).plus({ day: 1 }).toJSDate();
     const searchOptions = {
-        id: 'NFO:NIFTY20OCTFUT',
+        id: 'NSE:RELIANCE',
         interval: CandleInterval.MIN_05,
         from,
         to,
     };
     const instrument = await InstrumentRepository.findById(searchOptions.id);
     if (instrument == undefined) throw new Error("Can't find instrument");
-    const databaseCandles = await CandleRepository.findBy(searchOptions);
+    console.log(from.toLocaleString(), to.toLocaleString());
+    const databaseCandles = await CandleRepository.findBy({
+        instrumentId: 'NSE:RELIANCE',
+        interval: CandleInterval.MIN_05,
+        from,
+        to,
+    });
     const candles = mapBrokerCandlesToNaiveCandles(
         instrument,
         searchOptions.interval,

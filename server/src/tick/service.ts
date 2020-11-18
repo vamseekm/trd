@@ -5,9 +5,12 @@ import os from 'os';
 import path from 'path';
 import zlib from 'zlib';
 
+import { CandleService } from '../candle/service';
+import { IndicatorService } from '../indicator/service';
 import { Log } from '../infrastructure';
 import { Config } from '../infrastructure/config';
 import { TickRepository } from '../persistance';
+import { PipelineService } from '../pipeline/service';
 import { PersistentTick, Tick } from '../types/tick';
 import { toDayAndTime } from '../util/time';
 
@@ -70,7 +73,22 @@ function toPersistentTick(tick: Tick): PersistentTick {
     };
 }
 
+async function loadTestTicks(): Promise<void> {
+    await CandleService.flushCandleCache();
+    await IndicatorService.flushCache();
+    const ticks = await TickRepository.getTicksByInstrumentId('NSE:RELIANCE');
+    let i = 0;
+    for (const tick of ticks) {
+        console.log(tick.timestamp.toLocaleTimeString());
+        const candles = await PipelineService.processTicks([tick], false);
+        if (candles && candles.length > 0) console.log(candles[0].totalVolume);
+        i += 1;
+        if (i > 1000) break;
+    }
+}
+
 export const TickService = {
     clean,
     backup,
+    loadTestTicks,
 };

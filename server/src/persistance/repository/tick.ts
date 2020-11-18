@@ -35,6 +35,19 @@ async function getTicksByInstrumentId(instrumentId: string): Promise<Tick[]> {
         order: [['timestamp', 'ASC']],
         raw: true,
     });
+    return mapToNative(ticks);
+}
+
+async function findBy({ limit }: { limit: number }): Promise<Tick[]> {
+    return mapToNative(
+        await TickModel.findAll({
+            ...(limit && { limit }),
+            raw: true,
+        }),
+    );
+}
+
+function mapToNative(ticks: TickModel[]): Tick[] {
     return ticks.map((tick) => {
         const { day, time } = toDayAndTime(tick.timestamp);
         return { ...tick, day: parseInt(day, 10), time: parseInt(time, 10) };
@@ -47,4 +60,5 @@ export const TickRepository = {
     getUniqueInstruments,
     removeDataOlderThan,
     getTicksByInstrumentId,
+    findBy,
 };

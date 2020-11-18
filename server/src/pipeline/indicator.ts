@@ -1,6 +1,7 @@
 import { AbstractIndicatorCalc } from '../indicator/calcs/base';
 import { flattenIndicatorDependency } from '../indicator/calcs/lib';
 import { SmaIndicatorCalc } from '../indicator/calcs/ma';
+import { VWapIndicatorCalc } from '../indicator/calcs/vwap';
 import { CandleCacheRepository } from '../persistance/repository/cache-candle';
 import { IndicatorCacheRepository } from '../persistance/repository/cache-indicator';
 import { Candle, Indicator, InstrumentConsts } from '../types';
@@ -16,7 +17,10 @@ interface IndicatorState {
     updatedIndicator: Indicator;
 }
 
-const DEFAULT_INDICATORS: AbstractIndicatorCalc[] = [new SmaIndicatorCalc({ field: 'close', intervals: 8 })];
+const DEFAULT_INDICATORS: AbstractIndicatorCalc[] = [
+    new SmaIndicatorCalc({ field: 'close', intervals: 8 }),
+    new VWapIndicatorCalc(),
+];
 
 export class IndicatorPipeline {
     indicatorStateList: IndicatorState[] = [];

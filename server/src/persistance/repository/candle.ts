@@ -32,14 +32,12 @@ async function getCandles(keys: string[]): Promise<Candle[]> {
 }
 
 async function findBy({
-    id,
     interval,
     from,
     to,
     timeCode,
     instrumentId,
 }: {
-    id?: string;
     interval?: CandleInterval;
     from?: Date;
     to?: Date;
@@ -49,10 +47,10 @@ async function findBy({
     const where: WhereOptions = {
         ...(from && to && { timestamp: { [Op.gte]: from, [Op.lte]: to } }),
         ...(interval && { interval }),
-        ...(id && { id }),
-        ...(id && interval && { key: { [Op.like]: `${id}${InstrumentConsts.ID_SEPERATOR}${interval}%` } }),
-        ...(timeCode && { timeCode }),
         ...(instrumentId && { instrumentId }),
+        ...(instrumentId &&
+            interval && { key: { [Op.like]: `${instrumentId}${InstrumentConsts.ID_SEPERATOR}${interval}%` } }),
+        ...(timeCode && { timeCode }),
     };
     if (Object.keys(where).length === 0) throw new Error('Please specify atleast one where condition.');
     return validate(await CandleModel.findAll({ where, order: Sequelize.col('key'), raw: true }));

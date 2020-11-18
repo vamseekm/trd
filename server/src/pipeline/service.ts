@@ -26,7 +26,7 @@ function computeMissingTicks(ticks: Tick[]): Tick[] {
     return missingTicks;
 }
 
-async function processTicks(ticks: Tick[]): Promise<Candle[]> {
+async function processTicks(ticks: Tick[], stdoutStats = true): Promise<Candle[]> {
     const startTime = Date.now();
     for (const tick of ticks) {
         _tickMap[tick.instrumentId] = tick;
@@ -42,16 +42,17 @@ async function processTicks(ticks: Tick[]): Promise<Candle[]> {
     const writeTime = Date.now() - startWriteTime;
     const totalTime = Date.now() - startTime;
     const cpuTime = totalTime - writeTime;
-    printStats('stats', {
-        ticks: ticks.length,
-        mapSize: Object.keys(_tickMap).length,
-        tickMiss: missingTicks.length,
-        candles: sourceCandles.length,
-        writeTime,
-        cpuTime,
-        totalTime,
-        timeCode,
-    });
+    if (stdoutStats)
+        printStats('stats', {
+            ticks: ticks.length,
+            mapSize: Object.keys(_tickMap).length,
+            tickMiss: missingTicks.length,
+            candles: sourceCandles.length,
+            writeTime,
+            cpuTime,
+            totalTime,
+            timeCode,
+        });
     return sourceCandles;
 }
 
