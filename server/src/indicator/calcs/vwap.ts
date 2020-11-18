@@ -1,8 +1,27 @@
 import { Indicator } from '../../types';
+import { assertNotUndefined } from '../../util/lib/algo-ds';
+import { truncateFloat } from '../../util/nums/nums';
 import { AbstractIndicatorCalc, IndicatorCalcParams } from './base';
-export class TotalValueCalc extends AbstractIndicatorCalc {
+
+export class TypicalPriceCalc extends AbstractIndicatorCalc {
     constructor() {
-        super({ id: `totalValue`, intervals: 1 });
+        super({ id: 'typicalPrice', intervals: 1 });
+    }
+
+    calculateWithParams({ combinedCurrent, currentIndicator }: IndicatorCalcParams): Indicator {
+        const { high, low, close } = combinedCurrent;
+        assertNotUndefined('high', high);
+        assertNotUndefined('low', low);
+        assertNotUndefined('close', low);
+        currentIndicator.values[this.id] = truncateFloat((high + low + close) / 3);
+        return currentIndicator;
+    }
+}
+export class TotalValueCalc extends AbstractIndicatorCalc {
+    tp: TypicalPriceCalc = new TypicalPriceCalc();
+    constructor() {
+        super({ id: `totalValue`, intervals: 1, field: 'typicalPrice' });
+        this.addSubIndicator(this.tp);
     }
 
     calculateWithParams({
@@ -12,11 +31,14 @@ export class TotalValueCalc extends AbstractIndicatorCalc {
         sameDay,
     }: IndicatorCalcParams): Indicator {
         const previousTotalValue = combinedPrevious?.[this.id];
+        assertNotUndefined('typeicalPrice', combinedCurrent[this.tp.id]);
         if (previousTotalValue == undefined || sameDay === false) {
             currentIndicator.values[this.id] = combinedCurrent[this.field] * combinedCurrent['volume'];
             return currentIndicator;
         }
-        const currentTotalValue = previousTotalValue + combinedCurrent[this.field] * combinedCurrent['volume'];
+        const currentTotalValue = truncateFloat(
+            previousTotalValue + combinedCurrent[this.field] * combinedCurrent['volume'],
+        );
         currentIndicator.values[this.id] = currentTotalValue;
         return currentIndicator;
     }
@@ -30,9 +52,7 @@ export class VWapIndicatorCalc extends AbstractIndicatorCalc {
     }
 
     calculateWithParams({ combinedCurrent, currentIndicator }: IndicatorCalcParams): Indicator {
-        currentIndicator.values[this.id] = Number.parseFloat(
-            (combinedCurrent[this.tv.id] / combinedCurrent['totalVolume']).toFixed(4),
-        );
+        currentIndicator.values[this.id] = truncateFloat(combinedCurrent[this.tv.id] / combinedCurrent['totalVolume']);
         return currentIndicator;
     }
 }

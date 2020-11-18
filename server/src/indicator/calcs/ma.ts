@@ -1,4 +1,5 @@
 import { Indicator } from '../../types';
+import { truncateFloat } from '../../util/nums/nums';
 import { AbstractIndicatorCalc, IndicatorCalcParams } from './base';
 export interface MaInput {
     field: string;
@@ -24,7 +25,7 @@ export class SmaIndicatorCalc extends AbstractIndicatorCalc {
         }
 
         const currentSma = prevSma * ((this.intervals - 1) / this.intervals) + currentValue / this.intervals;
-        currentIndicator.values[this.id] = Number.parseFloat(currentSma.toFixed(4));
+        currentIndicator.values[this.id] = truncateFloat(currentSma);
         return currentIndicator;
     }
 }
@@ -51,7 +52,7 @@ export class EmaIndicatorCalc extends AbstractIndicatorCalc {
         }
         const k = 2 / (this.intervals + 1);
         const currentEma = currentValue * k + prevEma * (1 - k);
-        currentIndicator.values[this.id] = Number.parseFloat(currentEma.toFixed(4));
+        currentIndicator.values[this.id] = truncateFloat(currentEma);
         return currentIndicator;
     }
 }
