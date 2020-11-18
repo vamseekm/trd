@@ -60,13 +60,11 @@ async function processCandles(sourceCandles: Candle[]): Promise<{ candles: Candl
     const downResPipeline = new DownResolutionPipeline(sourceCandles);
     const downResCandles = await downResPipeline.execute();
     const allCandles = [...sourceCandles, ...downResCandles];
-    await CandleCacheRepository.writeCandles(allCandles);
+    await CandleCacheRepository.writeCandles(downResCandles);
+    await CandleCacheRepository.queueForDBWrites(downResCandles);
     const indicatorPipeline = new IndicatorPipeline(allCandles);
     const indicators = await indicatorPipeline.execute();
-    await Promise.all([
-        CandleCacheRepository.queueForDBWrites(downResCandles),
-        IndicatorCacheRepository.writeIndicators(indicators),
-    ]);
+    await IndicatorCacheRepository.writeIndicators(indicators);
     return { candles: allCandles, indicators };
 }
 

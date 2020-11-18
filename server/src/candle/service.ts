@@ -154,9 +154,10 @@ async function verifyCandles(): Promise<void> {
     // const from = DateTime.local(2020, 10, 17, 0, 0, 0).toJSDate();
     const from = days[days.length - 1];
     const to = DateTime.fromJSDate(from).plus({ day: 1 }).toJSDate();
+    const interval = CandleInterval.MIN_15;
     const searchOptions = {
         id: 'NSE:RELIANCE',
-        interval: CandleInterval.MIN_05,
+        interval,
         from,
         to,
     };
@@ -165,7 +166,7 @@ async function verifyCandles(): Promise<void> {
     console.log(from.toLocaleString(), to.toLocaleString());
     const databaseCandles = await CandleRepository.findBy({
         instrumentId: 'NSE:RELIANCE',
-        interval: CandleInterval.MIN_05,
+        interval,
         from,
         to,
     });

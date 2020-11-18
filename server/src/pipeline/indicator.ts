@@ -4,7 +4,7 @@ import { SmaIndicatorCalc } from '../indicator/calcs/ma';
 import { VWapIndicatorCalc } from '../indicator/calcs/vwap';
 import { CandleCacheRepository } from '../persistance/repository/cache-candle';
 import { IndicatorCacheRepository } from '../persistance/repository/cache-indicator';
-import { Candle, Indicator, InstrumentConsts } from '../types';
+import { Candle, Indicator } from '../types';
 import { CandleUtil } from '../util';
 
 interface IndicatorState {
@@ -64,7 +64,7 @@ export class IndicatorPipeline {
             const { exchange, tradingSymbol, interval, timeCode } = CandleUtil.parseCandleKey(
                 indicatorState.sourceCandle.key,
             );
-            const timeRecordsKey = `${exchange}${InstrumentConsts.ID_SEPERATOR}${interval}`;
+            const timeRecordsKey = `${exchange}-${interval}-${timeCode}`;
             if (timeRecords[timeRecordsKey] == undefined) {
                 timeRecords[timeRecordsKey] = await CandleCacheRepository.readPreviousCandleTimeRecords({
                     exchange,
@@ -101,6 +101,10 @@ export class IndicatorPipeline {
     calculateIndicator(indicatorState: IndicatorState): void {
         for (const indicatorCalc of indicatorState.indicatorCalcList) {
             const candleList = indicatorState.prevCandleKeys.map((candleKey) => this.candleMap[candleKey]);
+            if (candleList[0] == undefined) {
+                console.log(indicatorState.sourceCandle.key);
+                console.log(indicatorState.prevCandleKeys);
+            }
             const indicatorList = indicatorState.prevIndicatorKeys.map(
                 (indicatorKey) => this.indicatorMap[indicatorKey],
             );
