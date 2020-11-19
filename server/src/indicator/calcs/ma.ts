@@ -4,11 +4,12 @@ import { AbstractIndicatorCalc, IndicatorCalcParams } from './base';
 export interface MaInput {
     field: string;
     intervals: number;
+    id?: string;
 }
 
 export class SmaIndicatorCalc extends AbstractIndicatorCalc {
     constructor(opts: MaInput) {
-        super({ ...opts, id: `sma(${opts.field},${opts.intervals})` });
+        super({ id: `sma(${opts.field},${opts.intervals})`, ...opts });
     }
 
     calculateWithParams({
@@ -31,11 +32,8 @@ export class SmaIndicatorCalc extends AbstractIndicatorCalc {
 }
 
 export class EmaIndicatorCalc extends AbstractIndicatorCalc {
-    smaIndicator: SmaIndicatorCalc;
     constructor(opts: MaInput) {
-        super({ ...opts, id: `ema(${opts.field},${opts.intervals})` });
-        this.smaIndicator = new SmaIndicatorCalc(opts);
-        this.addSubIndicator(this.smaIndicator);
+        super({ id: `ema(${opts.field},${opts.intervals})`, ...opts });
     }
 
     calculateWithParams({

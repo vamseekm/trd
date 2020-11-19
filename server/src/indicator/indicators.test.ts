@@ -8,18 +8,11 @@ import { timeCodeToDate } from '../util/time';
 import { AbstractIndicatorCalc } from './calcs/base';
 import { flattenIndicatorDependency } from './calcs/lib';
 import { EmaIndicatorCalc, SmaIndicatorCalc } from './calcs/ma';
-import { MacdIndicatorCalc } from './calcs/macd';
+import { defaultMacdIndicator } from './calcs/macd';
 import { VWapIndicatorCalc } from './calcs/vwap';
 
 test('Indicator dependency flatten', async () => {
-    const macd = new MacdIndicatorCalc({
-        field: 'close',
-        emaPeriodShort: 12,
-        emaPeriodLong: 26,
-        signalPeriod: 9,
-        intervals: 1,
-    });
-    const indicators = flattenIndicatorDependency([macd, new VWapIndicatorCalc()]);
+    const indicators = flattenIndicatorDependency([defaultMacdIndicator(), new VWapIndicatorCalc()]);
     const ids = indicators.map((indicator) => indicator.id);
     expect(ids).toMatchSnapshot();
 });
@@ -101,12 +94,18 @@ test('Moving averages', async () => {
     // console.log(await readCandlesFromMemory());
     expect(await readCandlesFromMemory()).toMatchSnapshot();
     expect(await readIndicatorsFromMemory()).toMatchSnapshot();
-    expect(true).toEqual(true);
 });
 
 test('VWAP', async () => {
     await runIndicators(readMockCandles(), [new VWapIndicatorCalc()]);
     // console.log(await readCandlesFromMemory());
     expect(await readIndicatorsFromMemory()).toMatchSnapshot();
-    expect(true).toEqual(true);
+});
+
+test('MACD', async () => {
+    const indicatorList = [defaultMacdIndicator()];
+    expect(flattenIndicatorDependency(indicatorList).map((ind) => ind.id)).toMatchSnapshot();
+    await runIndicators(readMockCandles(), indicatorList);
+    const indicators = await readIndicatorsFromMemory();
+    expect(indicators).toMatchSnapshot();
 });
