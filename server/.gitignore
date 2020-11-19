@@ -4,3 +4,4 @@
 /node_trace.*.log
 /docs
 .DS_Store
+/coverage
