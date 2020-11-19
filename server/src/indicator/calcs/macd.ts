@@ -1,8 +1,7 @@
-import { IndicatorCalcParams } from '../../../dist/indicator/calcs/base';
 import { Indicator } from '../../types';
 import { assertNotUndefined } from '../../util/lib/algo-ds';
 import { truncateFloat } from '../../util/nums/nums';
-import { AbstractIndicatorCalc } from './base';
+import { AbstractIndicatorCalc, IndicatorCalcParams } from './base';
 import { EmaIndicatorCalc } from './ma';
 
 export interface MacdInputOptions {
