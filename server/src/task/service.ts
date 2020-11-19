@@ -5,6 +5,7 @@ import pup from 'puppeteer';
 
 import { BrokerService } from '../broker/service';
 import { CandleService } from '../candle/service';
+import { IndicatorService } from '../indicator/service';
 import { Log } from '../infrastructure';
 import { InstrumentService } from '../instrument';
 import { PrefRepository } from '../persistance';
@@ -17,15 +18,24 @@ async function init(): Promise<void> {
     await InstrumentService.updateLtpInitial();
     await InstrumentService.track();
     await InstrumentService.updateLTPTracked();
+    await InstrumentService.updateMeta();
+}
+
+async function maintnance(): Promise<void> {
+    await TickService.backup();
+    await TickService.clean();
+}
+
+async function loadCandles(): Promise<void> {
+    await CandleService.flushCandleCache();
+    await IndicatorService.flushCache();
+    await CandleService.loadCandles();
 }
 
 async function runCronTasks(): Promise<any> {
+    await maintnance();
     await init();
-    await InstrumentService.updateMeta();
-    await TickService.backup();
-    await TickService.clean();
-    await CandleService.flushCandleCache();
-    await CandleService.loadCandles();
+    await loadCandles();
 }
 
 async function cron(): Promise<any> {
@@ -107,4 +117,5 @@ export const TaskService = {
     autoLogin,
     autoLoginCron,
     cron,
+    loadCandles,
 };

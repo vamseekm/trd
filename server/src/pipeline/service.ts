@@ -35,8 +35,6 @@ async function processTicks(ticks: Tick[], stdoutStats = true): Promise<Candle[]
     const tickPipeline = new TickPipeline(ticks);
     const sourceCandles = await tickPipeline.execute();
     const startWriteTime = Date.now();
-    await CandleCacheRepository.writeCandles(sourceCandles);
-    await CandleCacheRepository.queueForDBWrites(sourceCandles);
     await processCandles(sourceCandles);
     const timeCode = sourceCandles.length > 0 ? sourceCandles[0].timeCode : 0;
     const writeTime = Date.now() - startWriteTime;
@@ -57,6 +55,8 @@ async function processTicks(ticks: Tick[], stdoutStats = true): Promise<Candle[]
 }
 
 async function processCandles(sourceCandles: Candle[]): Promise<{ candles: Candle[]; indicators: Indicator[] }> {
+    await CandleCacheRepository.writeCandles(sourceCandles);
+    await CandleCacheRepository.queueForDBWrites(sourceCandles);
     const downResPipeline = new DownResolutionPipeline(sourceCandles);
     const downResCandles = await downResPipeline.execute();
     const allCandles = [...sourceCandles, ...downResCandles];

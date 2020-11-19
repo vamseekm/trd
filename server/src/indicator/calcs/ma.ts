@@ -12,15 +12,10 @@ export class SmaIndicatorCalc extends AbstractIndicatorCalc {
         super({ id: `sma(${opts.field},${opts.intervals})`, ...opts });
     }
 
-    calculateWithParams({
-        combinedPrevious,
-        combinedCurrent,
-        currentIndicator,
-        sameDay,
-    }: IndicatorCalcParams): Indicator {
+    calculateWithParams({ combinedPrevious, combinedCurrent, currentIndicator }: IndicatorCalcParams): Indicator {
         const prevSma = (combinedPrevious as any)[this.id];
         const currentValue = (combinedCurrent as any)[this.field];
-        if (prevSma == undefined || sameDay === false) {
+        if (prevSma == undefined) {
             currentIndicator.values[this.id] = currentValue;
             return currentIndicator;
         }
@@ -36,15 +31,10 @@ export class EmaIndicatorCalc extends AbstractIndicatorCalc {
         super({ id: `ema(${opts.field},${opts.intervals})`, ...opts });
     }
 
-    calculateWithParams({
-        combinedCurrent,
-        combinedPrevious,
-        currentIndicator,
-        sameDay,
-    }: IndicatorCalcParams): Indicator {
+    calculateWithParams({ combinedCurrent, combinedPrevious, currentIndicator }: IndicatorCalcParams): Indicator {
         const prevEma = (combinedPrevious as any)?.[this.id];
         const currentValue = (combinedCurrent as any)[this.field];
-        if (prevEma == undefined || sameDay === false) {
+        if (prevEma == undefined) {
             currentIndicator.values[this.id] = currentValue;
             return currentIndicator;
         }

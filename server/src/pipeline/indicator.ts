@@ -1,6 +1,7 @@
 import { AbstractIndicatorCalc } from '../indicator/calcs/base';
 import { flattenIndicatorDependency } from '../indicator/calcs/lib';
 import { SmaIndicatorCalc } from '../indicator/calcs/ma';
+import { defaultMacdIndicator } from '../indicator/calcs/macd';
 import { VWapIndicatorCalc } from '../indicator/calcs/vwap';
 import { CandleCacheRepository } from '../persistance/repository/cache-candle';
 import { IndicatorCacheRepository } from '../persistance/repository/cache-indicator';
@@ -19,6 +20,7 @@ interface IndicatorState {
 const DEFAULT_INDICATORS: AbstractIndicatorCalc[] = [
     new SmaIndicatorCalc({ field: 'close', intervals: 8 }),
     new VWapIndicatorCalc(),
+    defaultMacdIndicator(),
 ];
 
 export class IndicatorPipeline {
@@ -101,6 +103,7 @@ export class IndicatorPipeline {
             if (candleList[0] == undefined) {
                 console.log(indicatorState.sourceCandle.key);
                 console.log(indicatorState.prevKeys);
+                console.log(candleList);
             }
             const indicatorList = indicatorState.prevKeys.map((indicatorKey) => this.indicatorMap[indicatorKey]);
             const updatedIndicator = indicatorCalc.calculate(candleList, indicatorList);
