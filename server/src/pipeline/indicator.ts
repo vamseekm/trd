@@ -1,3 +1,5 @@
+import { isPresent } from 'ts-is-present';
+
 import { AbstractIndicatorCalc } from '../indicator/calcs/base';
 import { flattenIndicatorDependency } from '../indicator/calcs/lib';
 import { SmaIndicatorCalc } from '../indicator/calcs/ma';
@@ -27,8 +29,7 @@ export class IndicatorPipeline {
     indicatorStateList: IndicatorState[] = [];
     candleMap: Record<string, Candle> = {};
     indicatorMap: Record<string, Indicator> = {};
-    constructor(sourceCandles: Candle[], indicatorCalcList?: AbstractIndicatorCalc[]) {
-        indicatorCalcList = indicatorCalcList || DEFAULT_INDICATORS;
+    constructor(sourceCandles: Candle[], indicatorCalcList = DEFAULT_INDICATORS) {
         for (const sourceCandle of sourceCandles) {
             this.candleMap[sourceCandle.key] = sourceCandle;
             this.indicatorStateList.push({
@@ -81,20 +82,21 @@ export class IndicatorPipeline {
             indicatorState.prevKeys.forEach(allIndicatorKeySet.add.bind(allIndicatorKeySet));
         }
         const allCandleKeys = [...allCandleKeySet];
-        const allCandles = await CandleCacheRepository.getCandles(allCandleKeys);
-        for (const [i, candleKey] of allCandleKeys.entries()) {
-            const candle = allCandles[i];
-            if (candle != undefined) this.candleMap[candleKey] = candle;
-        }
         const allIndicatorKeys = [...allIndicatorKeySet];
-        const allIndicators = await IndicatorCacheRepository.getIndicators(allIndicatorKeys);
+        const [allCandles, allIndicators] = await Promise.all([
+            CandleCacheRepository.getCandles(allCandleKeys),
+            IndicatorCacheRepository.getIndicators(allIndicatorKeys),
+        ]);
+        allCandles.filter(isPresent).forEach((candle) => {
+            this.candleMap[candle.key] = candle;
+        });
         for (const [i, indicatorKey] of allIndicatorKeys.entries()) {
             const indicator = allIndicators[i];
             this.indicatorMap[indicatorKey] = indicator || { key: indicatorKey, values: {} };
         }
-        for (const { sourceCandle } of this.indicatorStateList) {
+        this.indicatorStateList.forEach(({ sourceCandle }) => {
             this.candleMap[sourceCandle.key] = sourceCandle;
-        }
+        });
     }
 
     calculateIndicator(indicatorState: IndicatorState): void {
